@@ -1,0 +1,58 @@
+name: Task
+description: Create a new task for the LLM Red-Teaming framework
+body:
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: Short description of the task
+      placeholder: e.g. Implement prompt injection attack module
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Provide details, context, or objectives for this task
+      placeholder: Explain what needs to be done and why
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: input
+    id: estimated_minutes
+    attributes:
+      label: Estimated Time (minutes)
+      description: Approximate time expected to complete this task
+      placeholder: e.g. @username1 60 @username2 70...
+    validations:
+      required: false
+
+  - type: input
+    id: actual_minutes
+    attributes:
+      label: Actual Time (minutes)
+      description: Time actually spent on this task (fill after completion)
+      placeholder: e.g. @username1 160 @username2 170...
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Add any references, links, or notes
+      placeholder: Optional
+    validations:
+      required: false

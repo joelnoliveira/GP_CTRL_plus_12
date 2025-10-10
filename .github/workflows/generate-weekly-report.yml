@@ -1,0 +1,66 @@
+name: Generate Weekly Time Report
+
+on:
+  schedule:
+    - cron: '0 15 * * MON' # 16:00 Portugal = 15:00 UTC
+  workflow_dispatch:
+
+jobs:
+  weekly-time-report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch all issues (with assignees)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          mkdir -p reports
+          echo "Fetching all issues from $REPO..."
+          gh api -X GET repos/$REPO/issues \
+            --paginate \
+            -f state=all \
+            --jq '.' > reports/issues.json
+
+      - name: Fetch user real names
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching user real names..."
+          jq -r '.[] | .assignees[]?.login' reports/issues.json | sort -u > reports/usernames.txt
+          echo "{" > reports/user_names.json
+          first=true
+          while read -r username; do
+            [ -z "$username" ] && continue
+            name=$(gh api users/$username --jq '.name // empty')
+            if [ "$first" = true ]; then
+              first=false
+            else
+              echo "," >> reports/user_names.json
+            fi
+            if [ -z "$name" ]; then
+              echo "\"$username\": \"$username\"" >> reports/user_names.json
+            else
+              echo "\"${username,,}\": \"$name\"" >> reports/user_names.json
+            fi
+          done < reports/usernames.txt
+          echo "}" >> reports/user_names.json
+
+      - name: Generate weekly report (Python)
+        run: |
+          python3 .github/scripts/generate_time_report.py
+
+      - name: Commit reports
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add reports/*_weekly_report.csv reports/total_time_report.csv || echo "No report files to add"
+          git commit -m "Weekly and total time reports ($(date +'%Y-%m-%d'))" || echo "No changes to commit"
+          git push
+

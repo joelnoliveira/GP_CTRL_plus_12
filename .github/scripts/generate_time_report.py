@@ -12,7 +12,7 @@ def extract_times(issues, since_date=None):
         if not closed_at:
             continue
 
-        closed_at_dt = datetime.strptime(closed_at, "%Y-%m-%dT%H:%M:%SZ")
+        closed_at_dt = datetime.strptime(closed_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
         if since_date and closed_at_dt < since_date:
             continue
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json, re, csv, os, datetime
+from datetime import datetime, timedelta, timezone
 
 def extract_times(issues, since_date=None):
     """Extracts time per user. If since_date is given, filters closed issues after it."""
@@ -11,7 +12,7 @@ def extract_times(issues, since_date=None):
         if not closed_at:
             continue
 
-        closed_at_dt = datetime.datetime.strptime(closed_at, "%Y-%m-%dT%H:%M:%SZ")
+        closed_at_dt = datetime.strptime(closed_at, "%Y-%m-%dT%H:%M:%SZ")
         if since_date and closed_at_dt < since_date:
             continue
 
@@ -62,11 +63,14 @@ def main():
     with open(users_path) as f:
         user_names = json.load(f)
 
-    # --- DATE CALCULATION ---
-    now = datetime.datetime.utcnow()
+    now = datetime.now(timezone.utc)
     days_since_monday = now.weekday()
-    last_monday = now - datetime.timedelta(days=days_since_monday)
-    last_monday = last_monday.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Get Monday of this week
+    this_monday = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Get Monday of previous week
+    last_monday = this_monday - timedelta(weeks=1)
 
     # --- WEEKLY REPORT ---
     weekly_data = extract_times(issues, since_date=last_monday)

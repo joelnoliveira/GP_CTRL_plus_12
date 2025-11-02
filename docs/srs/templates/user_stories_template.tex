@@ -1,0 +1,46 @@
+\newcounter{US}
+\makeatletter
+\newcommand{\US}[3]{%
+    \refstepcounter{US}%
+    \subsubsection*{US-\theUS: #1}%
+    \protected@edef\@currentlabelname{US-\theUS: #1}%
+    \label{US:#2}%
+    #3 % description content if you want
+}
+\makeatother
+
+% Command for a Feature
+\newcommand{\Feature}[1]{%
+    \textbf{Feature:} #1
+}
+
+% Commands for keywords
+\newcommand{\Given}[1]{\emph{Dado} #1; }
+\newcommand{\When}[1]{\emph{Quando} #1; }
+\newcommand{\Then}[1]{\emph{Então} #1; }
+\newcommand{\And}[1]{\emph{E} #1; }
+
+% Environment for Scenarios
+\newenvironment{Cenarios}{
+    \begin{enumerate}[label=C\arabic*: , leftmargin=*]
+}{
+    \end{enumerate}
+}
+
+% % To use template copy paste:
+%
+% \US{Title}{label}
+% {
+%   \Feature{} % title of the user story
+%   \begin{Cenarios}
+%       \item \Given{}
+%             \When{}
+%             \Then{} 
+%             \And{}
+%       \item 
+%             \Given{} 
+%             \When{} 
+%             \Then{} 
+%             \And{}
+%   \end{Cenarios}
+% }

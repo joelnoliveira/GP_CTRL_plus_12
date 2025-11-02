@@ -1,0 +1,19 @@
+{
+	"name": "LaTeX Documentation Container",
+	"dockerFile": "Dockerfile",
+	"workspaceFolder": "/workspace",
+	"workspaceMount": "source=${localWorkspaceFolder}/docs/srs,target=/workspace/,type=bind",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"James-Yu.latex-workshop",
+				"ms-vscode.live-share",
+				"streetsidesoftware.code-spell-checker",
+				"esbenp.prettier-vscode",
+				"aaron-bond.better-comments",
+				"ms-vsliveshare.vsliveshare",
+				"streetsidesoftware.code-spell-checker-portuguese"
+			]
+		}
+	}
+  }

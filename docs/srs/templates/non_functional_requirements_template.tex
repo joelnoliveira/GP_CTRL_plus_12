@@ -1,0 +1,8 @@
+\newcounter{NFR}
+\newcommand{\NFR}[2]{%
+    \refstepcounter{NFR}%
+    \subsubsection*{NFR-\theNFR: #1}%
+    #2
+}
+% To use template copy paste:
+% \NFR{Title}{Description}

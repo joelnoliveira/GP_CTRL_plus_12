@@ -1,0 +1,42 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{bookmark} % To have bookmarks
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage[portuguese]{babel} % auto names in pt-pt (captions,...)
+\usepackage{tabularx}  % for tabularx environment
+
+
+\hypersetup{
+    pdfauthor={Diogo Frazão, Francisco Coelho, Joel Oliveira, Raul Rodrigues}, % Set author metadata
+    pdftitle={Software Requirement Specification}, % Set title metadata
+}
+
+% import templates
+% \input{templates/functional_requirements_template.tex}
+% \input{templates/user_stories_template.tex}
+% \input{templates/non_functional_requirements_template.tex}
+
+\begin{document}
+\input{chapters/0_cover/0_cover.tex}
+
+
+\newpage
+\tableofcontents
+\newpage
+\listoffigures
+\listoftables
+\newpage
+
+\input{chapters/1_vision_and_limits/0_vision_and_limits.tex}
+\input{chapters/2_requirements/0_requirements.tex}
+\input{chapters/3_domain_and_data_model/0_domain_and_data_model.tex}
+\input{chapters/4_system_architecture/0_system_architecture.tex}
+\input{chapters/5_restrictions_risks_assumptions/0_restrictions_risks_assumptions.tex}
+\input{chapters/6_tracebility_and_planning/0_tracebility_and_planning.tex}
+
+
+\end{document}

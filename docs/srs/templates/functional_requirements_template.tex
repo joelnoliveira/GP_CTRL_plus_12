@@ -1,0 +1,12 @@
+\newcounter{FR}
+\makeatletter
+\newcommand{\FR}[3]{%
+    \refstepcounter{FR}%
+    \subsubsection*{FR-\theFR: #1}%
+    \protected@edef\@currentlabelname{FR-\theFR: #1}%
+    \label{FR:#2}%
+    #3
+}
+\makeatother
+% To use template copy paste:
+% \FR{Title}{Label}{Description}

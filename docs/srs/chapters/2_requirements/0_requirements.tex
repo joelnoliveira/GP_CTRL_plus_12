@@ -30,6 +30,9 @@
 
 \FR{Avaliação da Utilidade}{avaliacao_utilidade}{O sistema poderia opcionalmente através do mecanismo de júris determinar se a resposta do modelo alvo constitui uma resposta útil.}
 
+\FR{Captcha}{captcha}{O sistema poderia opcionalmente a cada login e registo na plataforma exigir verificação Captcha para verificar se não é se o user não é um Bot.}
+
+
 % \FR{C}
 
 % | Tipo de requisito               | Redação recomendada                   | MoSCoW      | Semântica                                              |
@@ -42,3 +45,19 @@
 
 
 \subsection{Requisitos Não Funcionais}
+
+\NFR{Segurança}{O sistema deve implementar autenticação segura com hashing de passwords e e-mails (bcrypt ou superior) para proteger contas de utilizadores.}
+
+
+\NFR{Usabilidade}{O sistema deve permitir que utilizadores configurem e iniciem um ataque básico em menos de 5 minutos, utilizando configurações pré-definidas.}
+
+\NFR{Compatibilidade}{O sistema deve funcionar nos principais navegadores web (Chrome, Firefox, Safari) nas suas versões mais recentes.}
+
+\NFR{Conformidade}{O sistema deve permitir aos utilizadores exportar e eliminar os seus dados pessoais, cumprindo requisitos básicos do GDPR.}
+
+%TODO: maybe implementar Captcha para dar log in e registo
+
+
+\NFR{Usabilidade}{O sistema deve permitir que utilizadores configurem e iniciem um ataque básico em menos de 5 minutos, utilizando configurações pré-definidas.}
+
+\NFR{Observabilidade}{O sistema deve registar operações críticas (login, execução de ataques, erros) com timestamp e ID de utilizador para auditoria.}

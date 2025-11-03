@@ -1,38 +1,53 @@
 \section{Requisitos}
 \subsection{Requisitos Funcionais}
 
-\FR{Pipeline de Ataque}{execucao_da_pipeline_de_ataque}{O sistema deve reproduzir o ataque segundo uma pipeline de instruções.}
-\FR{Faseamento da Pipeline}{pipeline_de_ataque_faseada_por_configuracoes}{O sistema deve conter a pipeline de ataques faseada em scenario, workload dataset, scenario-specific metric, algorithm (LLM), linguagem de programação e attack load.}
-\FR{Selecionar Configuração das Fases}{selecionar_configuracao_fases}{O sistema deve permitir selecionar a configuração de cada fase da pipeline através de configurações pré-definidas.}
-\FR{Inserção de Configurações Próprias}{configuracao_propria}{O sistema poderia opcionalmente aceitar inserção por parte do utilizador de configurações de cada fase.} %TODO: Deve ser possível adicionar novas LLMs sem modificar alterar a framework. / Deve ser possível adicionar novos tipos de ataque ou fault loads sem alterações estruturais./ uploaded de ataques diretamente por utilizadores
+\FR{Execução de Pipeline de Ataque}{execucao_pipeline_ataque}{O sistema deve executar ataques através de uma pipeline configurável composta por cinco fases sequenciais: seleção de cenário, seleção de workload dataset, definição de métricas específicas do cenário, seleção de algoritmo/LLM alvo, e definição de attack load.[Must have]}
 
+\FR{Configuração de Fases da Pipeline}{configuracao_fases_pipeline}{O sistema deve permitir ao utilizador selecionar a configuração de cada fase da pipeline através de opções pré-definidas disponibilizadas pelo sistema.[Must have]}
+
+\FR{Configurações Personalizadas}{configuracoes_personalizadas}{O sistema deve permitir ao utilizador inserir configurações personalizadas para cada fase da pipeline, incluindo a adição de novos datasets e attack loads sem modificar o código-fonte da framework. As configurações devem seguir um formato exemplo.[Should Have]}
 
 % \FR{Seleção de LLMs}{selecao_llms}{O sistema deve permitir a seleção de um ou mais modelos de LLMs para serem testados/avaliados.}
-\FR{Histórico de Resultados}{historico_resultados}{O sistema deve permitir visualizar resultados de ataques anteriormente executados pelo utilizador.}
-\FR{Reutilização de Resultados}{reutilizacao_resultados}{O sistema deve questionar o utilizador quanto à reutilização dos resultados de ataques anteriormente executados no sistema, casos estes estejam públicos.}
-\FR{Filtragem de Resultados}{filtragem_resultados}{O sistema deve permitir filtrar os resultados de ataques por scenario, workload dataset, scenario-specific metric, algorithm (LLM), linguagem de programação e attack load.}
-\FR{Comparar Resultados}{comparar_resultados}{O sistema deve permitir comparar lado a lado resultados de diferentes ataques, até 3 simultâneo.}
+\FR{Visualização de Histórico de Resultados}{historico_resultados}{O sistema deve permitir ao utilizador visualizar todos os resultados de ataques que executou anteriormente, apresentando pelo menos para cada ataque: data de execução, configuração da pipeline utilizada, e métricas calculadas.[Must Have]}
 
-\FR{Registo de Utilizador}{registo_de_utilizador}{O sistema deve permitir a criação de contas para cada utilizador.}
-\FR{Login de Utilizador}{login_de_utilizador}{O sistema deve permitir que o utilizador efetue o login.}
-\FR{Controlo de Acesso aos Resultados}{controlo_acesso_resultados}{O sistema deve permitir ao utilizador disponibilizar os resultados dos experimentos de forma pública ou privada.}
+\FR{Reutilização de Resultados Públicos}{reutilizacao_resultados}{O sistema deve permitir ao utilizador reutilizar resultados de ataques executados por outros utilizadores e marcados como públicos, apresentando uma confirmação antes da reutilização.[Could Have]}
 
-\FR{Análise do Código de Linguagens de Programação Comuns}{analise_do_codigo_de_linguagens_de_programação_comuns}{O sistema deve permitir compilar e avaliar através de Static Analysis Tools  as vulnerabilidades do código de linguagens de programação comuns (e.g. python, java, javascript, etc).}
-\FR{Suporte de Diferentes Tipos de Dados}{suporte_diferentes_tipos_de_dados}{O sistema poderia opcionalmente efetuar ataques com a integração de outros tipos de dados para além de texto (e.g. mensagens em imagens, audios).}
-\FR{Suporte a Ataques Diferentes}{suporte_ataques_diferentes}{O sistema poderia opcionalmente efetuar ataques que utilizem code-to-code e code completion prompts, além de ataques de ataques text-to-code.}
-\FR{LLM Atacante}{llm_atacante}{O sistema deve implementar metedologias de ataques baseados em LLM de forma a criar prompts adversariais dinamicamente.}
+\FR{Filtragem de Resultados}{filtragem_resultados}{O sistema deve permitir ao utilizador filtrar resultados de ataques utilizando um ou mais dos seguintes critérios: cenário, workload dataset, métrica específica do cenário, algoritmo/LLM, linguagem de programação, e attack load.[Should Have]}
 
-\FR{Armazenamento de Dados}{armazenamento_dados}{O sistema deve permitir armazenar os dados de entrada, a resposta dos modelos e as respetivas métricas.}
-\FR{Cálculo de métrica ASR}{calculo_metrica_asr}{O sistema deve permitir calcular o Attack Success Rate (ASR), medindo a proporção de prompts adversariais que burlam com sucesso os mecanismos de segurança.}
-\FR{Cálculo de métrica ORR}{calculo_metrica_orr}{O sistema deve permitir calcular o Over-Refusal Rate (ORR), medindo a proporção de prompts benignas que são incorretamente rejeitadas.}
-\FR{Cálculo de métrica AOR}{calculo_metrica_aor}{O sistema deve permitir calcular o Achieved Objective Rate (AOR), medindo a amplitude do sucesso do ataque através da proporção de objetivos distintos que foram alcançados.}
-\FR{Mecanismo de Júri}{mecanismo_juri}{O sistema deve ter um mecanismo de julgamento através de LLMs para determinar se a resposta do modelo alvo constitui uma recusa em comprir o objetivo, utilizando sistema de votação entre os elementos do júri (LLMs).}
+\FR{Comparação de Resultados}{comparar_resultados}{O sistema deve permitir ao utilizador comparar lado a lado os resultados de até 3 ataques diferentes simultaneamente.[Should Have]}
 
-\FR{Avaliação da Utilidade}{avaliacao_utilidade}{O sistema poderia opcionalmente através do mecanismo de júris determinar se a resposta do modelo alvo constitui uma resposta útil.}
+\FR{Registo de Utilizador}{registo_de_utilizador}{O sistema deve permitir a criação de contas de utilizador através de email e password, validando o formato do email e exigindo passwords com no mínimo 8 caracteres.[Must Have]}
 
-\FR{Captcha}{captcha}{O sistema poderia opcionalmente a cada login e registo na plataforma exigir verificação Captcha para verificar se não é se o user não é um Bot.}
+\FR{Login de Utilizador}{login_de_utilizador}{O sistema deve permitir ao utilizador autenticar-se através de email e password, gerando uma sessão após autenticação bem-sucedida.[Must Have]}
 
+\FR{Controlo de Visibilidade de Resultados}{controlo_acesso_resultados}{O sistema deve permitir ao utilizador definir, para cada ataque executado, se os resultados são públicos (visíveis por todos os utilizadores) ou privados (visíveis apenas pelo próprio utilizador).[Could Have]}
 
+\FR{Análise de Vulnerabilidades do Código de Linguagens de Programação Comuns}{analise_do_codigo_de_linguagens_de_programação_comuns}{O sistema deve permitir compilar e avaliar através de Static Analysis Tools  as vulnerabilidades do código de linguagens de programação comuns (e.g. python, java, javascript, etc), reportando o tipo e severidade de cada vulnerabilidade encontrada.[Should Have]}
+
+\FR{Suporte de Diferentes Tipos de Dados}{suporte_diferentes_tipos_de_dados}{O sistema deve suportar ataques que utilizem tipos de dados de entrada além de texto, nomeadamente imagens contendo texto e ficheiros de áudio.[Could Have]}
+
+\FR{Suporte a Cenários de Geração de Código}{cenarios_geracao_codigo}{O sistema deve suportar três tipos de cenários de ataque relacionados com código: text-to-code (geração de código a partir de descrição textual), code-to-code (transformação/refatoração de código), e code completion (completamento automático de código).[Could Have]}
+
+\FR{LLM Atacante}{llm_atacante}{O sistema deve implementar metedologias de ataques baseados em LLM de forma a criar prompts adversariais dinamicamente.[Must Have]}
+
+\FR{Armazenamento de Dados}{armazenamento_dados}{O sistema deve armazenar para cada ataque executado: os dados de entrada, as respostas geradas pelos LLMs, as configurações da pipeline utilizada, e os valores calculados de todas as métricas.[Must Have]}
+
+\FR{Cálculo de Attack Success Rate}{calculo_metrica_asr}{O sistema deve calcular a métrica Attack Success Rate (ASR), definida como a proporção de prompts adversariais que contornaram com sucesso os mecanismos de segurança do LLM alvo.[Must Have]}
+
+\FR{Cálculo de Over-Refusal Rate}{calculo_metrica_orr}{O sistema deve permitir calcular o Over-Refusal Rate (ORR), medindo a proporção de prompts benignas que foram incorretamente rejeitadas pelo LLM alvo.[Must Have]}
+
+\FR{Cálculo de Achieved Objective Rate}{calculo_metrica_aor}{O sistema deve permitir calcular o Achieved Objective Rate (AOR), medindo a amplitude do sucesso do ataque através da proporção de objetivos distintos que foram alcançados.[Must Have]}
+
+\FR{Mecanismo de Júri}{mecanismo_juri}{O sistema deve implementar um mecanismo de júri composto por 3  LLMs para classificar cada resposta do modelo alvo como "recusa" ou "cumprimento" do objetivo, utilizando votação por maioria simples para determinar a classificação final.[Must Have]}
+
+\FR{Avaliação da Utilidade}{avaliacao_utilidade}{O sistema deve utilizar o mecanismo de júri de LLMs para classificar cada resposta do modelo alvo quanto à sua utilidade, categorizando-a como "útil", ou "inútil" através de votação por maioria simples.[Should Have]}
+
+\FR{Verificação Anti-Bot}{captcha}{O sistema deve exigir verificação CAPTCHA em cada processo de registo e autenticação de utilizadores para prevenir acesso automatizado por bots.[Could Have]}
+
+\FR{Exportação de Resultados}{exportacao_resultados}{O sistema deve permitir ao utilizador exportar os resultados de ataques em formatos estruturados (JSON, XML), incluindo todas as configurações, prompts, respostas e métricas calculadas.[Could Have]}
+
+% suporte_diferentes_tipos_de_dados -> opcional
+% cenarios_geracao_docigo -> opcional
 % \FR{C}
 
 % | Tipo de requisito               | Redação recomendada                   | MoSCoW      | Semântica                                              |

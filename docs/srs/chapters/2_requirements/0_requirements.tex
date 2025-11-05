@@ -1,28 +1,27 @@
 \section{Requisitos}
 \subsection{Requisitos Funcionais}
 
-\FR{Execução de Pipeline de Ataque}{execucao_pipeline_ataque}{O sistema deve executar ataques através de uma pipeline configurável composta por cinco fases sequenciais: seleção de cenário, seleção de workload dataset, definição de métricas específicas do cenário, seleção de algoritmo/LLM alvo, e definição de attack load.[Must have]}
-
-\FR{Configuração de Fases da Pipeline}{configuracao_fases_pipeline}{O sistema deve permitir ao utilizador selecionar a configuração de cada fase da pipeline através de opções pré-definidas disponibilizadas pelo sistema.[Must have]}
-
-\FR{Configurações Personalizadas}{configuracoes_personalizadas}{O sistema deve permitir ao utilizador inserir configurações personalizadas para cada fase da pipeline, incluindo a adição de novos datasets e attack loads sem modificar o código-fonte da framework. As configurações devem seguir um formato exemplo.[Should Have]}
-
 % \FR{Seleção de LLMs}{selecao_llms}{O sistema deve permitir a seleção de um ou mais modelos de LLMs para serem testados/avaliados.}
-\FR{Visualização de Histórico de Resultados}{historico_resultados}{O sistema deve permitir ao utilizador visualizar todos os resultados de ataques que executou anteriormente, apresentando pelo menos para cada ataque: data de execução, configuração da pipeline utilizada, e métricas calculadas.[Must Have]}
 
-\FR{Reutilização de Resultados Públicos}{reutilizacao_resultados}{O sistema deve permitir ao utilizador reutilizar resultados de ataques executados por outros utilizadores e marcados como públicos, apresentando uma confirmação antes da reutilização.[Could Have]}
+\FR{Configuração e Execução dos Ataques}{config_execucao_ataques}{O sistema deve permitir ao utilizador configurar e executar ataques, através da seleção de opções pré-definidas disponibilizadas pelo sistema para cada módulo (cenário, workload dataset, métricas específicas do cenário, algoritmo/LLM alvo e attack load), garantindo que a execução segue as configurações definidas.[Must have]}
+
+\FR{Configurações Personalizadas}{configuracoes_personalizadas}{O sistema deve permitir ao utilizador inserir configurações personalizadas para cada módulo, incluindo a adição de novos datasets e attack loads sem modificar o código-fonte da framework. As configurações devem seguir um formato exemplo.[Should Have]}
+
+\FR{Visualização de Histórico de Resultados}{historico_resultados}{O sistema deve permitir ao utilizador visualizar todos os resultados de ataques, tanto os próprios como os públicos, apresentando pelo menos para cada ataque: data de execução, configuração  utilizada, e métricas calculadas.[Must Have]}
+
+\FR{Reutilização de Resultados Públicos}{reutilizacao_resultados}{O sistema deve pedir confirmação ao utilizador para reutilizar resultados de ataques executados por outros utilizadores cujas configurações coincidem com resultados públicos disponíveis. [Could Have]}
 
 \FR{Filtragem de Resultados}{filtragem_resultados}{O sistema deve permitir ao utilizador filtrar resultados de ataques utilizando um ou mais dos seguintes critérios: cenário, workload dataset, métrica específica do cenário, algoritmo/LLM, linguagem de programação, e attack load.[Should Have]}
 
-\FR{Comparação de Resultados}{comparar_resultados}{O sistema deve permitir ao utilizador comparar lado a lado os resultados de até 3 ataques diferentes simultaneamente.[Should Have]}
+\FR{Comparação de Resultados}{comparar_resultados}{O sistema deve permitir ao utilizador comparar lado a lado os resultados de até 3 ataques diferentes simultaneamente, deve ainda permitir comparar estatísticas através de um gráfico.[Should Have]}
 
-\FR{Registo de Utilizador}{registo_de_utilizador}{O sistema deve permitir a criação de contas de utilizador através de email e password, validando o formato do email e exigindo passwords com no mínimo 8 caracteres.[Must Have]}
+\FR{Registo de Utilizador}{registo_de_utilizador}{O sistema deve permitir a criação de contas de utilizador através de email e password, validando o formato do email e que este não esteja já associado a alguma conta, e exigindo passwords com no mínimo 8 caracteres.[Must Have]}
 
 \FR{Login de Utilizador}{login_de_utilizador}{O sistema deve permitir ao utilizador autenticar-se através de email e password, gerando uma sessão após autenticação bem-sucedida.[Must Have]}
 
-\FR{Controlo de Visibilidade de Resultados}{controlo_acesso_resultados}{O sistema deve permitir ao utilizador definir, para cada ataque executado, se os resultados são públicos (visíveis por todos os utilizadores) ou privados (visíveis apenas pelo próprio utilizador).[Could Have]}
+\FR{Controlo de Visibilidade de Resultados}{controlo_acesso_resultados}{O sistema deve permitir ao utilizador definir, para cada ataque executado, se os resultados são públicos (visíveis por todos os utilizadores) ou privados (visíveis apenas pelo próprio utilizador). [Could Have]}
 
-\FR{Análise de Vulnerabilidades do Código de Linguagens de Programação Comuns}{analise_do_codigo_de_linguagens_de_programação_comuns}{O sistema deve permitir compilar e avaliar através de Static Analysis Tools  as vulnerabilidades do código de linguagens de programação comuns (e.g. python, java, javascript, etc), reportando o tipo e severidade de cada vulnerabilidade encontrada.[Should Have]}
+\FR{Análise de Vulnerabilidades do Código de Linguagens de Programação Comuns}{analise_do_codigo_de_linguagens_de_programação_comuns}{O sistema deve permitir compilar e avaliar através de Static Analysis Tools as vulnerabilidades do código de linguagens de programação comuns (e.g. python, java, javascript, etc), reportando o tipo e severidade de cada vulnerabilidade encontrada.[Should Have]}
 
 \FR{Suporte de Diferentes Tipos de Dados}{suporte_diferentes_tipos_de_dados}{O sistema deve suportar ataques que utilizem tipos de dados de entrada além de texto, nomeadamente imagens contendo texto e ficheiros de áudio.[Could Have]}
 
@@ -30,7 +29,7 @@
 
 \FR{LLM Atacante}{llm_atacante}{O sistema deve implementar metedologias de ataques baseados em LLM de forma a criar prompts adversariais dinamicamente.[Must Have]}
 
-\FR{Armazenamento de Dados}{armazenamento_dados}{O sistema deve armazenar para cada ataque executado: os dados de entrada, as respostas geradas pelos LLMs, as configurações da pipeline utilizada, e os valores calculados de todas as métricas.[Must Have]}
+\FR{Armazenamento de Dados}{armazenamento_dados}{O sistema deve armazenar para cada ataque executado: os dados de entrada, as respostas geradas pelos LLMs, as configurações utilizadas, e os valores calculados de todas as métricas.[Must Have]}
 
 \FR{Cálculo de Attack Success Rate}{calculo_metrica_asr}{O sistema deve calcular a métrica Attack Success Rate (ASR), definida como a proporção de prompts adversariais que contornaram com sucesso os mecanismos de segurança do LLM alvo.[Must Have]}
 
@@ -46,33 +45,388 @@
 
 \FR{Exportação de Resultados}{exportacao_resultados}{O sistema deve permitir ao utilizador exportar os resultados de ataques em formatos estruturados (JSON, XML), incluindo todas as configurações, prompts, respostas e métricas calculadas.[Could Have]}
 
-% suporte_diferentes_tipos_de_dados -> opcional
-% cenarios_geracao_docigo -> opcional
-% \FR{C}
-
-% | Tipo de requisito               | Redação recomendada                   | MoSCoW      | Semântica                                              |
-% | ------------------------------- | ------------------------------------- | ----------- | ------------------------------------------------------ |
-% | **Essencial**                   | O sistema **deve permitir** [...]     | Must have   | Obrigatório; sem isto o sistema não cumpre o propósito |
-% | **Importante, mas não crítico** | O sistema **deverá permitir** [...]   | Should have | Desejável; adiado se houver restrições                 |
-% | **Opcional**                    | O sistema **pode permitir** [...]     | Could have  | Facultativo; apenas se sobrar tempo/recursos           |
-% | **Excluído**                    | O sistema **não deve permitir** [...] | Won’t have  | Fora do escopo ou adiado para outra fase               |
-
-
 
 \subsection{Requisitos Não Funcionais}
 
-\NFR{Segurança}{O sistema deve implementar autenticação segura com hashing de passwords e e-mails (bcrypt ou superior) para proteger contas de utilizadores.}
+\NFR{Segurança}{O sistema deve implementar autenticação segura através de hashing de passwords (bcrypt ou superior) e tokens de sessão para proteger contas de utilizadores.}
 
+\NFR{Usabilidade}{O sistema deve permitir que utilizadores configurem e iniciem ataques básico em menos de 5 minutos, utilizando configurações pré-definidas.}
 
-\NFR{Usabilidade}{O sistema deve permitir que utilizadores configurem e iniciem um ataque básico em menos de 5 minutos, utilizando configurações pré-definidas.}
-
-\NFR{Compatibilidade}{O sistema deve funcionar nos principais navegadores web (Chrome, Firefox, Safari) nas suas versões mais recentes.}
+\NFR{Compatibilidade}{O sistema deve funcionar nos principais navegadores web (Chrome, Firefox, Safari) na versão mais recente.}
 
 \NFR{Conformidade}{O sistema deve permitir aos utilizadores exportar e eliminar os seus dados pessoais, cumprindo requisitos básicos do GDPR.}
 
-%TODO: maybe implementar Captcha para dar log in e registo
-
-
-\NFR{Usabilidade}{O sistema deve permitir que utilizadores configurem e iniciem um ataque básico em menos de 5 minutos, utilizando configurações pré-definidas.}
-
 \NFR{Observabilidade}{O sistema deve registar operações críticas (login, execução de ataques, erros) com timestamp e ID de utilizador para auditoria.}
+
+\subsection{Use Cases}
+
+\US{Configurar e Executar Ataques com Opções Pré-definidas}{us_config_ataque_predef}
+{
+  \Feature{Como utilizador, quero configurar o ataque selecionando opções pré-definidas para cada módulo, de modo a executar o ataque seguindo as configurações escolhidas}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{tenho acesso à interface de configuração de ataques}
+            \And{seleciono um cenário pré-definido, um workload dataset, as métricas específicas do cenário, um algoritmo/LLM alvo e a attack load}
+            \When{seleciono executar ataque}
+            \Then{o sistema valida todas as seleções}
+            \And{o sistema inicia a execução seguindo exatamente as configurações definidas}
+            \And{o sistema apresenta o progresso da execução em tempo real}
+            \And{o sistema regista os resultados e métricas da execução}
+            \And{o sistema apresenta os resultados ao utilizador}
+      \item \Given{que estou autenticado}
+            \And{tenho acesso à interface de configuração de ataques}
+            \And{não selecionei todas as opções obrigatórias (cenário, workload dataset, métricas, algoritmo/LLM alvo ou attack load)}
+            \When{seleciono executar ataque}
+            \Then{o sistema informa que falta completar opções obrigatórias}
+            \And{o sistema impede a execução do ataque até todas as seleções serem efetuadas}
+      
+  \end{Cenarios}
+}
+
+\US{Inserir Configurações Personalizadas}{us_configuracoes_personalizadas}
+{
+  \Feature{Como utilizador, quero inserir configurações personalizadas para cada módulo, sem modificar o código-fonte, para que possa complementar as opções predefinidas}
+
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{tenho acesso à interface de configuração personalizada}
+            \When{carrego os ficheiros de configuração no sistema seguindo o formato exemplo}
+            \Then{o sistema valida cada ficheiro}
+            \And{posso utilizá-los para executar o ataque}
+
+      \item \Given{que estou autenticado}
+            \And{tenho acesso à interface de configuração personalizada}
+            \When{carrego um ou mais ficheiros com um formato inválido no sistema}
+            \Then{o sistema apresenta uma mensagem de erro indicando o problemas com os ficheiros inseridos}
+            \And{não é possível executar o ataque}
+  \end{Cenarios}
+}
+
+\US{Visualizar Histórico de Resultados de Ataques}{us_visualizar_historico_resultados}
+{
+  \Feature{Como utilizador, quero aceder ao histórico de resultados de ataques, incluindo os que realizei e os públicos, para poder consultar os detalhes e métricas das execuções}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \When{acedo à interface de histórico de ataques}
+            \Then{o sistema apresenta os meus ataques realizados com data de execução, configurações utilizadas e métricas calculadas}
+            \And{apresenta também os ataques públicos disponíveis com a mesma informação}
+            \And{o sistema permite expandir qualquer entrada para visualizar detalhes adicionais}
+      \item \Given{que estou autenticado}
+            \And{não existem ataques registados por mim e nem resultados públicos disponíveis}
+            \When{acedo à interface de histórico de ataques}
+            \Then{o sistema apresenta uma mensagem a indicar que ainda não existem resultados disponíveis}
+  \end{Cenarios}
+}
+
+\US{Reutilizar Resultados Públicos de Ataques}{us_reutilizacao_resultados_publicos}
+{
+  \Feature{Como utilizador, quero ser informado e decidir quando existem resultados públicos disponíveis para configurações idênticas, de modo a poupar tempo e recursos se optar pela reutilização}
+
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{tenho acesso à interface de configuração de ataques}
+            \And{seleciono opções que coincidem com resultados públicos já disponíveis}
+            \And{submeto o ataque}
+            \And{o sistema apresenta uma opção para reutilizar esses resultados}
+            \When{seleciono aceitar}
+            \Then{o sistema apresenta os resultados públicos sem executar novo ataque}
+
+      \item \Given{que estou autenticado}
+            \And{tenho acesso à interface de configuração de ataques}
+            \And{seleciono opções que coincidem com resultados públicos já disponíveis}
+            \And{submeto o ataque}
+            \And{o sistema apresenta uma opção para reutilizar esses resultados}
+            \When{seleciono rejeitar}
+            \Then{o sistema executa novo ataque com as configurações escolhidas}
+            \And{o sistema apresenta os resultados}
+
+      \item \Given{que estou autenticado}
+            \And{tenho acesso à interface de configuração de ataques}
+            \And{seleciono opções para executar ataque}
+            \When{não existem resultados públicos para essas configurações}
+            \Then{o sistema não apresenta opção de reutilização}
+            \And{o sistema avança diretamente para a execução do ataque}
+  \end{Cenarios}
+}
+
+\US{Filtrar Histórico de Resultados de Ataques}{us_filtrar_historico_resultados}
+{
+  \Feature{Como utilizador, quero aplicar filtros no histórico de resultados de ataques, para encontrar mais facilmente execuções com características específicas}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{acedi à interface de histórico de resultados}
+            \And{aplico um ou mais filtros (cenário, workload dataset, métrica, algoritmo/LLM, linguagem de programação, attack load)}
+            \When{submeto a filtragem}
+            \Then{o sistema apresenta apenas os resultados que correspondem aos filtros selecionados}
+
+      \item \Given{que estou autenticado}
+            \And{acedi à interface de histórico de resultados}
+            \And{aplico filtros que não correspondem a nenhum resultado existente}
+            \When{submeto a filtragem}
+            \Then{o sistema apresenta uma mensagem a indicar que não foram encontrados resultados com os filtros selecionados}
+  \end{Cenarios}
+}
+
+\US{Comparar Resultados de Ataques}{us_comparar_resultados}
+{
+  \Feature{Como utilizador, quero selecionar até 3 ataques e compará-los lado a lado e num gráfico, para analisar as diferenças nas métricas e configurações}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{acedi à interface de histórico de resultados}
+            \And{selecionei entre 1 a 3 ataques da lista}
+            \When{aciono a opção de comparar}
+            \Then{o sistema apresenta uma visualização lado a lado com os dados principais de cada ataque (data, configuração, métricas)}
+            \And{o sistema apresenta um gráfico comparativo com as principais métricas dos ataques selecionados}
+
+      \item \Given{que estou autenticado}
+            \And{acedi à interface de histórico de resultados}
+            \And{selecionei menos de 2 ataques}
+            \When{aciono a opção de comparar}
+            \Then{o sistema rejeita a comparação}
+            \And{informa que é necessário selecionar mais de um ataque}
+
+      \item \Given{que estou autenticado}
+            \And{acedi à interface de histórico de resultados}
+            \When{seleciono um quarto ataque}
+            \Then{o sistema impede a seleção}
+            \And{informa que o limite máximo para comparação é de 3 ataques}
+  \end{Cenarios}
+}
+
+\US{Registo de Utilizador}{us_registo_utilizador}
+{
+  \Feature{Como novo utilizador, quero registar-me com email e password, para poder aceder às funcionalidades da plataforma}
+  \begin{Cenarios}
+      \item \Given{que estou na página de registo de utilizador}
+            \And{insiro um email válido e uma password com pelo menos 8 caracteres}
+            \When{submeto o formulário de registo}
+            \Then{o sistema cria a nova conta}
+            \And{Redireciona para a página de login}
+
+      \item \Given{que estou na página de registo de utilizador}
+            \And{insiro um email num formato inválido}
+            \When{submeto o formulário}
+            \Then{o sistema apresenta uma mensagem de erro a indicar que o email é inválido}
+            \And{impede a criação da conta}
+
+      \item \Given{que estou na página de registo de utilizador}
+            \And{insiro um email já associado a uma conta existente}
+            \When{submeto o formulário}
+            \Then{o sistema apresenta uma mensagem de erro a indicar que o email já se encontra associado a uma conta existente}
+            \And{impede a criação da conta}
+
+      \item \Given{que estou na página de registo de utilizador}
+            \When{insiro uma password com menos de 8 caracteres}
+            \And{submeto o formulário}
+            \Then{o sistema apresenta uma mensagem de erro a indicar que a password é demasiado curta}
+            \And{impede a criação da conta}
+  \end{Cenarios}
+}
+
+\US{Login Utilizador}{us_login_utilizador}
+{
+  \Feature{Como utilizador registado, quero autenticar-me com email e password, para aceder às funcionalidades da plataforma com a minha sessão}
+  \begin{Cenarios}
+      \item \Given{que estou na página de login}
+            \And{insiro um email e password válidos}
+            \When{submeto o formulário de login}
+            \Then{o sistema autentica o utilizador}
+            \And{inicia uma nova sessão}
+            \And{redireciona para a página principal da plataforma}
+
+      \item \Given{que estou na página de login}
+            \And{insiro um email ou password inválidos}
+            \When{submeto o formulário de login}
+            \Then{o sistema informa que as credenciais estão incorretas}
+            \And{impede o acesso à plataforma}
+
+      \item \Given{que estou na página de login}
+            \When{deixo algum dos campos (email ou password) em branco}
+            \Then{o sistema apresenta uma mensagem de erro de preenchimento obrigatório}
+            \And{impede o envio do formulário}
+  \end{Cenarios}
+}
+
+\US{Definir Visibilidade dos Resultados de Ataques}{us_definir_visibilidade_resultados}
+{
+  \Feature{Como utilizador, quero poder definir se os resultados de um ataque são públicos ou privados, para controlar quem pode visualizá-los}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{executei um ataque com sucesso}
+            \And{o sistema apresenta a opção de definir a visibilidade dos resultados}
+            \When{seleciono a opção "Público" ou "Privado"}
+            \Then{o sistema regista a visibilidade escolhida}
+            \And{aplica as restrições de acesso conforme a escolha}
+
+      \item \Given{que estou autenticado}
+            \And{estou a editar as configurações de um ataque já executado}
+            \When{altero a visibilidade de "Privado" para "Público"}
+            \Then{o sistema atualiza imediatamente a visibilidade}
+            \And{o resultado passa a estar acessível a outros utilizadores}
+
+      \item \Given{que estou autenticado}
+            \And{visualizo resultados públicos de outro utilizador}
+            \When{o autor altera a visibilidade para "Privado"}
+            \Then{o resultado deixa de estar acessível para mim}
+  \end{Cenarios}
+}
+
+\US{Analisar Vulnerabilidades em Código Gerado Por Ataques}{us_analise_vulnerabilidades_codigo}
+{
+  \Feature{Como utilizador, quero que o sistema analise automaticamente o código gerado por ataques, utilizando ferramentas de análise estática, para identificar vulnerabilidades e calcular métricas de severidade}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{iniciei a execução de um ataque que gera código em linguagens suportadas (e.g. Python, Java, JavaScript)}
+            \When{o ataque alcança a fase de análise de código}
+            \Then{o sistema executa automaticamente ferramentas de análise estática sobre o código gerado}
+            \And{identifica vulnerabilidades e respetivas severidades}
+            \And{regista os resultados como parte das métricas do ataque}
+  \end{Cenarios}
+}
+% -----------------------------------------------------------------
+
+% \US{Executar Ataques com Diferentes Tipos de Dados de Entrada}{us_ataques_multimodais}
+% {
+%   \Feature{Como utilizador, quero executar ataques utilizando tipos de dados além de texto, como imagens com texto e ficheiros de áudio, para avaliar o comportamento dos LLMs em cenários multimodais}
+%   \begin{Cenarios}
+%       \item \Given{que estou autenticado}
+%             \And{acedi à interface de criação de ataques}
+%             \When{seleciono um cenário que suporta entradas de tipo imagem ou áudio}
+%             \And{forneço os dados de entrada correspondentes}
+%             \And{executa o ataque normalmente sobre o LLM alvo}
+%             \And{regista os resultados e métricas associadas}
+      
+%       \item \Given{que estou autenticado}
+%             \And{acedi à interface de criação de ataques}
+%             \And{o cenário selecionado não suporta dados de entrada não textuais}
+%             \When{tento fornecer uma imagem ou ficheiro de áudio como entrada}
+%             \Then{o sistema informa que o tipo de dados não é suportado neste cenário}
+%             \And{impede a execução do ataque até que um tipo de entrada válido seja selecionado}
+%   \end{Cenarios}
+% }
+
+% \US{Executar Ataques com Geração de Código}{us_ataques_geracao_codigo}
+% {
+%   \Feature{Como utilizador, quero executar ataques que envolvam geração ou manipulação de código}
+%   \begin{Cenarios}
+%       \item \Given{que estou autenticado}
+%             \And{acedi à interface de criação de ataques}
+%             \When{seleciono um cenário do tipo text-to-code, code-to-code ou code completion}
+%             \Then{o sistema carrega os módulos e configurações apropriados ao tipo selecionado}
+%             \And{executa o ataque de acordo com o fluxo definido para esse tipo de cenário}
+%   \end{Cenarios}
+% }
+
+% \US{Executar Ataques Gerados por LLM Atacante}{us_llm_atacante}
+% {
+%   \Feature{Como utilizador, quero executar ataques gerados por um LLM atacante, para avaliar a eficácia de prompts adversariais criados dinamicamente}
+%   \begin{Cenarios}
+%       \item \Given{que estou autenticado}
+%             \And{acedi à interface de criação de ataques}
+%             \When{seleciono o método de ataque baseado em LLM}
+%             \And{escolho uma LLM para atuar como atacante}
+%             \And{defino um prompt base alinhado ao objetivo do ataque}
+%             \And{inicio a execução do ataque}
+%             \Then{o sistema utiliza a LLM atacante para gerar dinamicamente prompts adversariais a partir do prompt base}
+%             \And{envia os prompts ao LLM alvo como parte do ataque}
+%             \And{regista os resultados e métricas associadas à eficácia do ataque}
+
+%       \item \Given{que estou autenticado}
+%             \And{acedi à interface de criação de ataques}
+%             \And{o método de ataque selecionado requer um LLM atacante}
+%             \And{o modelo atacante não está configurado ou indisponível}
+%             \When{tento iniciar o ataque}
+%             \Then{o sistema informa que não é possível gerar os prompts adversariais}
+%             \And{impede a execução até que o LLM atacante esteja disponível}
+%   \end{Cenarios}
+% }
+
+% \US{Armazenar Resultados de um Ataque Executado}{us_armazenamento_resultados_ataque}
+% {
+%   \Feature{Como utilizador, quero que todos os dados e resultados de um ataque sejam armazenados automaticamente, para que eu possa consultá-los e analisá-los posteriormente}
+%   \begin{Cenarios}
+%       \item \Given{que estou autenticado}
+%             \And{iniciei a execução de um ataque com configurações válidas}
+%             \When{o ataque é concluído}
+%             \Then{o sistema armazena automaticamente os dados de entrada utilizados}
+%             \And{as respostas geradas pelos LLMs}
+%             \And{as configurações aplicadas em cada módulo}
+%             \And{os valores calculados de todas as métricas definidas}
+
+%       \item \Given{que estou autenticado}
+%             \And{iniciei a execução de um ataque}
+%             \And{ocorre uma falha durante a execução}
+%             \When{a execução termina de forma incompleta}
+%             \Then{o sistema armazena parcialmente os dados gerados até ao momento}
+%             \And{regista o estado do ataque como incompleto ou falhado}
+%   \end{Cenarios}
+% }
+
+% \US{Avaliar Resultados de Ataques com Métricas Globais«}{us_calculo_metricas_juri}
+% {
+%   \Feature{Como utilizador, quero que o sistema avalie automaticamente os resultados de um ataque com base nas métricas ASR, ORR e AOR, utilizando um mecanismo de júri para determinar o sucesso ou falha do ataque}
+%   \begin{Cenarios}
+%       \item \Given{que estou autenticado}
+%             \And{executei um ataque seguindo as configurações válidas}
+%             \When{o ataque termina}
+%             \Then{o sistema aplica o mecanismo de júri às respostas geradas pelos LLMs}
+%             \And{classifica cada resposta como sucesso ou falha, de acordo com critérios definidos}
+%             \And{calcula automaticamente a métrica ASR como a proporção de prompts adversariais bem-sucedidas}
+%             \And{calcula a métrica ORR como a proporção de prompts benignas incorretamente rejeitadas}
+%             \And{calcula a métrica AOR como a proporção de objetivos distintos alcançados com sucesso}
+%             \And{armazena os valores calculados como parte dos resultados do ataque}
+%   \end{Cenarios}
+% }
+
+% -----------------------------------------------------------------
+
+\US{Mecanismo de Júri}{mecanismo_juri}{
+  \Feature{Como utilizador, quero que cada resposta do modelo alvo seja classificada por um júri de 3 LLMs como "recusa" ou "cumprimento", usando maioria simples, para obter uma decisão objetiva e auditável} 
+  \begin{Cenarios}
+      \item
+            \Given{que uma execução de ataque produziu uma resposta do modelo alvo para um prompt} 
+            \And{que o mecanismo de júri com 3 LLMs está configurado e ativo com votação por maioria simples} 
+            \When{o sistema submete a resposta do modelo alvo aos 3 LLMs jurados} 
+            \Then{cada LLM devolve uma classificação "recusa" ou "cumprimento"} 
+            \And{o sistema calcula a classificação final por maioria simples} 
+            \And{o sistema apresenta a classificada final e regista votos e metadados na execução}
+  \end{Cenarios}
+} 
+
+\US{Avaliação da Utilidade}{avaliacao_utilidade}{
+  \Feature{Como utilizador, quero que o júri de LLMs classifique a utilidade de cada resposta do modelo alvo como "útil" ou "inútil", para medir valor prático dos resultados}
+  \begin{Cenarios}
+      \item
+            \Given{que existe uma resposta do modelo alvo concluída para um prompt}
+            \When{o sistema submete a resposta aos LLMs jurados com instruções de utilidade}
+            \Then{cada LLM devolve "útil" ou "inútil"}
+            \And{o sistema determina a classificação final por maioria simples}
+            \And{o sistema apresenta a utilidade final e regista votos e metadados na execução}
+  \end{Cenarios}
+} %
+
+\US{Verificação Anti-Bot}{captcha}{
+  \Feature{Como utilizador, quero que o sistema exija CAPTCHA no registo e na autenticação, para prevenir acessos automatizados por bots} 
+  \begin{Cenarios}
+      \item
+            \Given{que estou no processo de registo}
+            \And{preenchi os dados obrigatórios com informações válidas} 
+            \When{submeto o formulário de registo} 
+            \Then{o sistema exige a resolução de um CAPTCHA válido} 
+            \And{o sistema só conclui o registo após validação bem-sucedida do CAPTCHA}
+  \end{Cenarios}
+} 
+
+\US{Exportação de Resultados}{exportacao_resultados}{
+  \Feature{Como utilizador, quero exportar resultados de ataques (JSON, XML) incluindo configurações, prompts, respostas e métricas, para análise e partilha}
+  \begin{Cenarios}
+      \item
+            \Given{que existe uma execução concluída com configurações, prompts, respostas e métricas calculadas} 
+            \And{seleciono a opção de exportar}
+            \And{escolho o formato desejado}
+            \When{seleciono exportar}
+            \Then{o sistema gera um ficheiro estruturado nesse formato com todos os elementos da execução}
+            \And{o sistema disponibiliza o ficheiro para download}
+  \end{Cenarios}
+} %
+

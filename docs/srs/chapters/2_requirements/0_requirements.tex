@@ -25,7 +25,7 @@
 
 \FR{Suporte de Diferentes Tipos de Dados}{suporte_diferentes_tipos_de_dados}{O sistema deve suportar ataques que utilizem tipos de dados de entrada além de texto, nomeadamente imagens contendo texto e ficheiros de áudio.[Could Have]}
 
-\FR{Suporte a Cenários de Geração de Código}{cenarios_geracao_codigo}{O sistema deve suportar três tipos de cenários de ataque relacionados com código: text-to-code (geração de código a partir de descrição textual), code-to-code (transformação/refatoração de código), e code completion (completamento automático de código).[Could Have]}
+\FR{Suporte de Diferentes Tipos de Geração de Código}{diferentes_tipos_geracao_codigo}{O sistema deve suportar três tipos diferentes de ataques relacionados com código: text-to-code (geração de código a partir de descrição textual), code-to-code (transformação/refatoração de código), e code completion (completamento automático de código).[Could Have]}
 
 \FR{LLM Atacante}{llm_atacante}{O sistema deve implementar metedologias de ataques baseados em LLM de forma a criar prompts adversariais dinamicamente.[Must Have]}
 
@@ -60,7 +60,7 @@
 
 \subsection{Use Cases}
 
-\US{Configurar e Executar Ataques com Opções Pré-definidas}{us_config_ataque_predef}
+\US{Configurar e Executar Ataques com Opções Pré-definidas}{config_ataque_predef}
 {
   \Feature{Como utilizador, quero configurar o ataque selecionando opções pré-definidas para cada módulo, de modo a executar o ataque seguindo as configurações escolhidas}
   \begin{Cenarios}
@@ -83,7 +83,7 @@
   \end{Cenarios}
 }
 
-\US{Inserir Configurações Personalizadas}{us_configuracoes_personalizadas}
+\US{Inserir Configurações Personalizadas}{configuracoes_personalizadas}
 {
   \Feature{Como utilizador, quero inserir configurações personalizadas para cada módulo, sem modificar o código-fonte, para que possa complementar as opções predefinidas}
 
@@ -102,7 +102,7 @@
   \end{Cenarios}
 }
 
-\US{Visualizar Histórico de Resultados de Ataques}{us_visualizar_historico_resultados}
+\US{Visualizar Histórico de Resultados de Ataques}{visualizar_historico_resultados}
 {
   \Feature{Como utilizador, quero aceder ao histórico de resultados de ataques, incluindo os que realizei e os públicos, para poder consultar os detalhes e métricas das execuções}
   \begin{Cenarios}
@@ -118,7 +118,7 @@
   \end{Cenarios}
 }
 
-\US{Reutilizar Resultados Públicos de Ataques}{us_reutilizacao_resultados_publicos}
+\US{Reutilizar Resultados Públicos de Ataques}{reutilizacao_resultados_publicos}
 {
   \Feature{Como utilizador, quero ser informado e decidir quando existem resultados públicos disponíveis para configurações idênticas, de modo a poupar tempo e recursos se optar pela reutilização}
 
@@ -149,7 +149,7 @@
   \end{Cenarios}
 }
 
-\US{Filtrar Histórico de Resultados de Ataques}{us_filtrar_historico_resultados}
+\US{Filtrar Histórico de Resultados de Ataques}{filtrar_historico_resultados}
 {
   \Feature{Como utilizador, quero aplicar filtros no histórico de resultados de ataques, para encontrar mais facilmente execuções com características específicas}
   \begin{Cenarios}
@@ -167,7 +167,7 @@
   \end{Cenarios}
 }
 
-\US{Comparar Resultados de Ataques}{us_comparar_resultados}
+\US{Comparar Resultados de Ataques}{comparar_resultados}
 {
   \Feature{Como utilizador, quero selecionar até 3 ataques e compará-los lado a lado e num gráfico, para analisar as diferenças nas métricas e configurações}
   \begin{Cenarios}
@@ -193,7 +193,7 @@
   \end{Cenarios}
 }
 
-\US{Registo de Utilizador}{us_registo_utilizador}
+\US{Registo de Utilizador}{registo_utilizador}
 {
   \Feature{Como novo utilizador, quero registar-me com email e password, para poder aceder às funcionalidades da plataforma}
   \begin{Cenarios}
@@ -223,7 +223,7 @@
   \end{Cenarios}
 }
 
-\US{Login Utilizador}{us_login_utilizador}
+\US{Login Utilizador}{login_utilizador}
 {
   \Feature{Como utilizador registado, quero autenticar-me com email e password, para aceder às funcionalidades da plataforma com a minha sessão}
   \begin{Cenarios}
@@ -247,7 +247,7 @@
   \end{Cenarios}
 }
 
-\US{Definir Visibilidade dos Resultados de Ataques}{us_definir_visibilidade_resultados}
+\US{Definir Visibilidade dos Resultados de Ataques}{definir_visibilidade_resultados}
 {
   \Feature{Como utilizador, quero poder definir se os resultados de um ataque são públicos ou privados, para controlar quem pode visualizá-los}
   \begin{Cenarios}
@@ -271,7 +271,7 @@
   \end{Cenarios}
 }
 
-\US{Analisar Vulnerabilidades em Código Gerado Por Ataques}{us_analise_vulnerabilidades_codigo}
+\US{Analisar Vulnerabilidades em Código Gerado Por Ataques}{analise_vulnerabilidades_codigo}
 {
   \Feature{Como utilizador, quero que o sistema analise automaticamente o código gerado por ataques, utilizando ferramentas de análise estática, para identificar vulnerabilidades e calcular métricas de severidade}
   \begin{Cenarios}
@@ -284,7 +284,7 @@
   \end{Cenarios}
 }
 
-\US{Executar Ataques com Diferentes Tipos de Dados de Entrada}{us_ataques_multimodais}
+\US{Executar Ataques com Diferentes Tipos de Dados de Entrada}{ataques_multimodais}
 {
   \Feature{Como utilizador, quero executar ataques utilizando tipos de dados além de texto, como imagens com texto e ficheiros de áudio, para avaliar o comportamento dos LLMs em cenários multimodais}
   \begin{Cenarios}
@@ -297,7 +297,7 @@
   \end{Cenarios}
 }
 
-\US{Executar Ataques com Geração de Código}{us_ataques_geracao_codigo}
+\US{Executar Ataques com Geração de Código}{ataques_geracao_codigo}
 {
   \Feature{Como utilizador, quero executar ataques que envolvam geração ou manipulação de código}
   \begin{Cenarios}
@@ -308,7 +308,7 @@
   \end{Cenarios}
 }
 
-\US{Executar Ataques Gerados por LLM Atacante}{us_llm_atacante}
+\US{Executar Ataques Gerados por LLM Atacante}{llm_atacante}
 {
   \Feature{Como utilizador, quero executar ataques gerados por LLM atacante, para avaliar a eficácia de prompts adversariais criados dinamicamente}
   \begin{Cenarios}
@@ -323,7 +323,7 @@
   \end{Cenarios}
 }
 
-\US{Armazenar Resultados de um Ataque Executado}{us_armazenamento_resultados_ataque}
+\US{Armazenar Resultados de um Ataque Executado}{armazenamento_resultados_ataque}
 {
   \Feature{Como utilizador, quero que todos os dados e resultados de um ataque sejam armazenados automaticamente, para que eu possa consultá-los e analisá-los posteriormente}
   \begin{Cenarios}
@@ -344,7 +344,7 @@
   \end{Cenarios}
 }
 
-\US{Avaliar Resultados de Ataques com Métricas Globais}{us_calculo_metricas_juri}
+\US{Avaliar Resultados de Ataques com Métricas Globais}{calculo_metricas_juri}
 {
   \Feature{Como utilizador, quero que o sistema avalie automaticamente os resultados de um ataque com base nas métricas ASR, ORR e AOR, para avaliar a performance de cada LLM}
   \begin{Cenarios}

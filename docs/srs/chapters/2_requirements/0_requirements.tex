@@ -29,7 +29,7 @@
 
 \FR{LLM Atacante}{llm_atacante}{O sistema deve implementar metedologias de ataques baseados em LLM de forma a criar prompts adversariais dinamicamente.[Must Have]}
 
-\FR{Armazenamento de Dados}{armazenamento_dados}{O sistema deve armazenar para cada ataque executado: os dados de entrada, as respostas geradas pelos LLMs, as configurações utilizadas, e os valores calculados de todas as métricas.[Must Have]}
+\FR{Armazenamento de Dados}{armazenamento_dados}{O sistema deve armazenar para cada ataque executado: os dados de entrada, as respostas geradas por todos os LLMs, as configurações utilizadas, e os valores calculados de todas as métricas.[Must Have]}
 
 \FR{Cálculo de Attack Success Rate}{calculo_metrica_asr}{O sistema deve calcular a métrica Attack Success Rate (ASR), definida como a proporção de prompts adversariais que contornaram com sucesso os mecanismos de segurança do LLM alvo.[Must Have]}
 
@@ -283,102 +283,81 @@
             \And{regista os resultados como parte das métricas do ataque}
   \end{Cenarios}
 }
-% -----------------------------------------------------------------
 
-% \US{Executar Ataques com Diferentes Tipos de Dados de Entrada}{us_ataques_multimodais}
-% {
-%   \Feature{Como utilizador, quero executar ataques utilizando tipos de dados além de texto, como imagens com texto e ficheiros de áudio, para avaliar o comportamento dos LLMs em cenários multimodais}
-%   \begin{Cenarios}
-%       \item \Given{que estou autenticado}
-%             \And{acedi à interface de criação de ataques}
-%             \When{seleciono um cenário que suporta entradas de tipo imagem ou áudio}
-%             \And{forneço os dados de entrada correspondentes}
-%             \And{executa o ataque normalmente sobre o LLM alvo}
-%             \And{regista os resultados e métricas associadas}
-      
-%       \item \Given{que estou autenticado}
-%             \And{acedi à interface de criação de ataques}
-%             \And{o cenário selecionado não suporta dados de entrada não textuais}
-%             \When{tento fornecer uma imagem ou ficheiro de áudio como entrada}
-%             \Then{o sistema informa que o tipo de dados não é suportado neste cenário}
-%             \And{impede a execução do ataque até que um tipo de entrada válido seja selecionado}
-%   \end{Cenarios}
-% }
+\US{Executar Ataques com Diferentes Tipos de Dados de Entrada}{us_ataques_multimodais}
+{
+  \Feature{Como utilizador, quero executar ataques utilizando tipos de dados além de texto, como imagens com texto e ficheiros de áudio, para avaliar o comportamento dos LLMs em cenários multimodais}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{acedi à interface de execução de ataques}
+            \And{seleciono um dataset com imagens e/ou áudio}
+            \When{seleciono atacar}
+            \Then{executa o ataque normalmente sobre o LLM alvo}
+            \And{regista os resultados e métricas associadas}
+  \end{Cenarios}
+}
 
-% \US{Executar Ataques com Geração de Código}{us_ataques_geracao_codigo}
-% {
-%   \Feature{Como utilizador, quero executar ataques que envolvam geração ou manipulação de código}
-%   \begin{Cenarios}
-%       \item \Given{que estou autenticado}
-%             \And{acedi à interface de criação de ataques}
-%             \When{seleciono um cenário do tipo text-to-code, code-to-code ou code completion}
-%             \Then{o sistema carrega os módulos e configurações apropriados ao tipo selecionado}
-%             \And{executa o ataque de acordo com o fluxo definido para esse tipo de cenário}
-%   \end{Cenarios}
-% }
+\US{Executar Ataques com Geração de Código}{us_ataques_geracao_codigo}
+{
+  \Feature{Como utilizador, quero executar ataques que envolvam geração ou manipulação de código}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{acedi à interface de execução de ataques}
+            \When{seleciono um dataset do tipo text-to-code, code-to-code ou code completion}
+            \Then{executa o ataque de acordo com o fluxo definido para esse tipo de cenário}
+  \end{Cenarios}
+}
 
-% \US{Executar Ataques Gerados por LLM Atacante}{us_llm_atacante}
-% {
-%   \Feature{Como utilizador, quero executar ataques gerados por um LLM atacante, para avaliar a eficácia de prompts adversariais criados dinamicamente}
-%   \begin{Cenarios}
-%       \item \Given{que estou autenticado}
-%             \And{acedi à interface de criação de ataques}
-%             \When{seleciono o método de ataque baseado em LLM}
-%             \And{escolho uma LLM para atuar como atacante}
-%             \And{defino um prompt base alinhado ao objetivo do ataque}
-%             \And{inicio a execução do ataque}
-%             \Then{o sistema utiliza a LLM atacante para gerar dinamicamente prompts adversariais a partir do prompt base}
-%             \And{envia os prompts ao LLM alvo como parte do ataque}
-%             \And{regista os resultados e métricas associadas à eficácia do ataque}
+\US{Executar Ataques Gerados por LLM Atacante}{us_llm_atacante}
+{
+  \Feature{Como utilizador, quero executar ataques gerados por LLM atacante, para avaliar a eficácia de prompts adversariais criados dinamicamente}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{acedi à interface de execução de ataques}
+            \When{seleciono o método de ataque baseado em LLM}
+            \And{selecionei as restantes configurações}
+            \And{inicio a execução do ataque}
+            \Then{o sistema utiliza a LLM atacante para gerar dinamicamente prompts adversariais a partir do prompt base}
+            \And{envia os prompts ao LLM alvo como parte do ataque}
+            \And{regista os resultados e métricas associadas à eficácia do ataque}
+  \end{Cenarios}
+}
 
-%       \item \Given{que estou autenticado}
-%             \And{acedi à interface de criação de ataques}
-%             \And{o método de ataque selecionado requer um LLM atacante}
-%             \And{o modelo atacante não está configurado ou indisponível}
-%             \When{tento iniciar o ataque}
-%             \Then{o sistema informa que não é possível gerar os prompts adversariais}
-%             \And{impede a execução até que o LLM atacante esteja disponível}
-%   \end{Cenarios}
-% }
+\US{Armazenar Resultados de um Ataque Executado}{us_armazenamento_resultados_ataque}
+{
+  \Feature{Como utilizador, quero que todos os dados e resultados de um ataque sejam armazenados automaticamente, para que eu possa consultá-los e analisá-los posteriormente}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{iniciei a execução de um ataque com configurações válidas}
+            \When{o ataque é concluído}
+            \Then{o sistema armazena automaticamente os dados de entrada utilizados}
+            \And{as respostas geradas por todos LLMs}
+            \And{as configurações aplicadas em cada módulo}
+            \And{os valores calculados de todas as métricas definidas}
 
-% \US{Armazenar Resultados de um Ataque Executado}{us_armazenamento_resultados_ataque}
-% {
-%   \Feature{Como utilizador, quero que todos os dados e resultados de um ataque sejam armazenados automaticamente, para que eu possa consultá-los e analisá-los posteriormente}
-%   \begin{Cenarios}
-%       \item \Given{que estou autenticado}
-%             \And{iniciei a execução de um ataque com configurações válidas}
-%             \When{o ataque é concluído}
-%             \Then{o sistema armazena automaticamente os dados de entrada utilizados}
-%             \And{as respostas geradas pelos LLMs}
-%             \And{as configurações aplicadas em cada módulo}
-%             \And{os valores calculados de todas as métricas definidas}
+      \item \Given{que estou autenticado}
+            \And{iniciei a execução de um ataque}
+            \And{ocorre uma falha durante a execução}
+            \When{a execução termina de forma incompleta}
+            \Then{o sistema armazena parcialmente os dados gerados até ao momento}
+            \And{regista o estado do ataque como incompleto ou falhado}
+  \end{Cenarios}
+}
 
-%       \item \Given{que estou autenticado}
-%             \And{iniciei a execução de um ataque}
-%             \And{ocorre uma falha durante a execução}
-%             \When{a execução termina de forma incompleta}
-%             \Then{o sistema armazena parcialmente os dados gerados até ao momento}
-%             \And{regista o estado do ataque como incompleto ou falhado}
-%   \end{Cenarios}
-% }
-
-% \US{Avaliar Resultados de Ataques com Métricas Globais«}{us_calculo_metricas_juri}
-% {
-%   \Feature{Como utilizador, quero que o sistema avalie automaticamente os resultados de um ataque com base nas métricas ASR, ORR e AOR, utilizando um mecanismo de júri para determinar o sucesso ou falha do ataque}
-%   \begin{Cenarios}
-%       \item \Given{que estou autenticado}
-%             \And{executei um ataque seguindo as configurações válidas}
-%             \When{o ataque termina}
-%             \Then{o sistema aplica o mecanismo de júri às respostas geradas pelos LLMs}
-%             \And{classifica cada resposta como sucesso ou falha, de acordo com critérios definidos}
-%             \And{calcula automaticamente a métrica ASR como a proporção de prompts adversariais bem-sucedidas}
-%             \And{calcula a métrica ORR como a proporção de prompts benignas incorretamente rejeitadas}
-%             \And{calcula a métrica AOR como a proporção de objetivos distintos alcançados com sucesso}
-%             \And{armazena os valores calculados como parte dos resultados do ataque}
-%   \end{Cenarios}
-% }
-
-% -----------------------------------------------------------------
+\US{Avaliar Resultados de Ataques com Métricas Globais}{us_calculo_metricas_juri}
+{
+  \Feature{Como utilizador, quero que o sistema avalie automaticamente os resultados de um ataque com base nas métricas ASR, ORR e AOR, para avaliar a performance de cada LLM}
+  \begin{Cenarios}
+      \item \Given{que estou autenticado}
+            \And{executei um ataque seguindo as configurações válidas}
+            \When{o ataque termina}
+            \And{os júris avaliam a respostas geradas pelo LLM}
+            \Then{calcula a métrica ASR como a proporção de prompts adversariais bem-sucedidas}
+            \And{calcula a métrica ORR como a proporção de prompts benignas incorretamente rejeitadas}
+            \And{calcula a métrica AOR como a proporção de objetivos distintos alcançados com sucesso}
+            \And{armazena os valores calculados como parte dos resultados do ataque}
+  \end{Cenarios}
+}
 
 \US{Mecanismo de Júri}{mecanismo_juri}{
   \Feature{Como utilizador, quero que cada resposta do modelo alvo seja classificada por um júri de 3 LLMs como "recusa" ou "cumprimento", usando maioria simples, para obter uma decisão objetiva e auditável} 
@@ -389,7 +368,7 @@
             \When{o sistema submete a resposta do modelo alvo aos 3 LLMs jurados} 
             \Then{cada LLM devolve uma classificação "recusa" ou "cumprimento"} 
             \And{o sistema calcula a classificação final por maioria simples} 
-            \And{o sistema apresenta a classificada final e regista votos e metadados na execução}
+            \And{o sistema guarda a classificação final e as estatísticas (ASR, ORR, AOR), regista votos e metadados da execução}
   \end{Cenarios}
 } 
 

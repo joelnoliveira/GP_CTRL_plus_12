@@ -1,5 +1,14 @@
 \section{Arquitetura do Sistema}
 
+\subsection{Decisões}
+\begin{itemize}
+    \item Optámos por utilizar React na componente de desenvolvimento Frontend por ser uma das bibliotecas mais populares e consolidadas do mercado, com uma vasta comunidade, tendo manutenção contínua que assegura estabilidade e suporte a longo prazo. Além disso, a equipa já possui experiência prévia com a tecnologia, o que facilita a manutenção, acelera o desenvolvimento e reduz a curva de aprendizagem. Essa escolha garante maior produtividade e consistência na implementação da interface do utilizador.
+    \item Optámos por utilizar FastAPI no backend porque oferece elevada performance e concorrência assíncrona, essenciais para servir LLMs a múltiplos utilizadores com baixa latência e throughput consistente. Além disso, a integração nativa com Python e documentação automática OpenAPI aceleram o desenvolvimento e reduzem erros, alinhando-se com a experiência atual da equipa.
+    \item Optámos por uma base de dados relacional para guardar dados de utilizadores e das experiências porque nos dá controlo total do esquema e das relações, consultas flexíveis e consistência transacional, ao contrário de usar o MLflow como repositório principal, que não oferece a mesma liberdade para modelar a informação da aplicação , como uma flag “público/privado” por ataque, que exige controlo granular da estrutura das tabelas, chaves e restrições ao nível do esquema. No MLFlow estariamos restringidos ao formato por eles oferecido.
+    \item Optámos por utilizar Langfuse como plataforma de observabilidade e rastreamento de LLMs porque é uma ferramenta open-source amplamente adotada no mercado, oferecendo tracing completo. Ao contrário de alternativas como LangSmith (fechado, pago para self-hosting), Langfuse é production-ready, framework-agnostic e fácil de dar self-host sem restrições ou custos recorrentes. Além disso, integra-se nativamente com Python e FastAPI, alinhando-se com o stack atual.
+    \item Optámos por usar um container dedicado para cada componente (Attacker, Target e Juri) para permitir paralelismo, melhor performance e um controlo regulado dos recursos de cada container.
+    \item Optámos por utilizar uma base de dados PostgreSQL porque a equipa de desenvolvimento já está habituada à sua utilização e esta solução responde melhor aos requisitos de uma aplicação multi user, oferecendo robustez e controlo de acessos simultâneos.
+\end{itemize}
 \subsection{Nível 1 - Contexto do Sistema}
 
 

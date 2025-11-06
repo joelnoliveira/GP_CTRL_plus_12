@@ -1,6 +1,119 @@
 \section{Modelo de Domínio e Dados}
 
 \subsection{Entidades no Modelo Conceptual}
+\subsubsection{users}
+\begin{itemize}
+  \item \texttt{id (uuid, PK)} — identificador único do utilizador.
+  \item \texttt{email (unique)} — email de autenticação (único).
+  \item \texttt{password\_hash} — hash seguro da palavra-passe.
+  \item \texttt{role (admin|user)} — perfil de permissões do utilizador.
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação.
+\end{itemize}
+
+\subsubsection{scenarios}
+\begin{itemize}
+  \item \texttt{id (uuid, PK)} — identificador do cenário.
+  \item \texttt{name (text, unique)} — nome curto do cenário.
+  \item \texttt{description (text)} — descrição do cenário.
+  \item \texttt{config\_path (text)} — caminho/ficheiro na VM (ex.: \texttt{/var/app/scenarios/\{id\}.json}).
+  \item \texttt{is\_builtin (boolean)} — \texttt{true} se for cenário “de fábrica” (pré-instalado).
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação.
+\end{itemize}
+
+\subsubsection{workload\_datasets}
+\begin{itemize}
+  \item \texttt{id (uuid, PK)} — identificador do dataset.
+  \item \texttt{owner\_user\_id (uuid, FK users.id, nullable)} — dono (nulo = global).
+  \item \texttt{name (text)} — nome do dataset.
+  \item \texttt{description (text)} — descrição/resumo.
+  \item \texttt{storage\_path (text)} — diretório na VM (ex.: \texttt{/var/app/datasets/\{id\}/}).
+  \item \texttt{mime\_type (text)} — tipo dominante (ex.: \texttt{text/plain}, \texttt{image/*}, \texttt{audio/*}).
+  \item \texttt{visibility (public|private)} — visibilidade (privado → só o dono).
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação.
+\end{itemize}
+
+\subsubsection{attack\_loads}
+\begin{itemize}
+  \item \texttt{id (uuid, PK)} — identificador do attack load.
+  \item \texttt{owner\_user\_id (uuid, FK users.id, nullable)} — dono (nulo = global).
+  \item \texttt{name (text)} — nome do attack load.
+  \item \texttt{type (template|llm\_based)} — modo: template estático ou gerado por LLM.
+  \item \texttt{template\_text (text, nullable)} — conteúdo do template (se \texttt{type=template}).
+  \item \texttt{generator\_prompt (text, nullable)} — prompt base do gerador (se \texttt{type=llm\_based}).
+  \item \texttt{params (jsonb, nullable)} — parâmetros/variáveis do template.
+  \item \texttt{visibility (public|private)} — visibilidade (privado → só o dono).
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação.
+\end{itemize}
+
+\subsubsection{models}
+\begin{itemize}
+  \item \texttt{name (text, PK)} — identificador do modelo (ex.: \texttt{llama3.1:8b}).
+  \item \texttt{provider (text)} — fornecedor/host (\texttt{ollama|openai|...}).
+  \item \texttt{family (text)} — família (llama, mistral, qwen, …).
+  \item \texttt{size (text)} — dimensão (3B/7B/8B/13B, …).
+  \item \texttt{quant (text, nullable)} — quantização (ex.: \texttt{Q4\_K\_M}).
+  \item \texttt{params (jsonb, nullable)} — hiperparâmetros por defeito.
+\end{itemize}
+
+\subsubsection{runs}
+\begin{itemize}
+  \item \texttt{id (uuid, PK)} — identificador do run.
+  \item \texttt{user\_id (uuid, FK users.id)} — utilizador dono do run.
+  \item \texttt{scenario\_id (uuid, FK scenarios.id)} — cenário escolhido.
+  \item \texttt{workload\_dataset\_id (uuid, FK workload\_datasets.id)} — dataset usado.
+  \item \texttt{attack\_load\_id (uuid, FK attack\_loads.id)} — attack load usado.
+  \item \texttt{target\_model (text/FK models.name)} — modelo alvo.
+  \item \texttt{attack\_model (text/FK models.name, nullable)} — modelo atacante (se houver).
+  \item \texttt{visibility (public|private)} — visibilidade dos resultados do run.
+  \item \texttt{status (queued|running|judging|done|failed)} — estado da execução.
+  \item \texttt{langfuse\_trace\_id (text, nullable)} — ID do trace no Langfuse.
+  \item \texttt{started\_at, ended\_at (timestamptz, nullable)} — timestamps de início e fim.
+\end{itemize}
+
+\subsubsection{artifacts} \emph{(prompts/outputs/configs/logs)}
+\begin{itemize}
+  \item \texttt{id (uuid, PK)} — identificador do artefacto.
+  \item \texttt{run\_id (uuid, FK runs.id)} — run a que pertence.
+  \item \texttt{kind (prompt|output|config|log)} — tipo de artefacto.
+  \item \texttt{content\_hash (text, nullable)} — hash para deduplicação/integridade.
+  \item \texttt{mime\_type (text, nullable)} — tipo de conteúdo (ex.: \texttt{text/plain}).
+  \item \texttt{size\_bytes (int, nullable)} — tamanho em bytes.
+  \item \texttt{storage (text)} — caminho/URL do ficheiro (ex.: \texttt{file:///var/app/artifacts/\{run\_id\}/...}).
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação.
+\end{itemize}
+
+\subsubsection{jury\_votes}
+\begin{itemize}
+  \item \texttt{id (uuid, PK)} — identificador do voto.
+  \item \texttt{run\_id (uuid, FK runs.id)} — run avaliado.
+  \item \texttt{juror\_idx (int, 1..3)} — posição do jurado.
+  \item \texttt{label (recusa|cumpre)} — decisão do jurado.
+  \item \texttt{usefulness (numeric)} — utilidade atribuída (0 ou 1; pode ser [0..1]).
+  \item \texttt{score (numeric, nullable)} — nota adicional (opcional).
+  \item \texttt{latency\_ms (int)} — latência da avaliação do jurado.
+  \item \texttt{model\_used (text)} — modelo do jurado.
+  \item \texttt{created\_at (timestamptz)} — data/hora do voto.
+\end{itemize}
+
+\subsubsection{metrics}
+\begin{itemize}
+  \item \texttt{run\_id (uuid, PK/FK runs.id)} — run a que pertencem as métricas.
+  \item \texttt{asr (numeric)} — \textit{Attack Success Rate}.
+  \item \texttt{orr (numeric)} — \textit{Output Refusal Rate}.
+  \item \texttt{aor (numeric)} — \textit{Achieved Objective Rate}.
+  \item \texttt{usefulness\_rate (numeric, nullable)} — fração de respostas “úteis”.
+  \item \texttt{useful\_majority (boolean, nullable)} — consenso final de utilidade (maioria).
+\end{itemize}
+
+\subsubsection{audit\_logs}
+\begin{itemize}
+  \item \texttt{id (uuid, PK)} — identificador do evento.
+  \item \texttt{user\_id (uuid, FK users.id, nullable)} — utilizador que originou o evento.
+  \item \texttt{action (text)} — ação (\texttt{login|create\_run|judge|export|...}).
+  \item \texttt{run\_id (uuid, nullable)} — run relacionado (se aplicável).
+  \item \texttt{created\_at (timestamptz)} — data/hora do evento.
+\end{itemize}
+
 
 
 \subsection{Relações entre Entidades}

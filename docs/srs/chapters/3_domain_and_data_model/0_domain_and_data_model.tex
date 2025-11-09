@@ -1,7 +1,95 @@
 \section{Modelo de Domínio e Dados}
 
 \subsection{Entidades no Modelo Conceptual}
+\subsubsection{users}
+\begin{itemize}
+  \item \texttt{id (uuid)} — identificador único do utilizador.
+  \item \texttt{email (text)} — email de autenticação (valor único).
+  \item \texttt{password\_hash (text)} — hash seguro da palavra-passe.
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação do registo.
+\end{itemize}
 
+\subsubsection{scenarios}
+\begin{itemize}
+  \item \texttt{id (uuid)} — identificador do cenário.
+  \item \texttt{name (text)} — nome curto único do cenário.
+  \item \texttt{description (text)} — descrição do cenário.
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação do registo.
+\end{itemize}
+
+\subsubsection{workload\_datasets}
+\begin{itemize}
+  \item \texttt{id (uuid)} — identificador do dataset.
+  \item \texttt{owner\_user\_id (uuid)} — utilizador que adicionou/criou o dataset.
+  \item \texttt{name (text)} — nome do dataset.
+  \item \texttt{scenario\_id (uuid)} — scenario do qual o dataset faz part.
+  \item \texttt{description (text)} — descrição/resumo do dataset.
+  \item \texttt{storage\_path (text)} — diretório base na VM (ex.: \texttt{/var/app/datasets/\{id\}/}).
+  \item \texttt{mime\_type (text)} — tipo dominante de conteúdo (ex.: \texttt{text/plain}, \texttt{image/*}, \texttt{audio/*}).
+   \item \texttt{is\_builtin (boolean)} — indica se é um workload\_datasets pré-instalado.
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação do registo.
+\end{itemize}
+
+\subsubsection{attack\_loads}
+\begin{itemize}
+  \item \texttt{id (uuid)} — identificador do attack load.
+  \item \texttt{owner\_user\_id (uuid)} — utilizador que criou o attack load.
+  \item \texttt{name (text)} — nome do attack load.
+   \item \texttt{description (text)} — descrição/resumo do dataset.
+  \item \texttt{type (text)} — tipo de attack load (\texttt{template|llm\_based}).
+  \item \texttt{storage\_path (text)} — diretório base na VM (ex.: \texttt{/var/app/attackloads/\{id\}/}).
+   \item \texttt{is\_builtin (boolean)} — indica se é um attack\_loads pré-instalado.
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação do registo.
+\end{itemize}
+
+\subsubsection{models}
+\begin{itemize}
+  \item \texttt{name (uuid)} — identificador único do modelo (ex.: \texttt{llama3.1:8b}).
+\end{itemize}
+
+\subsubsection{runs}
+\begin{itemize}
+  \item \texttt{id (uuid)} — identificador da execução (run).
+  \item \texttt{owner\_user\_id (uuid)} — utilizador dono da execução.
+  \item \texttt{scenario\_id (uuid)} — identificador do cenário usado na execução.
+  \item \texttt{workload\_dataset\_id (uuid)} — identificador do dataset usado.
+  \item \texttt{attack\_load\_id (uuid)} — identificador do attack load usado.
+  \item \texttt{target\_model\_name (uuid)} — nome do modelo alvo (igual a \texttt{models.name}).
+  \item \texttt{attack\_model\_name (uuid)} — nome do modelo atacante (igual a \texttt{models.name}, quando aplicável).
+  \item \texttt{public (boolean)} — visibilidade dos resultados (privado=0, publico=1).
+  \item \texttt{status (text)} — estado da execução (\texttt{queued|running|judging|done|failed}).
+  \item \texttt{langfuse\_trace\_id (text)} — identificador do trace correspondente no Langfuse.
+  \item \texttt{started\_at (timestamptz)} — data/hora de início da execução.
+  \item \texttt{ended\_at (timestamptz)} — data/hora de fim da execução.
+\end{itemize}
+
+\subsubsection{jury\_votes}
+\begin{itemize}
+  \item \texttt{id (uuid)} — identificador do voto do jurado.
+  \item \texttt{run\_id (uuid)} — identificador da execução avaliada.
+  \item \texttt{juror\_index (int)} — posição do jurado na votação (1..3).
+  \item \texttt{verdict (boolean)} — decisão do jurado em relação à conformidade/segurança da resposta face ao objetivo do ataque (\texttt{recusa|cumpre}).
+  \item \texttt{usefulness (boolean)} — utilidade atribuída á resposta do modelo alvo (\texttt{0 ou 1}).
+  \item \texttt{model\_name (text)} — nome do modelo do jurado (igual a \texttt{models.name}).
+  \item \texttt{created\_at (timestamptz)} — data/hora de criação do registo.
+\end{itemize}
+
+\subsubsection{metrics}
+\begin{itemize}
+  \item \texttt{run\_id (uuid)} — identificador da execução a que pertencem as métricas.
+  \item \texttt{asr (numeric)} — \textit{Attack Success Rate} da execução.
+  \item \texttt{orr (numeric)} — \textit{Over-Refusal Rate} da execução.
+  \item \texttt{aor (numeric)} — \textit{Achieved Objective Rate} da execução.
+  \item \texttt{useful\_majority (boolean)} — consenso final de utilidade decidida pelo júri.
+  \item \texttt{verdict\_majority (boolean)} — consenso final sobre o veredito do ataque decidida pelo júri. 
+\end{itemize}
 
 \subsection{Relações entre Entidades}
+Na Figura \ref{fig:diagrama_database_relacoes} podemos observar as relações entre as entidades na base de dados.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{images/database_relations.jpeg}
+  \caption{Relações entre as entidades da base de dados}
+  \label{fig:diagrama_database_relacoes}
+\end{figure}
 

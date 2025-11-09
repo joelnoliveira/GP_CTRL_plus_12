@@ -67,7 +67,7 @@ Componente dedicado à execução dos modelos de linguagem (LLMs). Recebe pedido
 O mesmo container aloja modelos com papéis diferents (LLM gerador de ataques, LLM alvo e júris) configurados de forma independente.
 A comunicação bidirecional com o \textit{Backend} permite enviar pedidos e receber resultados para posterior armazenamento e análise.
 
-\subsubsection{File System \textit{(Container Ollama / FS local)}}
+\subsubsection{File System \textit{(FS local)}}
 O \textit{File System} representa o sistema de ficheiros da máquina onde o sistema está hospedado. É utilizado para leitura e escrita de artefactos experimentais, incluindo:
 \begin{itemize}
 \item datasets e \textit{attack loads};
@@ -80,7 +80,7 @@ A comunicação é feita através do sistema de ficheiros local, permitindo ao \
 Plataforma de observabilidade e análise de \textit{tracing} que recolhe informações sobre cada execução.
 O \textit{Backend} envia eventos relativos a prompts, respostas e métricas, permitindo o versionamento de artefactos e o acompanhamento das execuções em tempo real.
 
-\subsubsection{Racionacinio de Desenho}
+\subsubsection{Raciocínio de Desenho}
 O sistema foi desenhado com base em princípios de separação de responsabilidades, auditabilidade e escalabilidade:
 \begin{itemize}
 \item \textbf{Isolamento de componentes}: cada container tem funções bem definidas (UI, orquestração, persistência, execução e observabilidade);
@@ -112,7 +112,7 @@ O Backend decompõe-se em múltiplos componentes especializados, organizados em 
 \item \textbf{Security API}: Responsável por processar pedidos de autenticação e autorização. Valida credenciais do utilizador, emite tokens JWT e impõe políticas de segurança para operações sensíveis do sistema.
 \item \textbf{Auth API}: Garante o registo e login de novos utilizadores na plataforma.
 \item \textbf{Results API}: Responsável por recuperar, filtrar e formatar resultados de execuções. Interage com o \textit{Data Repository} para consultar histórico de execuções, métricas agregadas e votos do júri, disponibilizando-os ao \textit{Frontend}. Permite a exportação dos resultados.
-\item \textbf{Run API}:  Componente que recebe pedidos de lançamento de experiências do \textit{Frontend}, valida configurações através do \textit{Configuration API}, passando  a execução para o \textit{Attack Orchestration Service}. Permite a importação de configurações por parte do utilizador.
+\item \textbf{Run API}:  Componente que recebe pedidos de lançamento de experiências do \textit{Frontend}, passando  a execução para o \textit{Attack Orchestration Service}. Permite a importação de configurações por parte do utilizador.
 \end{itemize}
 
 \paragraph{Camada de Serviços de Orquestração}
@@ -141,7 +141,7 @@ O \textit{Frontend} envia credenciais ao \textit{Auth API}, que valida com a \te
 O \textit{Run API} recebe um pedido de execução e a configuração, invoca o \textit{Attack Orchestration Service} para gerar ataques (comunicando com \textit{Ollama LLMs}), coordena respostas do LLM alvo e encaminha pares para o \textit{Evaluation Service}. Resultados são persistidos no \textit{Data Repository} e rastreados no \textit{LangFuse}.
 
 \item \textbf{Fluxo de Avaliação}: 
-O \textit{Attack Orchestration Service} solicita ao \textit{Ollama LLMs} a execução de modelos júri, recolhe votos, e eniva para o \textit{Evaluation Service} que calcula métricas agregadas e persiste no \textit{Data Repository}. Envia feedback estruturado ao \textit{LangFuse} para análise retrospetiva.
+O \textit{Attack Orchestration Service} solicita ao \textit{Ollama LLMs} a execução de modelos júri, recolhe votos, e envia para o \textit{Evaluation Service} que calcula métricas agregadas e persiste no \textit{Data Repository}. Envia feedback estruturado ao \textit{LangFuse} para análise retrospetiva.
 
 \item \textbf{Fluxo de Consulta de Resultados}: 
 O \textit{Results API} processa pedidos do \textit{Frontend}, consulta o \textit{Data Repository} para recuperar execuções, métricas e histórico, e devolve dados formatados.

@@ -6,7 +6,7 @@
     \item Optámos por utilizar FastAPI no backend porque oferece elevada performance e concorrência assíncrona, essenciais para servir LLMs a múltiplos utilizadores com baixa latência e throughput consistente. Além disso, a integração nativa com Python e documentação automática OpenAPI aceleram o desenvolvimento e reduzem erros, alinhando-se com a experiência atual da equipa.
     \item Optámos por uma base de dados relacional para guardar dados de utilizadores e das experiências porque nos dá controlo total do esquema e das relações, consultas flexíveis e consistência transacional, ao contrário de usar o MLflow como repositório principal, que não oferece a mesma liberdade para modelar a informação da aplicação , como uma flag “público/privado” por ataque, que exige controlo granular da estrutura das tabelas, chaves e restrições ao nível do esquema. No MLFlow estariamos restringidos ao formato por eles oferecido.
     \item Optámos por utilizar Langfuse como plataforma de observabilidade e rastreamento de LLMs porque é uma ferramenta open-source amplamente adotada no mercado, oferecendo tracing completo. Ao contrário de alternativas como LangSmith (fechado, pago para self-hosting), Langfuse é production-ready, framework-agnostic e fácil de dar self-host sem restrições ou custos recorrentes. Além disso, integra-se nativamente com Python e FastAPI, alinhando-se com o stack atual.
-    \item Optámos por usar um único container para cada toda a execução dos modelos (Attacker, Target e Juri) uma vez que o Ollama (ferramenta que permite executar vários modelos através de chamadas à API) faz a gestão de pedidos concorrentes com uma fila.
+    \item Optámos por usar um único container para a execução dos modelos (Attacker, Target e Juri). Podem correr tanto no Ollama ou podem ser chamadas APIs externas (OpenAPI, entre outras). Para além disso, a execução de testes em modelos hospedados na máquina do utilizador também é permitida.
     \item Optámos por utilizar uma base de dados PostgreSQL porque a equipa de desenvolvimento já está habituada à sua utilização e esta solução responde melhor aos requisitos de uma aplicação multi user, oferecendo robustez e controlo de acessos simultâneos.
 \end{itemize}
 \subsection{Nível 1 - Contexto do Sistema}
@@ -62,9 +62,14 @@ Toda a comunicação externa ocorre via HTTP/REST, garantindo interoperabilidade
 Responsável por persistir informação crítica do sistema, incluindo configurações de ataques, datasets, histórico de execuções, prompts, respostas, métricas, votos do júri e \textit{audit logs}.
 A interação com o \textit{Backend} ocorre através de operações SQL diretas, garantindo consistência transacional e rastreabilidade total das experiências.
 
-\subsubsection{Ollama LLMs \textit{(Container Ollama)}}
-Componente dedicado à execução dos modelos de linguagem (LLMs). Recebe pedidos do \textit{Backend}, executa os prompts e devolve as respostas correspondentes via HTTP/REST.
-O mesmo container aloja modelos com papéis diferents (LLM gerador de ataques, LLM alvo e júris) configurados de forma independente.
+\subsubsection{LLMs \textit{(Container LLMs)}}
+Componente dedicado à execução dos modelos de linguagem (LLMs) via Ollama ou via API. Recebe pedidos do \textit{Backend}, executa os prompts e devolve as respostas correspondentes via HTTP/REST.
+O mesmo container aloja modelos ou redireciona pedidos para modelos externos.
+A comunicação bidirecional com o \textit{Backend} permite enviar pedidos e receber resultados para posterior armazenamento e análise.
+
+\subsubsection{LLMs \textit{(Local LLMs)}}
+Componente dedicado à execução dos modelos de linguagem (LLMs) presentes na máquina local do utilizador. Recebe pedidos do \textit{Backend}, executa os prompts e devolve as respostas correspondentes via HTTP/REST.
+A máquina do utilizador aloja modelos que são executados localmente pelo utilizador e recebe/envia os pedidos/resultados para o \textit{Backend}.
 A comunicação bidirecional com o \textit{Backend} permite enviar pedidos e receber resultados para posterior armazenamento e análise.
 
 \subsubsection{File System \textit{(FS local)}}
@@ -101,7 +106,7 @@ A Figura~\ref{fig:diagrama_componentes} detalha a decomposição interna do cont
   \label{fig:diagrama_componentes}
 \end{figure}
 
-O nível 3 do modelo C4 foca-se exclusivamente na arquitetura interna do \textit{Backend}, uma vez que os restantes containers (Frontend, Base de Dados, Ollama LLMs, File System e LangFuse) mantêm-se como unidades coesas sem necessidade de decomposição adicional nesta fase.
+O nível 3 do modelo C4 foca-se exclusivamente na arquitetura interna do \textit{Backend}, uma vez que os restantes containers (Frontend, Base de Dados, LLMs,File System e LangFuse) mantêm-se como unidades coesas sem necessidade de decomposição adicional nesta fase.
 
 \subsubsection{Backend (Container FastAPI) - Componentes}
 O Backend decompõe-se em múltiplos componentes especializados, organizados em camadas funcionais:
@@ -118,8 +123,8 @@ O Backend decompõe-se em múltiplos componentes especializados, organizados em 
 \paragraph{Camada de Serviços de Orquestração}
 
 \begin{itemize}
-\item \textbf{Attack Orchestration Service}: Serviço especializado que coordena a sequência de ataques adversariais. Solicita ao \textit{Ollama LLMs} que execute o modelo gerador de ataques, armazena respostas intermédias, coordena os pares ataque-resposta entre o LLM alvo e encaminha para o \textit{Evaluation Service}. Envia eventos de rastreamento ao \textit{LangFuse} em tempo real.
-\item \textbf{Evaluation Service}: Componente que calcula métricas com base nos resultados dos júris. Solicita ao \textit{Ollama LLMs} a execução de um ou múltiplos modelos júri para cada par ataque-resposta, recolhe votos, calcula métricas agregadas (taxa de sucesso, robustez) e armazena resultados através do \textit{Data Repository}. Comunica com o \textit{LangFuse} para registar feedback e métricas de avaliação.
+\item \textbf{Attack Orchestration Service}: Serviço especializado que coordena a sequência de ataques adversariais. Solicita ao container \textit{LLMs} ou às LLMs na máquina do utilizador que execute o modelo gerador de ataques, armazena respostas intermédias, coordena os pares ataque-resposta entre o LLM alvo e encaminha para o \textit{Evaluation Service}. Envia eventos de rastreamento ao \textit{LangFuse} em tempo real.
+\item \textbf{Evaluation Service}: Componente que calcula métricas com base nos resultados dos júris. Solicita ao container \textit{LLMs} ou às LLMs na máquina do utilizador a execução de um ou múltiplos modelos júri para cada par ataque-resposta, recolhe votos, calcula métricas agregadas (taxa de sucesso, robustez) e armazena resultados através do \textit{Data Repository}. Comunica com o \textit{LangFuse} para registar feedback e métricas de avaliação.
 \end{itemize}
 
 \paragraph{Camada de Persistência e Armazenamento}
@@ -138,10 +143,10 @@ Os principais fluxos de interação no Backend são:
 O \textit{Frontend} envia credenciais ao \textit{Auth API}, que valida com a \textit{Base de Dados} (via \textit{Data Repository}), emite um JWT e devolve ao \textit{Frontend}. O \textit{Security API} valida o JWT em pedidos subsequentes.
 
 \item \textbf{Fluxo de Execução}: 
-O \textit{Run API} recebe um pedido de execução e a configuração, invoca o \textit{Attack Orchestration Service} para gerar ataques (comunicando com \textit{Ollama LLMs}), coordena respostas do LLM alvo e encaminha pares para o \textit{Evaluation Service}. Resultados são persistidos no \textit{Data Repository} e rastreados no \textit{LangFuse}.
+O \textit{Run API} recebe um pedido de execução e a configuração, invoca o \textit{Attack Orchestration Service} para gerar ataques (comunicando com o container \textit{LLMs} ou com as LLMs na máquina do utilizador ), coordena respostas do LLM alvo e encaminha pares para o \textit{Evaluation Service}. Resultados são persistidos no \textit{Data Repository} e rastreados no \textit{LangFuse}.
 
 \item \textbf{Fluxo de Avaliação}: 
-O \textit{Attack Orchestration Service} solicita ao \textit{Ollama LLMs} a execução de modelos júri, recolhe votos, e envia para o \textit{Evaluation Service} que calcula métricas agregadas e persiste no \textit{Data Repository}. Envia feedback estruturado ao \textit{LangFuse} para análise retrospetiva.
+O \textit{Attack Orchestration Service} solicita ao container \textit{LLMs} ou às LLMs na máquina do utilizador a execução de modelos júri, recolhe votos, e envia para o \textit{Evaluation Service} que calcula métricas agregadas e persiste no \textit{Data Repository}. Envia feedback estruturado ao \textit{LangFuse} para análise retrospetiva.
 
 \item \textbf{Fluxo de Consulta de Resultados}: 
 O \textit{Results API} processa pedidos do \textit{Frontend}, consulta o \textit{Data Repository} para recuperar execuções, métricas e histórico, e devolve dados formatados.

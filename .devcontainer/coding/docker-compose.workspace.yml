@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:17
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: postgres_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ../db/init/:/docker-entrypoint-initdb.d/:Z
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # env_file:
+    #   - ../../.env
+    
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ../../backend/ollama_data:/root/.ollama
+    # gpus: all
+
+volumes:
+  ollama_data:
+    name: ollama_data
+  postgres_data:

@@ -41,7 +41,10 @@
 ## Executar o FastAPI
 - Dentro do terminal do container do backend executar:
     ```
-    cd "/workspace/backend/app"
-    uvicorn main:app --host 0.0.0.0 --port 8000 --reload 
+    cd "/workspace/backend"
+    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
     ```
 - Após a execução o servidor estará disponível em : http://localhost:8000/docs
+
+## Scripts de instalação dos modelos no ollama
+- Assumindo que o script tem as perimissões necessárias, executar o script localizado em [ollama/scripts/](ollama/scripts/) numa consola externa.

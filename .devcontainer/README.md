@@ -1,6 +1,5 @@
-# LaTeX Project with Texlive Container
-
-This project is designed to use a Texlive container within a VSCode development environment. The `.devcontainer` configuration allows for an isolated and consistent LaTeX setup, making it easier for all team members to collaborate on the LaTeX documents.
+# Project with multiple Devcontainers
+This project contains 2 Devcontainers, one for documentation using Texlive and other for coding devolopment. Using devcontainers allows for isolated and consistent development environments, making it easier for all team members to collaborate. 
 
 ## Requirements
 
@@ -15,4 +14,7 @@ Follow the steps below to set up your development environment:
 
 - Open the DevContainer by opening the Command Pallete (Ctrl + Shift + P) and execute the command ```>Dev Containers: Rebuild and Reopen in Container```.
 
+- Select the desired devcontainer.
+
+## Texlive devcontainer
 - Press the side preview button or the play button to compile or preview the pdf document.

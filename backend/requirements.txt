@@ -1,0 +1,7 @@
+psycopg2-binary==2.9.10
+fastapi==0.121.3
+uvicorn==0.38.0
+PyJWT==2.10.1
+ruff==0.14.3
+fastapi-cli==0.0.16
+fastapi-cloud-cli==0.5.1

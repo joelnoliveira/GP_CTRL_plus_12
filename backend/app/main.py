@@ -2,7 +2,6 @@ from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
-from .database import get_db
 from .models import reflect_tables, Base
 import os
 import requests

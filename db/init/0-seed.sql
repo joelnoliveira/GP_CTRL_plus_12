@@ -2,35 +2,38 @@
 -- This SQL file creates tables and populates them with initial data
 -- SQLAlchemy will reflect these tables at runtime
 
--- CREATE TABLE users (
--- 	id	 BIGSERIAL,
--- 	email	 VARCHAR(512) NOT NULL,
--- 	password	 VARCHAR(512) NOT NULL,
--- 	role	 BOOL NOT NULL,
--- 	created_at TIMESTAMP NOT NULL,
--- 	PRIMARY KEY(id)
--- );
+CREATE SCHEMA IF NOT EXISTS langfuse;
 
--- CREATE TABLE runs_metrics (
--- 	id			 BIGSERIAL,
--- 	target_model		 TEXT NOT NULL,
--- 	attack_model		 TEXT NOT NULL,
--- 	visibility		 TEXT NOT NULL,
--- 	status			 CHAR(255) NOT NULL,
--- 	langfuse_trace_id	 TEXT NOT NULL,
--- 	started_at		 TIMESTAMP NOT NULL,
--- 	ended_at			 TIMESTAMP NOT NULL,
--- 	metrics_asr		 INTEGER,
--- 	metrics_orr		 INTEGER NOT NULL,
--- 	metrics_aor		 INTEGER NOT NULL,
--- 	metrics_useful_majority	 BOOL NOT NULL,
--- 	metrics_veridict_majority BOOL NOT NULL,
--- 	workload_datasets_id	 BIGINT NOT NULL,
--- 	attack_loads_id		 BIGINT NOT NULL,
--- 	scenarios_id		 BIGINT NOT NULL,
--- 	users_id			 BIGINT NOT NULL,
--- 	PRIMARY KEY(id)
--- );
+
+CREATE TABLE users (
+	id	 BIGSERIAL,
+	email	 VARCHAR(512) NOT NULL,
+	password	 VARCHAR(512) NOT NULL,
+	role	 BOOL NOT NULL,
+	created_at TIMESTAMP NOT NULL,
+	PRIMARY KEY(id)
+);
+
+CREATE TABLE runs_metrics (
+	id			 BIGSERIAL,
+	target_model		 TEXT NOT NULL,
+	attack_model		 TEXT NOT NULL,
+	visibility		 TEXT NOT NULL,
+	status			 CHAR(255) NOT NULL,
+	langfuse_trace_id	 TEXT NOT NULL,
+	started_at		 TIMESTAMP NOT NULL,
+	ended_at			 TIMESTAMP NOT NULL,
+	metrics_asr		 INTEGER,
+	metrics_orr		 INTEGER NOT NULL,
+	metrics_aor		 INTEGER NOT NULL,
+	metrics_useful_majority	 BOOL NOT NULL,
+	metrics_veridict_majority BOOL NOT NULL,
+	workload_datasets_id	 BIGINT NOT NULL,
+	attack_loads_id		 BIGINT NOT NULL,
+	scenarios_id		 BIGINT NOT NULL,
+	users_id			 BIGINT NOT NULL,
+	PRIMARY KEY(id)
+);
 
 -- CREATE TABLE jury_votes (
 -- 	id		 BIGSERIAL,

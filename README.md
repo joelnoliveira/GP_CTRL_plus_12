@@ -47,4 +47,4 @@
 - Após a execução o servidor estará disponível em : http://localhost:8000/docs
 
 ## Scripts de instalação dos modelos no ollama
-- Assumindo que o script tem as perimissões necessárias, executar o script localizado em [ollama/scripts/](ollama/scripts/) numa consola externa.
+- Assumindo que o script tem as permissões necessárias, executar o script (Bash ou .dat de acordo com o sistema operativo) localizado em [ollama/scripts/](ollama/scripts/) numa consola externa.

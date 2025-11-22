@@ -1,19 +1,40 @@
 # GP_CTRL_plus_12
 - Automated Red-Teaming of LLMs through Prompt-Based Attack Simulation
 
-## Relatórios de Tempo
+## 📚 Documentação
 
-- Os relatórios automáticos de tempo estão disponíveis em:
-[reports/README.md](reports/README.md)
-
-## Acesso aos Devcontainers
-
-- A documentação relativa aos devcontainers encontra-se disponível em [.devcontainer/README.md](.devcontainer/README.md)
+- **Relatórios de Tempo**: [reports/README.md](reports/README.md)
+- **Devcontainers**: [.devcontainer/README.md](.devcontainer/README.md)
+- **Integração Langfuse**: [LANGFUSE_INTEGRATION.md](LANGFUSE_INTEGRATION.md) ⭐ **NOVO**
 
 ## Containers
 
 ### Build e Startup de Containers
 - O build e start dos containers são automáticos aquando da entrada nos devcontainers.
+
+### Serviços Disponíveis
+- **Backend (FastAPI)**: http://localhost:8000/docs
+- **Langfuse UI**: http://localhost:3000 (tracing de LLMs)
+- **PostgreSQL (App)**: localhost:5432
+- **PostgreSQL (Langfuse)**: localhost:5433
+- **Ollama**: http://localhost:11434
+
+### Configurar Langfuse (Opcional)
+O Langfuse permite fazer tracing das chamadas aos LLMs. Para ativar:
+
+1. Acede a http://localhost:3000
+2. Cria uma conta (primeiro signup = admin)
+3. Cria um projeto
+4. Vai a **Settings** → **API Keys** e cria uma chave
+5. Copia as chaves para `backend/.env`:
+   ```bash
+   LANGFUSE_PUBLIC_KEY=pk-lf-...
+   LANGFUSE_SECRET_KEY=sk-lf-...
+   LANGFUSE_ENABLED=true
+   ```
+6. Reinicia o backend
+
+Se não quiseres usar Langfuse, deixa `LANGFUSE_ENABLED=false` no `.env`.
 
 ### Acesso a Containers
 #### Aceder à Base de Dados

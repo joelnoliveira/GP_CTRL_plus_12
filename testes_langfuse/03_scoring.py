@@ -21,7 +21,8 @@ client = OpenAI(
 print("⭐ Testing scoring/feedback...")
 
 # Create trace
-trace = langfuse.trace(name="scored-generation")
+trace_id = langfuse.create_trace_id()
+trace_context = {"trace_id": trace_id}
 
 # Generate response
 response = client.chat.completions.create(
@@ -29,31 +30,37 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": "Explain neural networks in one sentence."}]
 )
 
-generation = trace.generation(
+generation = langfuse.start_observation(
+    trace_context=trace_context,
+    as_type="generation",
     name="neural-net-explanation",
     model=OLLAMA_MODEL,
-    input=[{"role": "user", "content": "Explain neural networks in one sentence."}],
-    output=response.choices[0].message.content
 )
+generation.update(output=response.choices[0].message.content)
+generation.end()
 
 print(f"📝 Response: {response.choices[0].message.content}")
 
 # Add scores
-trace.score(
+langfuse.create_score(
+    trace_id=trace_id,
     name="accuracy",
     value=0.85,
     comment="Good but could be more precise"
 )
 
-trace.score(
+langfuse.create_score(
+    trace_id=trace_id,
     name="conciseness",
     value=0.95
 )
 
-trace.score(
+langfuse.create_score(
+    trace_id=trace_id,
     name="user-feedback",
-    value=1
+    value=1,
+    data_type="BOOLEAN"
 )
 
-print(f"✅ Added 3 scores to trace {trace.id}")
+print(f"✅ Added 3 scores to trace {trace_id}")
 langfuse.flush()

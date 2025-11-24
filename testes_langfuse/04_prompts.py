@@ -45,20 +45,22 @@ compiled_text = prompt.compile(
 print(f"🔧 Compiled prompt: {compiled_text}")
 
 # Use with LLM
-trace = langfuse.trace(name="prompt-usage")
+trace_id = langfuse.create_trace_id()
+trace_context = {"trace_id": trace_id}
 
 response = client.chat.completions.create(
     model=OLLAMA_MODEL,
     messages=[{"role": "user", "content": compiled_text}]
 )
 
-generation = trace.generation(
+generation = langfuse.start_observation(
+    trace_context=trace_context,
+    as_type="generation",
     name="templated-response",
     model=OLLAMA_MODEL,
-    input=[{"role": "user", "content": compiled_text}],
-    output=response.choices[0].message.content,
-    prompt=prompt
 )
+generation.update(output=response.choices[0].message.content)
+generation.end()
 
 print(f"✅ Response: {response.choices[0].message.content[:150]}...")
 langfuse.flush()

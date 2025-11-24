@@ -60,13 +60,8 @@ print("\n🧪 Running evaluation...")
 dataset = langfuse.get_dataset(dataset_name)
 
 for item in dataset.items:
-    trace = langfuse.trace(
-        name=f"eval-{item.id}",
-        metadata={
-            "dataset_item_id": item.id,
-            "dataset_name": dataset_name
-        }
-    )
+    trace_id = langfuse.create_trace_id()
+    trace_context = {"trace_id": trace_id}
     
     question = item.input["question"]
     response = client.chat.completions.create(
@@ -74,15 +69,18 @@ for item in dataset.items:
         messages=[{"role": "user", "content": question}]
     )
     
-    generation = trace.generation(
+    generation = langfuse.start_observation(
+        trace_context=trace_context,
+        as_type="generation",
         name="eval-generation",
         model=OLLAMA_MODEL,
-        input=[{"role": "user", "content": question}],
-        output=response.choices[0].message.content
+        metadata={
+            "dataset_item_id": item.id,
+            "dataset_name": dataset_name
+        }
     )
-    
-    # Link to dataset item
-    item.link(trace, "eval-run")
+    generation.update(output=response.choices[0].message.content)
+    generation.end()
     
     print(f"✅ Evaluated: {question[:50]}...")
 

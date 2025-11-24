@@ -38,6 +38,7 @@ LANGFUSE_HOST = os.getenv('LANGFUSE_HOST')
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL')
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL')
 
+
 def _require(name: str, value: str | None):
     if not value:
         raise RuntimeError(f"Missing required config: {name}. Check .env")

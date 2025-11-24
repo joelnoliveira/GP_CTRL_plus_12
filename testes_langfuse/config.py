@@ -26,7 +26,7 @@ def _load_env(path: Path) -> None:
             if value:
                 os.environ.setdefault(key, value)
 
-_load_env(Path(__file__).parent / '.env')
+_load_env(Path(__file__).resolve().parent.parent / '.env')
 
 # Normalization / fallback (support legacy LANGFUSE_BASE_URL)
 if 'LANGFUSE_HOST' not in os.environ and 'LANGFUSE_BASE_URL' in os.environ:

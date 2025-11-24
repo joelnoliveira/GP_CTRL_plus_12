@@ -4,6 +4,7 @@
 
 CREATE SCHEMA IF NOT EXISTS langfuse;
 
+
 CREATE TABLE users (
 	id	 BIGSERIAL,
 	email	 VARCHAR(512) NOT NULL,

@@ -3,9 +3,9 @@
 
 % \FR{Seleção de LLMs}{selecao_llms}{O sistema deve permitir a seleção de um ou mais modelos de LLMs para serem testados/avaliados.}
 
-\FR{Configuração e Execução dos Ataques [Must Have]}{config_execucao_ataques}{O sistema deve permitir ao utilizador configurar e executar ataques, através da seleção de opções pré-definidas disponibilizadas pelo sistema para cada módulo (cenário, workload dataset, métricas específicas do cenário, algoritmo/LLM disponibilizas (alvo, júri, e opcionalmente de ataque), e attack load), garantindo que a execução segue as configurações definidas.}
+\FR{Configuração e Execução dos Ataques [Must Have]}{config_execucao_ataques}{O sistema deve permitir ao utilizador configurar e executar ataques, através da seleção de opções pré-definidas disponibilizadas pelo sistema para cada módulo (cenário, workload dataset, métricas específicas do cenário, algoritmo/LLM disponibilizas (alvo e de ataque), e attack load), garantindo que a execução segue as configurações definidas.}
 
-\FR{LLM Atacante [Must Have]}{llm_atacante}{O sistema deve implementar metodologias de ataques baseados em LLM de forma a criar prompts adversariais dinamicamente.}
+\FR{LLM Atacante [Must Have]}{llm_atacante}{O sistema deve implementar metodologias de ataques baseados em LLM de forma a criar prompts adversariais dinamicamente.O sistema deve suportar as técnicas "Crescendo Attack" e "Role-playing Attack", exigindo que o utilizador selecione uma destas tipologias aquando da escolha do LLM Atacante.}
 
 \FR{Ataques por Template [Must Have]}{ataques_por_template}{O sistema deve permitir executar ataques usando templates de prompts, em que os prompts atacantes são criados ao combinar um template com prompts da attack load.}
 
@@ -17,7 +17,7 @@
 
 \FR{Filtragem de Resultados [Should Have]}{filtragem_resultados}{O sistema deve permitir ao utilizador filtrar resultados de ataques utilizando um ou mais dos seguintes critérios: cenário, workload dataset, métrica específica do cenário, algoritmo/LLM, linguagem de programação, e attack load.}
 
-\FR{Comparação de Resultados [Must Have]}{comparar_resultados}{O sistema deve permitir ao utilizador comparar lado a lado os resultados de até 3 ataques diferentes simultaneamente, deve ainda permitir comparar estatísticas através de um gráfico.}
+\FR{Comparação de Resultados [Must Have]}{comparar_resultados}{O sistema deve permitir a análise comparativa de resultados através de: gráficos dinâmicos (barras e heatmaps) configuráveis por métrica, permitindo filtrar por workload/template dataset, modelo e alternar a exibição de baselines; e comparação lado a lado dos detalhes (prompts/respostas) de até 3 ataques distintos simultaneamente.}
 
 \FR{Registo de Utilizador [Must Have]}{registo_de_utilizador}{O sistema deve permitir a criação de contas de utilizador através de email e password, validando o formato do email e que este não esteja já associado a alguma conta, e exigindo passwords com no mínimo 8 caracteres.}
 
@@ -27,9 +27,9 @@
 
 \FR{Análise de Vulnerabilidades do Código de Linguagens de Programação Comuns [Must Have]}{analise_do_codigo_de_linguagens_de_programação_comuns}{O sistema deve permitir compilar e avaliar através de Static Analysis Tools as vulnerabilidades do código de linguagens de programação comuns (e.g. python, java, javascript, etc), reportando o tipo e severidade de cada vulnerabilidade encontrada.}
 
-\FR{Suporte de Diferentes Tipos de Dados [Must Have]}{suporte_diferentes_tipos_de_dados}{O sistema deve suportar ataques que utilizem tipos de dados de entrada além de texto, nomeadamente imagens contendo texto e ficheiros de áudio.}
+\FR{Suporte de Diferentes Tipos de Dados [Could Have]}{suporte_diferentes_tipos_de_dados}{O sistema deve suportar ataques que utilizem tipos de dados de entrada além de texto, nomeadamente imagens contendo texto e ficheiros de áudio.}
 
-\FR{Suporte de Diferentes Tipos de Geração de Código [Must Have]}{diferentes_tipos_geracao_codigo}{O sistema deve suportar três tipos diferentes de ataques relacionados com código: text-to-code (geração de código a partir de descrição textual), code-to-code (transformação/refatoração de código), e code completion (completamento automático de código).}
+\FR{Suporte de Diferentes Tipos de Geração de Código [Could Have]}{diferentes_tipos_geracao_codigo}{O sistema deve suportar três tipos diferentes de ataques relacionados com código: text-to-code (geração de código a partir de descrição textual), code-to-code (transformação/refatoração de código), e code completion (completamento automático de código).}
 
 \FR{Armazenamento de Dados [Must Have]}{armazenamento_dados}{O sistema deve armazenar para cada ataque executado: os dados de entrada, as respostas geradas por todos os LLMs, as configurações utilizadas, e os valores calculados de todas as métricas.}
 
@@ -87,10 +87,11 @@
 
 \US{Executar Ataques Gerados por LLM Atacante}{llm_atacante}
 {
-  \Feature{Como utilizador, quero executar ataques gerados por LLM atacante, para avaliar a eficácia de prompts adversariais criados dinamicamente}
+  \Feature{Como utilizador, quero executar ataques onde os prompts adversariais são criados dinamicamente por um LLM, escolhendo entre técnicas específicas (e.g., Crescendo, Role-playing) para testar diferentes vetores de ataque}
   \begin{Cenarios}
       \item \Given{acedi à interface de execução de ataques}
             \When{seleciono o método de ataque baseado em LLM}
+            \And{seleciono a técnica de ataque "Crescendo Attack" ou "Role-playing Attack"}
             \And{selecionei as restantes configurações}
             \And{inicio a execução do ataque}
             \Then{o sistema utiliza a LLM atacante para gerar dinamicamente prompts adversariais a partir do prompt base}
@@ -99,6 +100,7 @@
        \item \Given{que estou autenticado}
             \And{acedi à interface de execução de ataques}
             \When{seleciono o método de ataque baseado em LLM}
+            \And{seleciono a técnica de ataque "Crescendo Attack" ou "Role-playing Attack"}
             \And{selecionei as restantes configurações}
             \And{inicio a execução do ataque}
             \Then{o sistema utiliza a LLM atacante para gerar dinamicamente prompts adversariais a partir do prompt base}
@@ -208,27 +210,33 @@
   \end{Cenarios}
 }
 
+
 \US{Comparar Resultados de Ataques}{comparar_resultados}
 {
-  \Feature{Como utilizador, quero selecionar até 3 ataques e compará-los lado a lado e num gráfico, para analisar as diferenças nas métricas e configurações}
+  \Feature{Como utilizador, quero analisar os resultados de forma comparativa, tanto através de gráficos estatísticos globais como numa comparação detalhada lado a lado, para identificar padrões de desempenho e diferenças específicas}
   \begin{Cenarios}
       \item \Given{que estou autenticado}
             \And{acedi à interface de histórico de resultados}
-            \And{selecionei entre 2 a 3 ataques da lista}
-            \When{aciono a opção de comparar}
-            \Then{o sistema apresenta uma visualização lado a lado com os dados principais de cada ataque (data, configuração, métricas)}
-            \And{o sistema apresenta um gráfico comparativo com as principais métricas dos ataques selecionados}
+            \And{estou a visualizar os gráficos comparativos}
+            \When{seleciono o modo de visualização gráfica}
+            \And{aplico filtros de visualização (Dataset, Métrica específica)}
+            \Then{o sistema gera gráficos dinâmicos (Barras e Heatmaps) com o desempenho dos modelos filtrados}
+      
+      \item \Given{que estou autenticado}
+            \And{acedi à interface de histórico de resultados}
+            \And{estou a visualizar os gráficos comparativos}
+            \When{ativo a opção de "Exibir Baseline"}
+            \Then{o sistema atualiza os gráficos incluindo a linha de referência (baseline) para comparação}
 
       \item \Given{que estou autenticado}
             \And{acedi à interface de histórico de resultados}
-            \And{selecionei menos de 2 ataques}
-            \When{aciono a opção de comparar}
-            \Then{o sistema rejeita a comparação}
-            \And{informa que é necessário selecionar mais de um ataque}
+            \And{selecionei entre 2 a 3 ataques específicos da lista}
+            \When{aciono a opção de "Comparar Lado a Lado"}
+            \Then{o sistema apresenta uma tabela comparativa com os detalhes de cada ataque selecionado}
 
-      \item \Given{que estou autenticado}
+     \item \Given{que estou autenticado}
             \And{acedi à interface de histórico de resultados}
-            \When{seleciono um quarto ataque}
+            \When{tento selecionar mais de 3 ataques para comparação lado a lado}
             \Then{o sistema impede a seleção}
             \And{informa que o limite máximo para comparação é de 3 ataques}
   \end{Cenarios}

@@ -10,7 +10,9 @@ from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
 
-load_dotenv()
+# Load .env from workspace root
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
+load_dotenv(dotenv_path)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,55 +22,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-class DatasetRequest(BaseModel):
-    name: str
-    description: str = None
-    metadata: dict = None
 
-@app.post("/dataset")
-async def create_dataset(dataset: DatasetRequest):
-    langfuse = get_client()
-    langfuse.create_dataset(name=dataset.name, description=dataset.description, metadata=dataset.metadata)
-    return {"message": "Dataset created successfully", "name": dataset.name}
-
-@app.get("/dataset/{dataset_name}")
-async def get_dataset(dataset_name: str):
-    host = os.getenv("LANGFUSE_HOST")
-    public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
-    secret_key = os.getenv("LANGFUSE_SECRET_KEY")
-    
-    if not host or not public_key or not secret_key:
-         raise HTTPException(status_code=500, detail="Langfuse configuration missing")
-
-    # Encode the dataset name to handle special characters like slashes
-    encoded_name = quote(dataset_name, safe="")
-    url = f"{host}/api/public/datasets/{encoded_name}"
-    
-    try:
-        response = requests.get(url, auth=(public_key, secret_key))
-        if response.status_code == 404:
-             raise HTTPException(status_code=404, detail="Dataset not found")
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/datasets")
-async def list_datasets():
-    host = os.getenv("LANGFUSE_HOST")
-    public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
-    secret_key = os.getenv("LANGFUSE_SECRET_KEY")
-    
-    if not host or not public_key or not secret_key:
-         raise HTTPException(status_code=500, detail="Langfuse configuration missing")
-
-    url = f"{host}/api/public/datasets"
-    try:
-        response = requests.get(url, auth=(public_key, secret_key))
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 # liveness test, performed on container that depend on this one, do not delete!
 @app.get("/status/alive")
@@ -117,4 +71,31 @@ async def root():
 #     Comment = Base.classes.comments
 #     comments = db.query(Comment).all()
 #     return [{"id": c.id, "post_id": c.post_id, "user_id": c.user_id, "comment_text": c.comment_text} for c in comments]
+
+class CreateDatasetRequest(BaseModel):
+    name: str
+    description: str = None
+    metadata: dict = None
+
+@app.post("/datasets")
+async def create_dataset(request: CreateDatasetRequest):
+    langfuse = get_client()
+    dataset = langfuse.create_dataset(name=request.name, description=request.description, metadata=request.metadata)
+    return dataset
+
+@app.get("/datasets")
+async def get_datasets():
+    langfuse = get_client()
+    return langfuse.api.datasets.list()
+
+@app.get("/datasets/{dataset_name}")
+async def get_dataset(dataset_name: str):
+    langfuse = get_client()
+    # URL-encode the dataset name as per documentation for names with special characters
+    encoded_name = quote(dataset_name, safe="")
+    try:
+        dataset = langfuse.get_dataset(encoded_name)
+        return dataset
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
 

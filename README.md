@@ -5,7 +5,7 @@
 
 - **Relatórios de Tempo**: [reports/README.md](reports/README.md)
 - **Devcontainers**: [.devcontainer/README.md](.devcontainer/README.md)
-- **Integração Langfuse**: [LANGFUSE_INTEGRATION.md](LANGFUSE_INTEGRATION.md) ⭐ **NOVO**
+- **Integração Langfuse**: [LANGFUSE_INTEGRATION.md](LANGFUSE_INTEGRATION.md)
 
 ## Containers
 
@@ -14,10 +14,11 @@
 
 ### Serviços Disponíveis
 - **Backend (FastAPI)**: http://localhost:8000/docs
-- **Langfuse UI**: http://localhost:3000 (tracing de LLMs)
+- **Langfuse UI**: http://localhost:3000
 - **PostgreSQL (App)**: localhost:5432
 - **PostgreSQL (Langfuse)**: localhost:5433
 - **Ollama**: http://localhost:11434
+- **React**: http://localhost:3001
 
 ### Configurar Langfuse (Opcional)
 O Langfuse permite fazer tracing das chamadas aos LLMs. Para ativar:
@@ -48,12 +49,27 @@ Se não quiseres usar Langfuse, deixa `LANGFUSE_ENABLED=false` no `.env`.
     ``` sh
     psql -d postgres_db -U postgres    
     ```
+- Listar tabelas da seed.sql:
+    ``` sql
+        \dt    
+    ```
+- Listar tabelas do langfuse:
+    ``` sql
+        \dt langfuse.*
+    ```
 #### Aceder ao Container do Ollama
 - Duas opções:
     - Aceder através do Docker Desktop ou equivalente.
     - Executar numa linha de comandos externa:
         ``` sh
         docker-compose -f .devcontainer/coding/docker-compose.workspace.yml exec ollama sh
+        ```
+#### Aceder ao Container do Frontend
+- Duas opções:
+    - Aceder através do Docker Desktop ou equivalente.
+    - Executar numa linha de comandos externa:
+        ``` sh
+        docker-compose -f .devcontainer/coding/docker-compose.workspace.yml exec frontend sh
         ```
 
 #### Aceder ao Container do Backend (FastAPI)

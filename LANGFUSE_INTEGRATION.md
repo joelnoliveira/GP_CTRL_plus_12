@@ -30,7 +30,6 @@ Este projeto integra o **Langfuse v2** para tracing e observabilidade de chamada
 | `langfuse-web` | 3000 | Langfuse UI |
 | `ollama` | 11434 | Servidor Ollama (LLMs locais) |
 | `postgres__db` | 5432 | PostgreSQL da aplicação |
-| `langfuse-postgres` | 5433 | PostgreSQL do Langfuse |
 
 ## 🚀 Quick Start
 

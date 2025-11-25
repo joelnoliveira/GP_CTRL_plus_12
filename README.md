@@ -4,7 +4,7 @@
 ## 📚 Documentação
 
 - **Relatórios de Tempo**: [reports/README.md](reports/README.md)
-- **Devcontainers**: [.devcontainer/README.md](.devcontainer/README.md)
+- **AMBIENTE DE DESENVOLVIMENTO VSCODE (DEVCONTAINER)**: [.devcontainer/README.md](.devcontainer/README.md)
 - **Integração Langfuse**: [LANGFUSE_INTEGRATION.md](LANGFUSE_INTEGRATION.md)
 
 ## Containers

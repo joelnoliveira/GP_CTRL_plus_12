@@ -2,18 +2,20 @@ import time
 import uuid
 import requests
 import os
+from dotenv import load_dotenv
 from langfuse import Langfuse
-from config import LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST
+
+load_dotenv()
+
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST")
 
 def test_simple_rw():
     print("🚀 Starting Simple Read/Write Test...")
 
     # 1. Initialize Client
-    langfuse = Langfuse(
-        public_key=LANGFUSE_PUBLIC_KEY,
-        secret_key=LANGFUSE_SECRET_KEY,
-        host=LANGFUSE_HOST
-    )
+    langfuse = Langfuse()
 
     # 2. Create a Trace (Write)
     # In v3 SDK, we use start_span or similar, but let's check if we can create a trace directly.

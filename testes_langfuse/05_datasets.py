@@ -2,18 +2,19 @@
 Test 5: Datasets and Evaluation
 Create test datasets and run evaluations
 """
-from config import *
+import os
+from dotenv import load_dotenv
 from langfuse import Langfuse
 from openai import OpenAI
 
-langfuse = Langfuse(
-    public_key=LANGFUSE_PUBLIC_KEY,
-    secret_key=LANGFUSE_SECRET_KEY,
-    host=LANGFUSE_HOST
-)
+load_dotenv()
+
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
+
+langfuse = Langfuse()
 
 client = OpenAI(
-    base_url=OLLAMA_BASE_URL,
+    base_url=os.getenv("OLLAMA_BASE_URL"),
     api_key='ollama',
 )
 

@@ -2,14 +2,12 @@
 Test 6: Events and Observability
 Log custom events for user actions and system behavior
 """
-from config import *
-from langfuse import Langfuse
 import os
+from dotenv import load_dotenv
+from langfuse import Langfuse
 import time
 
-os.environ["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY
-os.environ["LANGFUSE_SECRET_KEY"] = LANGFUSE_SECRET_KEY
-os.environ["LANGFUSE_HOST"] = LANGFUSE_HOST
+load_dotenv()
 
 langfuse = Langfuse()
 

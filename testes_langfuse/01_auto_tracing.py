@@ -2,10 +2,16 @@
 Test 1: Automatic Tracing
 Langfuse automatically traces all OpenAI SDK calls
 """
-from config import *
+import os
+from dotenv import load_dotenv
 from langfuse import observe, get_client
 from openai import OpenAI
-import os
+
+# Load .env
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
+
+OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL')
 
 # Cliente OpenAI NORMAL (sem wrapper do Langfuse)
 client = OpenAI(

@@ -2,20 +2,19 @@
 Test 2: Manual Tracing
 Create traces manually with custom spans and metadata
 """
-from config import *
+import os
+from dotenv import load_dotenv
 from langfuse import Langfuse
 from openai import OpenAI
-import os
 
-# Set env vars for langfuse
-os.environ["LANGFUSE_PUBLIC_KEY"] = LANGFUSE_PUBLIC_KEY
-os.environ["LANGFUSE_SECRET_KEY"] = LANGFUSE_SECRET_KEY
-os.environ["LANGFUSE_HOST"] = LANGFUSE_HOST
+load_dotenv()
+
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 langfuse = Langfuse()
 
 client = OpenAI(
-    base_url=OLLAMA_BASE_URL,
+    base_url=os.getenv("OLLAMA_BASE_URL"),
     api_key='ollama',
 )
 

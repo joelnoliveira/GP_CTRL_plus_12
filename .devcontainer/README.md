@@ -1,5 +1,5 @@
 # Project with multiple Devcontainers
-This project contains 2 Devcontainers, one for documentation using Texlive and other for coding devolopment. Using devcontainers allows for isolated and consistent development environments, making it easier for all team members to collaborate. 
+This project contains 2 Devcontainers, one for documentation using Texlive and other for coding development. Using devcontainers allows for isolated and consistent development environments, making it easier for all team members to collaborate. 
 
 ## Requirements
 

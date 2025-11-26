@@ -20,23 +20,6 @@
 - **Ollama**: http://localhost:11434
 - **React**: http://localhost:3001
 
-### Configurar Langfuse (Opcional)
-O Langfuse permite fazer tracing das chamadas aos LLMs. Para ativar:
-
-1. Acede a http://localhost:3000
-2. Cria uma conta (primeiro signup = admin)
-3. Cria um projeto
-4. Vai a **Settings** → **API Keys** e cria uma chave
-5. Copia as chaves para `backend/.env`:
-   ```bash
-   LANGFUSE_PUBLIC_KEY=pk-lf-...
-   LANGFUSE_SECRET_KEY=sk-lf-...
-   LANGFUSE_ENABLED=true
-   ```
-6. Reinicia o backend
-
-Se não quiseres usar Langfuse, deixa `LANGFUSE_ENABLED=false` no `.env`.
-
 ### Acesso a Containers
 #### Aceder à Base de Dados
 - Para aceder ao container existem duas opções:
@@ -71,6 +54,13 @@ Se não quiseres usar Langfuse, deixa `LANGFUSE_ENABLED=false` no `.env`.
         ``` sh
         docker-compose -f .devcontainer/coding/docker-compose.workspace.yml exec frontend sh
         ```
+    - Para instalar modelos pré-definidos, executar o script (Bash ou .dat de acordo com o sistema operativo) localizado em [ollama/scripts/](ollama/scripts/) numa consola externa, assumindo que o script tem as permissões necessárias.
+    - Ou instalar modelos sem necessitar dos scripts:
+        ``` sh
+            docker-compose -f .devcontainer/coding/docker-compose.workspace.yml exec ollama sh
+            ollama list
+            ollama pull <modelo>
+        ```
 
 #### Aceder ao Container do Backend (FastAPI)
 - Ao entrar no devcontainer, o terminal embutido do VSCode acede automáticamente ao container do FastAPI.
@@ -84,4 +74,4 @@ Se não quiseres usar Langfuse, deixa `LANGFUSE_ENABLED=false` no `.env`.
 - Após a execução o servidor estará disponível em : http://localhost:8000/docs
 
 ## Scripts de instalação dos modelos no ollama
-- Assumindo que o script tem as permissões necessárias, executar o script (Bash ou .dat de acordo com o sistema operativo) localizado em [ollama/scripts/](ollama/scripts/) numa consola externa.
+- 

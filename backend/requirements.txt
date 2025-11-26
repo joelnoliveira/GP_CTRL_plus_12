@@ -6,5 +6,5 @@ ruff==0.14.3
 fastapi-cli==0.0.16
 fastapi-cloud-cli==0.5.1
 SQLAlchemy==2.0.44
-langfuse>=2.0.0
-openai
+langfuse==3.10.1
+openai==2.8.1

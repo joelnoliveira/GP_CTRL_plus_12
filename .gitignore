@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+*.pytest_cache/
+*.pyc
+node_modules/
+build/
+dist/
+npm-debug.log*
+yarn-error.log*
+.git
+.vscode/
+.history/
+docker-compose.override.yml
+ollama/ollama_data/*

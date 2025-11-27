@@ -9,7 +9,7 @@ from pyrit.orchestrator.single_turn.flip_attack_orchestrator import FlipAttackOr
 from pyrit.score.self_ask_refusal_scorer import SelfAskRefusalScorer
 from pyrit.orchestrator.single_turn.role_play_orchestrator import RolePlayOrchestrator, RolePlayPaths 
 
-def launch_crescendo_attack(
+async def launch_crescendo_attack(
         ollama_host,
         seed=2316,
         temperature_judges=0.1,
@@ -40,13 +40,13 @@ def launch_crescendo_attack(
 
     for result in results:
         await result.print_conversation_async()  # type: ignore
-        # thers an error here lol : data.append(await result.get_data_from_conversation_async())
+        data.append(await result.get_data_from_conversation_async())
 
     ##save variable data to a json file
     with open("gemma3:27b_3.json", "w") as f:
         json.dump(data, f)
 
-def launch_flip_attack(
+async def launch_flip_attack(
         ollama_host,
         seed=2316,
         temperature_judges=0.1,
@@ -76,7 +76,7 @@ def launch_flip_attack(
        json.dump(results, f)
 
 
-def launch_mr_robot_attack(
+async def launch_mr_robot_attack(
         ollama_host,
         seed=2316,
         temperature_judges=0.1,

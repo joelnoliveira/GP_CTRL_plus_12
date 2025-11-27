@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 import json
 import attacks
+from constants import TypesOfAttacks
 
 def load_labels(label: str):
     """
@@ -14,7 +15,7 @@ def load_labels(label: str):
     """
     try:
         file_path = "datasets/" + label + ".json"
-        "datasets/vulnerable_goals.json"
+
         with open(file_path, "r") as f:
             goals = json.load(f)
 
@@ -28,34 +29,27 @@ def load_labels(label: str):
         print(f"Error loading labels: {e}")
 
 
-def launch_attack(attack_option, label="malicious_goals"):
+async def launch_attack(attack_option, label="malicious_goals"):
     load_dotenv()
     attacks_dict = {
-        "CRESCENDO_ATTACK": attacks.launch_crescendo_attack,
-        "FLIP_ATTACK": attacks.launch_flip_attack,
-        "MR_ROBOT_ATTACK": attacks.launch_mr_robot_attack,  
+        TypesOfAttacks.CRESCENDO_ATTACK.value: attacks.launch_crescendo_attack,
+        TypesOfAttacks.FLIP_ATTACK.value: attacks.launch_flip_attack,
+        TypesOfAttacks.MR_ROBOT_ATTACK.value: attacks.launch_mr_robot_attack,  
     }
     if attack_option not in attacks_dict:
         raise ValueError(f"Invalid attack option: {attack_option}")
     
     #if attack_option is ALL_ATTACKS, run all attacks
-    targets = attacks_dict.keys() if attack_option == "ALL_ATTACKS" else [attack_option] 
+    targets = attacks_dict.keys() if attack_option == TypesOfAttacks.ALL_ATTACKS.value else [attack_option] 
 
     for attack in targets:
-        attacks_dict[attack](
+        await attacks_dict[attack](
             ollama_host=os.getenv("OLLAMA_HOST"),
             seed=2316,
             temperature_judges=0.1,
-            attacker_model_name="gemma3:27b",
-            judge_model_name="gemma3:27b",
-            jury_models=["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-            target_model_name="gemma3:27b",
+            attacker_model_name="dolphin3:8b",
+            judge_model_name="dolphin3:8b",
+            jury_models=["dolphin3:8b"],
+            target_model_name="dolphin3:8b",
             goals_list=load_labels(label=label),
         )
-
-
-def main():
-    launch_attack()
-
-if __name__ == "__main__":
-    main()

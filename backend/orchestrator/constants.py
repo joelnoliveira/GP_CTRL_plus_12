@@ -1,0 +1,7 @@
+from enum import Enum
+
+class TypesOfAttacks(Enum):
+    CRESCENDO_ATTACK = "CRESCENDO_ATTACK"
+    FLIP_ATTACK = "FLIP_ATTACK" 
+    MR_ROBOT_ATTACK = "MR_ROBOT_ATTACK"
+    ALL_ATTACKS = "ALL_ATTACKS"

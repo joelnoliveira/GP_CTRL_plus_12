@@ -9,6 +9,9 @@ from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
+from orchestrator import launch_attack
+from orchestrator import constants
+
 
 # Load .env from workspace root
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
@@ -99,3 +102,12 @@ async def get_dataset(dataset_name: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+@app.get("/attack")
+async def get_dataset(dataset_name: str):
+    langfuse = get_client()
+    # URL-encode the dataset name as per documentation for names with special characters
+    encoded_name = quote(dataset_name, safe="")
+    try:
+        await launch_attack(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label="malicious_goals")
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))

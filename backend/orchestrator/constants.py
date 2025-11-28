@@ -5,3 +5,7 @@ class TypesOfAttacks(Enum):
     FLIP_ATTACK = "FLIP_ATTACK" 
     MR_ROBOT_ATTACK = "MR_ROBOT_ATTACK"
     ALL_ATTACKS = "ALL_ATTACKS"
+
+class Goals(Enum):
+    MALICIOUS_GOALS = "malicious_goals"
+    VULNERABLE_GOALS = "vulnerable_goals"

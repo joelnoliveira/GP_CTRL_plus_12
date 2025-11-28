@@ -9,7 +9,7 @@ from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
-from orchestrator import launch_attack, constants
+from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
 
 
 # Load .env from workspace root
@@ -107,7 +107,31 @@ async def get_dataset():
     # URL-encode the dataset name as per documentation for names with special characters
     #encoded_name = quote(dataset_name, safe="")
     try:
-        await launch_attack(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label="malicious_goals")
+        await launch_attack(attack_option=constants.TypesOfAttacks.MR_ROBOT_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value)
+    except Exception as e:
+        error = str(e)
+        error += str(os.listdir("/"))
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.get("/attack-template")
+async def get_dataset():
+    #langfuse = get_client()
+    # URL-encode the dataset name as per documentation for names with special characters
+    #encoded_name = quote(dataset_name, safe="")
+    try:
+        await launch_attack_template(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label=constants.Goals.MALICIOUS_GOALS.value)
+    except Exception as e:
+        error = str(e)
+        error += str(os.listdir("/"))
+        raise HTTPException(status_code=404, detail=str(e))
+    
+@app.get("/over-refusal-test")
+async def get_dataset():
+    #langfuse = get_client()
+    # URL-encode the dataset name as per documentation for names with special characters
+    #encoded_name = quote(dataset_name, safe="")
+    try:
+        await launch_over_refusal_test()
     except Exception as e:
         error = str(e)
         error += str(os.listdir("/"))

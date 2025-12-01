@@ -9,6 +9,7 @@ from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
+from .routers import auth
 
 # Load .env from workspace root
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
@@ -22,7 +23,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
+#Uses auth router
+app.include_router(auth.router)
 
 # liveness test, performed on container that depend on this one, do not delete!
 @app.get("/status/alive")

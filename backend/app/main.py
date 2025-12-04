@@ -101,11 +101,9 @@ async def get_dataset(dataset_name: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+#change to post later to handle the options that we pass on the funciton
 @app.get("/attack")
-async def get_dataset():
-    #langfuse = get_client()
-    # URL-encode the dataset name as per documentation for names with special characters
-    #encoded_name = quote(dataset_name, safe="")
+async def attack():
     try:
         await launch_attack(attack_option=constants.TypesOfAttacks.MR_ROBOT_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value)
     except Exception as e:
@@ -113,11 +111,9 @@ async def get_dataset():
         error += str(os.listdir("/"))
         raise HTTPException(status_code=404, detail=str(e))
 
+#change to post later to handle the options that we pass on the funciton
 @app.get("/attack-template")
-async def get_dataset():
-    #langfuse = get_client()
-    # URL-encode the dataset name as per documentation for names with special characters
-    #encoded_name = quote(dataset_name, safe="")
+async def attack_template():
     try:
         await launch_attack_template(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label=constants.Goals.MALICIOUS_GOALS.value)
     except Exception as e:
@@ -125,11 +121,9 @@ async def get_dataset():
         error += str(os.listdir("/"))
         raise HTTPException(status_code=404, detail=str(e))
     
+#change to post later to handle the options that we pass on the funciton
 @app.get("/over-refusal-test")
-async def get_dataset():
-    #langfuse = get_client()
-    # URL-encode the dataset name as per documentation for names with special characters
-    #encoded_name = quote(dataset_name, safe="")
+async def over_refusal_test():
     try:
         await launch_over_refusal_test()
     except Exception as e:

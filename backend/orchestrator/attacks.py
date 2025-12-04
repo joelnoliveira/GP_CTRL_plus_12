@@ -15,14 +15,21 @@ from pyrit.score import SelfAskRefusalScorer
 from pyrit.models import SeedPromptDataset
 from pyrit.models.prompt_request_response import PromptRequestResponse
 from pyrit.memory.central_memory import CentralMemory
+from constants import DEFAULTS
 
 async def over_refusal_test(
-        ollama_host,
-        seed=2316,
-        temperature_judges=0.1,
-        target_model_name = "llama3.2:1b",
-        jury_models = ["llama3.2:1b", "llama3.2:1b", "llama3.2:1b"],
+        # ollama_host,
+        # seed=2316,
+        # temperature_judges=0.1,
+        # target_model_name = "llama3.2:1b",
+        # jury_models = ["llama3.2:1b", "llama3.2:1b", "llama3.2:1b"],
+        ollama_host, **kwargs
     ):
+    args = {**DEFAULTS, **kwargs}
+    seed = args["seed"]
+    temperature_judges = args["temperature_judges"]
+    target_model_name = args["target_model_name"]
+    jury_models = args["jury_models"]
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         
@@ -94,17 +101,37 @@ async def over_refusal_test(
     except Exception as e:
         print(f"Error in over_refusal_test: {e}")
 
+#we need to change this for each type of attack (just a baseline for the people that will do this later)
+async def launch_attack_template(ollama_host, **kwargs):
+    args = {**DEFAULTS, **kwargs}
+    seed = args["seed"]
+    goals_list = args["goals_list"] if args["goals_list"] is not None else []
+    initialize_pyrit(memory_db_type="InMemory")
 
-async def launch_crescendo_attack(
-        ollama_host,
-        seed=2316,
-        temperature_judges=0.1,
-        attacker_model_name = "gemma3:27b",
-        judge_model_name = "gemma3:27b",
-        jury_models = ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-        target_model_name = "gemma3:27b",
-        goals_list = [],
-    ):
+    #template attack
+    seed_prompt_dataset = SeedPromptDataset.from_yaml_file(pathlib.Path("datasets/JailBreakV_28K_clean.yaml"))
+
+    prompt_list = []
+    goals_dictionary = {}
+
+    #baseline from Donato... it will need to be adapted to our needs
+    for p in seed_prompt_dataset.prompts:
+        for goal in goals_list:
+            full_prompt: str = p.render_template_value(
+                prompt=goal
+            )
+            prompt_list.append(full_prompt)
+            goals_dictionary[full_prompt] = goal
+    #... launch X attack
+
+async def launch_crescendo_attack(ollama_host, **kwargs):
+    args = {**DEFAULTS, **kwargs}
+    seed = args["seed"]
+    attacker_model_name = args["attacker_model_name"]
+    judge_model_name = args["judge_model_name"]
+    target_model_name = args["target_model_name"]
+    goals_list = args["goals_list"] if args["goals_list"] is not None else []
+
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -135,16 +162,14 @@ async def launch_crescendo_attack(
     except Exception as e:
         print(f"Error in launch_crescendo_attack: {e}") 
 
-async def launch_flip_attack(
-        ollama_host,
-        seed=2316,
-        temperature_judges=0.1,
-        attacker_model_name = "gemma3:27b",
-        judge_model_name = "gemma3:27b",
-        jury_models = ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-        target_model_name = "gemma3:27b",
-        goals_list = [],
-    ):
+async def launch_flip_attack(ollama_host, **kwargs):
+    args = {**DEFAULTS, **kwargs}
+    seed = args["seed"]
+    attacker_model_name = args["attacker_model_name"]
+    judge_model_name = args["judge_model_name"]
+    target_model_name = args["target_model_name"]
+    goals_list = args["goals_list"] if args["goals_list"] is not None else []
+
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -163,21 +188,21 @@ async def launch_flip_attack(
 
         results = await orchestrator.send_prompts_async(prompt_list=goals_list, metadata=goals_list) # type: ignore
 
-        with open("flip_attack_results.json", "w") as f:
-            json.dump(results, f)
+        orchestrator.output_conversations_to_json(file_path="results/attacker_llm/malicious/single_turn/role_play/video_game2/gemma3_27b_3.json")
+        # with open("flip_attack_results.json", "w") as f:
+        #     json.dump(results, f)
     except Exception as e:
         print(f"Error in launch_flip_attack: {e}") 
 
-async def launch_mr_robot_attack(
-        ollama_host,
-        seed=2316,
-        temperature_judges=0.1,
-        attacker_model_name = "gemma3:27b",
-        judge_model_name = "gemma3:27b",
-        jury_models = ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-        target_model_name = "gemma3:27b",
-        goals_list = [],
-    ):
+async def launch_mr_robot_attack(ollama_host, **kwargs):
+    args = {**DEFAULTS, **kwargs}
+    seed = args["seed"]
+    attacker_model_name = args["attacker_model_name"]
+    jury_models = args["jury_models"]
+    temperature_judges = args["temperature_judges"]
+    target_model_name = args["target_model_name"]
+    goals_list = args["goals_list"] if args["goals_list"] is not None else []
+
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -209,7 +234,8 @@ async def launch_mr_robot_attack(
         orchestrator = RolePlayOrchestrator(objective_target=objective_target, adversarial_chat=attacker, role_play_definition_path=RolePlayPaths.VIDEO_GAME.value, scorers=[refusal_scorer_jury_1, refusal_scorer_jury_2, refusal_scorer_jury_3], batch_size=1 ,verbose=True)
         print("results:")
         results = await orchestrator.send_as_normalizer_requests_async(goals_list=goals_list) # type: ignore
-        with open("mr_robot_attack_results.json", "w") as f:
-            json.dump(results, f)
+        orchestrator.output_conversations_to_json(file_path="results/attacker_llm/malicious/single_turn/role_play/video_game2/gemma3_27b_3.json")
+        # with open("mr_robot_attack_results.json", "w") as f:
+        #     json.dump(results, f)
     except Exception as e:
         print(f"Error in launch_mr_robot_attack: {e}") 

@@ -15,7 +15,7 @@ from pyrit.score import SelfAskRefusalScorer
 from pyrit.models import SeedPromptDataset
 from pyrit.models.prompt_request_response import PromptRequestResponse
 from pyrit.memory.central_memory import CentralMemory
-from constants import DEFAULTS
+from orchestrator.constants import DEFAULTS
 
 async def over_refusal_test(
         # ollama_host,

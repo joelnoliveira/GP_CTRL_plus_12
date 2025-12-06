@@ -107,8 +107,6 @@ async def attack():
     try:
         await launch_attack(attack_option=constants.TypesOfAttacks.MR_ROBOT_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value)
     except Exception as e:
-        error = str(e)
-        error += str(os.listdir("/"))
         raise HTTPException(status_code=404, detail=str(e))
 
 #change to post later to handle the options that we pass on the funciton
@@ -117,8 +115,6 @@ async def attack_template():
     try:
         await launch_attack_template(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label=constants.Goals.MALICIOUS_GOALS.value)
     except Exception as e:
-        error = str(e)
-        error += str(os.listdir("/"))
         raise HTTPException(status_code=404, detail=str(e))
     
 #change to post later to handle the options that we pass on the funciton
@@ -127,6 +123,4 @@ async def over_refusal_test():
     try:
         await launch_over_refusal_test()
     except Exception as e:
-        error = str(e)
-        error += str(os.listdir("/"))
         raise HTTPException(status_code=404, detail=str(e))

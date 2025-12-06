@@ -9,6 +9,8 @@ from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
+from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
+
 
 # Load .env from workspace root
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
@@ -99,3 +101,26 @@ async def get_dataset(dataset_name: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+#change to post later to handle the options that we pass on the funciton
+@app.get("/attack")
+async def attack():
+    try:
+        await launch_attack(attack_option=constants.TypesOfAttacks.MR_ROBOT_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+#change to post later to handle the options that we pass on the funciton
+@app.get("/attack-template")
+async def attack_template():
+    try:
+        await launch_attack_template(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label=constants.Goals.MALICIOUS_GOALS.value)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    
+#change to post later to handle the options that we pass on the funciton
+@app.get("/over-refusal-test")
+async def over_refusal_test():
+    try:
+        await launch_over_refusal_test()
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))

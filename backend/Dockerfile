@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 ARG USER_NAME="not-admin"
 
@@ -12,13 +12,15 @@ WORKDIR /backend
 RUN adduser --disabled-password --gecos "" $USER_NAME
 
 
-COPY requirements.txt .
-
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml requirements.txt ./
 
 # Copy the current directory contents into the container at /app
 COPY . .
+
+# Install dependencies
+# RUN pip install --no-cache-dir -r requirements.txt && \
+#     pip install --no-cache-dir .
+RUN pip install --no-cache-dir -e .
 
 # Switch to non-root
 USER $USER_NAME

@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "backend-services"
+version = "0.1.0"
+description = "Backend services and orchestration"
+requires-python = ">=3.11"
+readme = "README.md"
+dependencies = [
+    "psycopg2-binary==2.9.10",
+    "fastapi==0.121.3",
+    "uvicorn==0.38.0",
+    "PyJWT==2.10.1",
+    "ruff==0.14.3",
+    "fastapi-cli==0.0.16",
+    "fastapi-cloud-cli==0.5.1",
+    "SQLAlchemy==2.0.44",
+    "langfuse==3.10.1",
+    "openai==2.8.1",
+    "aioconsole",
+    "aiofiles",
+    "appdirs",
+    "art",
+    "azure-cognitiveservices-speech",
+    "azure-core",
+    "azure-identity",
+    "azure-ai-contentsafety",
+    "azure-ai-ml",
+    "azure-storage-blob",
+    "confusables",
+    "confusable-homoglyphs",
+    "datasets",
+    "duckdb",
+    "duckdb-engine",
+    "fpdf2",
+    "httpx[http2]",
+    "jinja2",
+    "numpy>=1.21.0",
+    "pillow",
+    "pydantic",
+    "pyodbc",
+    "pycountry",
+    "python-dotenv",
+    "pypdf",
+    "segno",
+    "scikit-learn",
+    "scipy",
+    "sqlalchemy-stubs",
+    "termcolor==2.4.0",
+    "tenacity",
+    "tqdm",
+    "transformers",
+    "treelib",
+    "types-requests",
+    "websockets",
+    "pandas>=1.5.0",
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+    "jupyter",
+    "ipykernel"
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyter",
+    "ipykernel"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*", "evaluation_service*", "orchestrator*", "pyrit*"]
+namespaces = false

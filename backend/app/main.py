@@ -128,3 +128,7 @@ async def over_refusal_test_endpoint(db: Session = Depends(get_db)):
         error = str(e)
         error += str(os.listdir("/"))
         raise HTTPException(status_code=404, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

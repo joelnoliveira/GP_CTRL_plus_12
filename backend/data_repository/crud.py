@@ -87,6 +87,11 @@ def read_runs_by_user(db: Session, user_id: int) -> List[Dict[str, Any]]:
     return [dict(zip(columns, row)) for row in result.fetchall()]
 
 
+def read_run_by_id(db: Session, run_id: int) -> Optional[Dict[str, Any]]:
+    """Alias for read_run_metric_by_id to match test expectations."""
+    return read_run_metric_by_id(db, run_id)
+
+
 def read_jury_votes(db: Session, run_id: Optional[int] = None) -> List[Dict[str, Any]]:
     """
     Lê os votos do júri. Se run_id for fornecido, filtra por execução.
@@ -585,6 +590,34 @@ def bulk_create_users(db: Session, users: List[Dict[str, Any]]) -> int:
     return created_count
 
 
+def link_run_to_model(db: Session, run_id: int, model_name: int) -> None:
+    """Link a run to a model."""
+    query = text("INSERT INTO runs_metrics_models (runs_metrics_id, models_name) VALUES (:run_id, :model_name)")
+    db.execute(query, {"run_id": run_id, "model_name": model_name})
+    db.commit()
+
+
+def link_user_to_attack_load(db: Session, user_id: int, attack_load_id: int) -> None:
+    """Link a user to an attack load."""
+    query = text("INSERT INTO users_attack_loads (users_id, attack_loads_id) VALUES (:user_id, :attack_load_id)")
+    db.execute(query, {"user_id": user_id, "attack_load_id": attack_load_id})
+    db.commit()
+
+
+def link_user_to_workload_dataset(db: Session, user_id: int, dataset_id: int) -> None:
+    """Link a user to a workload dataset."""
+    query = text("INSERT INTO users_workload_datasets (users_id, workload_datasets_id) VALUES (:user_id, :dataset_id)")
+    db.execute(query, {"user_id": user_id, "dataset_id": dataset_id})
+    db.commit()
+
+
+def link_user_to_scenario(db: Session, user_id: int, scenario_id: int) -> None:
+    """Link a user to a scenario."""
+    query = text("INSERT INTO scenarios_users (users_id, scenarios_id) VALUES (:user_id, :scenario_id)")
+    db.execute(query, {"user_id": user_id, "scenario_id": scenario_id})
+    db.commit()
+
+
 def seed_database(db: Session) -> Dict[str, int]:
     """
     Popula a base de dados com dados de exemplo para testes.
@@ -596,7 +629,14 @@ def seed_database(db: Session) -> Dict[str, int]:
         "users": 0,
         "scenarios": 0,
         "workload_datasets": 0,
-        "attack_loads": 0
+        "attack_loads": 0,
+        "models": 0,
+        "runs_metrics": 0,
+        "jury_votes": 0,
+        "runs_metrics_models": 0,
+        "users_attack_loads": 0,
+        "users_workload_datasets": 0,
+        "scenarios_users": 0
     }
     
     # Criar usuários de exemplo
@@ -606,6 +646,10 @@ def seed_database(db: Session) -> Dict[str, int]:
         {"email": "user2@example.com", "password": "hashed_password_3", "role": False},
     ]
     counts["users"] = bulk_create_users(db, users)
+    
+    # Obter IDs dos usuários criados para uso posterior
+    user_admin = read_user_by_email(db, "admin@example.com")
+    user1 = read_user_by_email(db, "user1@example.com")
     
     # Criar cenários de exemplo
     scenario1 = create_scenario(
@@ -651,6 +695,91 @@ def seed_database(db: Session) -> Dict[str, int]:
     )
     counts["attack_loads"] = 2
     
+    # Criar modelos de exemplo
+    # Nota: A tabela models tem apenas uma coluna 'name' que é BIGINT
+    model1 = create_model(db, name=1001)
+    model2 = create_model(db, name=1002)
+    counts["models"] = 2
+    
+    # Criar métricas de execução (runs)
+    if user_admin:
+        run1 = create_run_metric(
+            db,
+            target_model="gpt-4",
+            attack_model="gpt-3.5-turbo",
+            visibility="public",
+            status="completed",
+            langfuse_trace_id="trace-001",
+            started_at=datetime.now(),
+            ended_at=datetime.now(),
+            metrics_orr=85,
+            metrics_aor=90,
+            metrics_useful_majority=True,
+            metrics_veridict_majority=True,
+            workload_datasets_id=dataset1['id'],
+            attack_loads_id=attack1['id'],
+            scenarios_id=scenario1['id'],
+            users_id=user_admin['id'],
+            metrics_asr=95
+        )
+        
+        run2 = create_run_metric(
+            db,
+            target_model="llama-2",
+            attack_model="gpt-4",
+            visibility="private",
+            status="failed",
+            langfuse_trace_id="trace-002",
+            started_at=datetime.now(),
+            ended_at=datetime.now(),
+            metrics_orr=20,
+            metrics_aor=30,
+            metrics_useful_majority=False,
+            metrics_veridict_majority=False,
+            workload_datasets_id=dataset1['id'],
+            attack_loads_id=attack2['id'],
+            scenarios_id=scenario2['id'],
+            users_id=user_admin['id'],
+            metrics_asr=10
+        )
+        counts["runs_metrics"] = 2
+        
+        # Criar votos do júri para a run1
+        create_jury_vote(
+            db,
+            usefulness=True,
+            model_name="gpt-4-judge",
+            runs_metrics_id=run1['id'],
+            jury_index=1,
+            veridict=True
+        )
+        create_jury_vote(
+            db,
+            usefulness=True,
+            model_name="claude-3-judge",
+            runs_metrics_id=run1['id'],
+            jury_index=2,
+            veridict=True
+        )
+        counts["jury_votes"] = 2
+        
+        # Link runs to models
+        link_run_to_model(db, run1['id'], model1['name'])
+        link_run_to_model(db, run2['id'], model2['name'])
+        counts["runs_metrics_models"] = 2
+        
+        # Link users to attack loads
+        link_user_to_attack_load(db, user_admin['id'], attack1['id'])
+        counts["users_attack_loads"] = 1
+        
+        # Link users to workload datasets
+        link_user_to_workload_dataset(db, user_admin['id'], dataset1['id'])
+        counts["users_workload_datasets"] = 1
+        
+        # Link users to scenarios
+        link_user_to_scenario(db, user_admin['id'], scenario1['id'])
+        counts["scenarios_users"] = 1
+    
     return counts
 
 
@@ -668,7 +797,8 @@ def store_run(
     langfuse_trace_id: Optional[str] = None,
     goals_list: Optional[List[str]] = None,
     config_params: Optional[Dict[str, Any]] = None,
-    results_storage_path: Optional[str] = None
+    results_storage_path: Optional[str] = None,
+    attacker_visibility: str = "standard"
 ) -> Dict[str, Any]:
     """
     Stores complete attack run information to the database atomically.
@@ -692,6 +822,7 @@ def store_run(
         goals_list: List of goals/prompts used (optional)
         config_params: Configuration parameters used (optional)
         results_storage_path: Path where JSON results are stored (optional)
+        attacker_visibility: Visibility of the attack (standard, white_box, black_box)
     
     Returns:
         Dictionary with created run_metric id and details
@@ -740,11 +871,19 @@ def store_run(
         workload_dataset_id = workload_dataset['id']
         
         # 4. Calculate metrics from results
-        metrics_asr = attack_results.get('metrics', {}).get('asr', 0)
-        metrics_orr = attack_results.get('metrics', {}).get('orr', 0)
-        metrics_aor = attack_results.get('metrics', {}).get('aor', 0)
-        metrics_useful_majority = attack_results.get('metrics', {}).get('useful_majority', False)
-        metrics_veridict_majority = attack_results.get('metrics', {}).get('veridict_majority', False)
+        def _ensure_float(val):
+            if isinstance(val, bool):
+                return 1.0 if val else 0.0
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return 0.0
+
+        metrics_asr = _ensure_float(attack_results.get('metrics', {}).get('asr', 0))
+        metrics_orr = _ensure_float(attack_results.get('metrics', {}).get('orr', 0))
+        metrics_aor = _ensure_float(attack_results.get('metrics', {}).get('aor', 0))
+        metrics_useful_majority = _ensure_float(attack_results.get('metrics', {}).get('useful_majority', False))
+        metrics_veridict_majority = _ensure_float(attack_results.get('metrics', {}).get('veridict_majority', False))
         
         # 5. Determine run status
         status = "completed" if metrics_asr > 0 else "completed_no_success"
@@ -754,7 +893,7 @@ def store_run(
             db,
             target_model=target_model,
             attack_model=attack_model,
-            visibility="standard",
+            visibility=attacker_visibility,
             status=status,
             langfuse_trace_id=langfuse_trace_id or f"trace_{started_at.timestamp()}",
             started_at=started_at,

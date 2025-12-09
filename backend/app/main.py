@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 from .models import reflect_tables, Base
+from .database import get_db
 import os
 import requests
 from requests.auth import HTTPBasicAuth
@@ -102,36 +103,27 @@ async def get_dataset(dataset_name: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 @app.get("/attack")
-async def get_dataset():
-    #langfuse = get_client()
-    # URL-encode the dataset name as per documentation for names with special characters
-    #encoded_name = quote(dataset_name, safe="")
+async def attack_endpoint(db: Session = Depends(get_db)):
     try:
-        await launch_attack(attack_option=constants.TypesOfAttacks.MR_ROBOT_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value)
+        await launch_attack(attack_option=constants.TypesOfAttacks.MR_ROBOT_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value, db=db, user_id=1, scenario_id=1)
     except Exception as e:
         error = str(e)
         error += str(os.listdir("/"))
         raise HTTPException(status_code=404, detail=str(e))
 
 @app.get("/attack-template")
-async def get_dataset():
-    #langfuse = get_client()
-    # URL-encode the dataset name as per documentation for names with special characters
-    #encoded_name = quote(dataset_name, safe="")
+async def attack_template_endpoint(db: Session = Depends(get_db)):
     try:
-        await launch_attack_template(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label=constants.Goals.MALICIOUS_GOALS.value)
+        await launch_attack_template(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label=constants.Goals.MALICIOUS_GOALS.value, db=db, user_id=1, scenario_id=1)
     except Exception as e:
         error = str(e)
         error += str(os.listdir("/"))
         raise HTTPException(status_code=404, detail=str(e))
     
 @app.get("/over-refusal-test")
-async def get_dataset():
-    #langfuse = get_client()
-    # URL-encode the dataset name as per documentation for names with special characters
-    #encoded_name = quote(dataset_name, safe="")
+async def over_refusal_test_endpoint(db: Session = Depends(get_db)):
     try:
-        await launch_over_refusal_test()
+        await launch_over_refusal_test(db=db, user_id=1, scenario_id=1)
     except Exception as e:
         error = str(e)
         error += str(os.listdir("/"))

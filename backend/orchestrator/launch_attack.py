@@ -30,7 +30,7 @@ def load_labels(label: str):
         print(f"Error loading labels: {e}")
 
 
-async def launch_attack(attack_option, label="malicious_goals"):
+async def launch_attack(attack_option, label="malicious_goals", db=None, user_id=None, scenario_id=None):
     load_dotenv()
     attacks_dict = {
         TypesOfAttacks.CRESCENDO_ATTACK.value: attacks.launch_crescendo_attack,
@@ -53,10 +53,13 @@ async def launch_attack(attack_option, label="malicious_goals"):
             jury_models=["llama3.2:1b", "llama3.2:1b", "llama3.2:1b"],
             target_model_name="llama3.2:1b",
             goals_list=load_labels(label=label),
+            db=db,
+            user_id=user_id,
+            scenario_id=scenario_id,
         )
 
 
-async def launch_attack_template(attack_option, label=Goals.MALICIOUS_GOALS.value):
+async def launch_attack_template(attack_option, label=Goals.MALICIOUS_GOALS.value, db=None, user_id=None, scenario_id=None):
     load_dotenv()
     #to do: implemente the attack templates in attacks.py and import them here
     attacks_dict = {
@@ -80,9 +83,12 @@ async def launch_attack_template(attack_option, label=Goals.MALICIOUS_GOALS.valu
             jury_models=["llama3.2:1b", "llama3.2:1b", "llama3.2:1b"],
             target_model_name="llama3.2:1b",
             goals_list=load_labels(label=label),
+            db=db,
+            user_id=user_id,
+            scenario_id=scenario_id,
         )
 
-async def launch_over_refusal_test():
+async def launch_over_refusal_test(db=None, user_id=None, scenario_id=None):
     load_dotenv()
     await attacks.over_refusal_test(
         ollama_host=os.getenv("OLLAMA_BASE_URL"),
@@ -90,4 +96,7 @@ async def launch_over_refusal_test():
         temperature_judges=0.1,
         target_model_name = "llama3.2:1b",
         jury_models = ["llama3.2:1b", "llama3.2:1b", "llama3.2:1b"],
+        db=db,
+        user_id=user_id,
+        scenario_id=scenario_id,
     )

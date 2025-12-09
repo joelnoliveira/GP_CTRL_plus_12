@@ -1,5 +1,10 @@
 import json
 import pathlib
+from typing import Optional, List, Dict, Any
+from datetime import datetime
+
+from sqlalchemy.orm import Session
+from data_repository.crud import store_run
 
 from pyrit.common import IN_MEMORY, initialize_pyrit
 from pyrit.orchestrator import CrescendoOrchestrator
@@ -20,10 +25,14 @@ async def over_refusal_test(
         ollama_host,
         seed=2316,
         temperature_judges=0.1,
-        target_model_name = "llama3.2:1b",
-        jury_models = ["llama3.2:1b", "llama3.2:1b", "llama3.2:1b"],
+        target_model_name: str = "llama3.2:1b",
+        jury_models: List[str] = ["llama3.2:1b", "llama3.2:1b", "llama3.2:1b"],
+        db: Optional[Session] = None,
+        user_id: Optional[int] = None,
+        scenario_id: Optional[int] = None,
     ):
     try:
+        started_at = datetime.now()
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         
         initialize_pyrit(memory_db_type="InMemory")
@@ -91,6 +100,36 @@ async def over_refusal_test(
 
         refusal_scores = await refusal_scorer_2.score_responses_inferring_tasks_batch_async(request_responses=responses_flattened, batch_size=1)
 
+        ended_at = datetime.now()
+
+        # persist run if DB and context provided
+        try:
+            data = []
+            for r in responses_flattened:
+                data.append(r)
+
+            attack_results = {
+                "attack_type": "over_refusal_test",
+                "metrics": {},
+                "data": data,
+            }
+
+            if db is not None and user_id is not None and scenario_id is not None:
+                store_run(
+                    db=db,
+                    user_id=user_id,
+                    scenario_id=scenario_id,
+                    target_model=target_model_name,
+                    attack_model=target_model_name,
+                    attack_type="over_refusal_test",
+                    attack_results=attack_results,
+                    jury_votes_data=[],
+                    started_at=started_at,
+                    ended_at=ended_at,
+                )
+        except Exception as _err:
+            print(f"Failed to store over_refusal_test run: {_err}")
+
     except Exception as e:
         print(f"Error in over_refusal_test: {e}")
 
@@ -99,13 +138,17 @@ async def launch_crescendo_attack(
         ollama_host,
         seed=2316,
         temperature_judges=0.1,
-        attacker_model_name = "gemma3:27b",
-        judge_model_name = "gemma3:27b",
-        jury_models = ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-        target_model_name = "gemma3:27b",
-        goals_list = [],
+        attacker_model_name: str = "gemma3:27b",
+        judge_model_name: str = "gemma3:27b",
+        jury_models: List[str] = ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
+        target_model_name: str = "gemma3:27b",
+        goals_list: List[str] = [],
+        db: Optional[Session] = None,
+        user_id: Optional[int] = None,
+        scenario_id: Optional[int] = None,
     ):
     try:
+        started_at = datetime.now()
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
@@ -130,8 +173,31 @@ async def launch_crescendo_attack(
             data.append(await result.get_data_from_conversation_async())
 
         ##save variable data to a json file
-        with open("gemma3:27b_3.json", "w") as f:
+        results_path = f"gemma3:27b_3.json"
+        with open(results_path, "w") as f:
             json.dump(data, f)
+
+        ended_at = datetime.now()
+
+        # attempt to persist run if DB and context provided
+        try:
+            attack_results = {"attack_type": "crescendo", "metrics": {}, "data": data}
+            if db is not None and user_id is not None and scenario_id is not None:
+                store_run(
+                    db=db,
+                    user_id=user_id,
+                    scenario_id=scenario_id,
+                    target_model=target_model_name,
+                    attack_model=attacker_model_name,
+                    attack_type="crescendo",
+                    attack_results=attack_results,
+                    jury_votes_data=[],
+                    started_at=started_at,
+                    ended_at=ended_at,
+                    results_storage_path=results_path,
+                )
+        except Exception as _err:
+            print(f"Failed to store crescendo run: {_err}")
     except Exception as e:
         print(f"Error in launch_crescendo_attack: {e}") 
 
@@ -139,13 +205,17 @@ async def launch_flip_attack(
         ollama_host,
         seed=2316,
         temperature_judges=0.1,
-        attacker_model_name = "gemma3:27b",
-        judge_model_name = "gemma3:27b",
-        jury_models = ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-        target_model_name = "gemma3:27b",
-        goals_list = [],
+        attacker_model_name: str = "gemma3:27b",
+        judge_model_name: str = "gemma3:27b",
+        jury_models: List[str] = ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
+        target_model_name: str = "gemma3:27b",
+        goals_list: List[str] = [],
+        db: Optional[Session] = None,
+        user_id: Optional[int] = None,
+        scenario_id: Optional[int] = None,
     ):
     try:
+        started_at = datetime.now()
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
@@ -163,8 +233,30 @@ async def launch_flip_attack(
 
         results = await orchestrator.send_prompts_async(prompt_list=goals_list, metadata=goals_list) # type: ignore
 
-        with open("flip_attack_results.json", "w") as f:
+        results_path = "flip_attack_results.json"
+        with open(results_path, "w") as f:
             json.dump(results, f)
+
+        ended_at = datetime.now()
+
+        try:
+            attack_results = {"attack_type": "flip", "metrics": {}, "data": results}
+            if db is not None and user_id is not None and scenario_id is not None:
+                store_run(
+                    db=db,
+                    user_id=user_id,
+                    scenario_id=scenario_id,
+                    target_model=target_model_name,
+                    attack_model=attacker_model_name,
+                    attack_type="flip",
+                    attack_results=attack_results,
+                    jury_votes_data=[],
+                    started_at=started_at,
+                    ended_at=ended_at,
+                    results_storage_path=results_path,
+                )
+        except Exception as _err:
+            print(f"Failed to store flip run: {_err}")
     except Exception as e:
         print(f"Error in launch_flip_attack: {e}") 
 
@@ -172,13 +264,17 @@ async def launch_mr_robot_attack(
         ollama_host,
         seed=2316,
         temperature_judges=0.1,
-        attacker_model_name = "gemma3:27b",
-        judge_model_name = "gemma3:27b",
-        jury_models = ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-        target_model_name = "gemma3:27b",
-        goals_list = [],
+        attacker_model_name: str = "gemma3:27b",
+        judge_model_name: str = "gemma3:27b",
+        jury_models: List[str] = ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
+        target_model_name: str = "gemma3:27b",
+        goals_list: List[str] = [],
+        db: Optional[Session] = None,
+        user_id: Optional[int] = None,
+        scenario_id: Optional[int] = None,
     ):
     try:
+        started_at = datetime.now()
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
@@ -209,7 +305,29 @@ async def launch_mr_robot_attack(
         orchestrator = RolePlayOrchestrator(objective_target=objective_target, adversarial_chat=attacker, role_play_definition_path=RolePlayPaths.VIDEO_GAME.value, scorers=[refusal_scorer_jury_1, refusal_scorer_jury_2, refusal_scorer_jury_3], batch_size=1 ,verbose=True)
         print("results:")
         results = await orchestrator.send_as_normalizer_requests_async(goals_list=goals_list) # type: ignore
-        with open("mr_robot_attack_results.json", "w") as f:
+        results_path = "mr_robot_attack_results.json"
+        with open(results_path, "w") as f:
             json.dump(results, f)
+
+        ended_at = datetime.now()
+
+        try:
+            attack_results = {"attack_type": "mr_robot", "metrics": {}, "data": results}
+            if db is not None and user_id is not None and scenario_id is not None:
+                store_run(
+                    db=db,
+                    user_id=user_id,
+                    scenario_id=scenario_id,
+                    target_model=target_model_name,
+                    attack_model=attacker_model_name,
+                    attack_type="mr_robot",
+                    attack_results=attack_results,
+                    jury_votes_data=[],
+                    started_at=started_at,
+                    ended_at=ended_at,
+                    results_storage_path=results_path,
+                )
+        except Exception as _err:
+            print(f"Failed to store mr_robot run: {_err}")
     except Exception as e:
         print(f"Error in launch_mr_robot_attack: {e}") 

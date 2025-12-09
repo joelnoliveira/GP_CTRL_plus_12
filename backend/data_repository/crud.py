@@ -625,7 +625,7 @@ def seed_database(db: Session) -> Dict[str, int]:
         db,
         name="Sample Dataset 1",
         description="Dataset de exemplo com prompts maliciosos",
-        storage_path="/datasets/sample1.json",
+        storage_path="./datasets/sample1.json",
         mime_path="application/json",
         scenarios_id=scenario1['id'],
         is_builtin=True
@@ -638,7 +638,7 @@ def seed_database(db: Session) -> Dict[str, int]:
         name="CRESCENDO Attack",
         description="Ataque gradual de escalação",
         type="crescendo",
-        storage_path="/attacks/crescendo.yaml",
+        storage_path="./attacks/crescendo.yaml",
         is_builtin=True
     )
     attack2 = create_attack_load(
@@ -646,10 +646,159 @@ def seed_database(db: Session) -> Dict[str, int]:
         name="MR Robot Attack",
         description="Ataque baseado em personagem",
         type="mr_robot",
-        storage_path="/attacks/mr_robot.yaml",
+        storage_path="./attacks/mr_robot.yaml",
         is_builtin=True
     )
     counts["attack_loads"] = 2
     
     return counts
+
+
+def store_run(
+    db: Session,
+    user_id: int,
+    scenario_id: int,
+    target_model: str,
+    attack_model: str,
+    attack_type: str,
+    attack_results: Dict[str, Any],
+    jury_votes_data: List[Dict[str, Any]],
+    started_at: datetime,
+    ended_at: datetime,
+    langfuse_trace_id: Optional[str] = None,
+    goals_list: Optional[List[str]] = None,
+    config_params: Optional[Dict[str, Any]] = None,
+    results_storage_path: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Stores complete attack run information to the database atomically.
+    Saves configuration, results, artifacts, and jury votes.
+    
+    All database writes are atomic: either all succeed and commit, or all fail and rollback.
+    
+    Args:
+        db: Database session
+        user_id: User who initiated the attack
+        scenario_id: Scenario ID
+        target_model: Target model name
+        attack_model: Attack model name
+        attack_type: Type of attack (crescendo, flip, mr_robot)
+        attack_results: Dictionary with results data (to be saved to JSON file)
+        jury_votes_data: List of jury votes with format: 
+                        [{"jury_index": 0, "model_name": "model1", "usefulness": True, "veridict": True}, ...]
+        started_at: Attack start time
+        ended_at: Attack end time
+        langfuse_trace_id: Langfuse trace ID (optional)
+        goals_list: List of goals/prompts used (optional)
+        config_params: Configuration parameters used (optional)
+        results_storage_path: Path where JSON results are stored (optional)
+    
+    Returns:
+        Dictionary with created run_metric id and details
+    
+    Raises:
+        Exception: If any database operation fails (all writes rolled back)
+    """
+    import json
+    from pathlib import Path
+    
+    # Begin explicit transaction
+    try:
+        # 1. Save results JSON to filesystem if not already saved
+        if results_storage_path is None:
+            results_dir = "./datasets"
+            Path(results_dir).mkdir(parents=True, exist_ok=True)
+            timestamp = started_at.strftime("%Y%m%d_%H%M%S")
+            results_storage_path = f"{results_dir}/{attack_type}_{timestamp}.json"
+            
+            with open(results_storage_path, "w") as f:
+                json.dump(attack_results, f, indent=2)
+        
+        # 2. Create attack load (contains artifacts/configuration)
+        attack_load = create_attack_load(
+            db,
+            name=f"{attack_type}_{started_at.strftime('%Y%m%d_%H%M%S')}",
+            description=f"{attack_type.upper()} attack configuration and results",
+            type=attack_type,
+            storage_path=results_storage_path,
+            is_builtin=False,
+            created_at=started_at
+        )
+        attack_load_id = attack_load['id']
+        
+        # 3. Create workload dataset (contains goals/prompts)
+        workload_dataset = create_workload_dataset(
+            db,
+            name=f"goals_{attack_type}_{started_at.strftime('%Y%m%d_%H%M%S')}",
+            description=f"Attack goals/prompts for {attack_type}",
+            storage_path=results_storage_path,
+            mime_path="application/json",
+            scenarios_id=scenario_id,
+            is_builtin=False,
+            created_at=started_at
+        )
+        workload_dataset_id = workload_dataset['id']
+        
+        # 4. Calculate metrics from results
+        metrics_asr = attack_results.get('metrics', {}).get('asr', 0)
+        metrics_orr = attack_results.get('metrics', {}).get('orr', 0)
+        metrics_aor = attack_results.get('metrics', {}).get('aor', 0)
+        metrics_useful_majority = attack_results.get('metrics', {}).get('useful_majority', False)
+        metrics_veridict_majority = attack_results.get('metrics', {}).get('veridict_majority', False)
+        
+        # 5. Determine run status
+        status = "completed" if metrics_asr > 0 else "completed_no_success"
+        
+        # 6. Create run metric (main record with configuration + results)
+        run_metric = create_run_metric(
+            db,
+            target_model=target_model,
+            attack_model=attack_model,
+            visibility="standard",
+            status=status,
+            langfuse_trace_id=langfuse_trace_id or f"trace_{started_at.timestamp()}",
+            started_at=started_at,
+            ended_at=ended_at,
+            metrics_asr=metrics_asr,
+            metrics_orr=metrics_orr,
+            metrics_aor=metrics_aor,
+            metrics_useful_majority=metrics_useful_majority,
+            metrics_veridict_majority=metrics_veridict_majority,
+            workload_datasets_id=workload_dataset_id,
+            attack_loads_id=attack_load_id,
+            scenarios_id=scenario_id,
+            users_id=user_id
+        )
+        run_id = run_metric['id']
+        
+        # 7. Store jury votes
+        for vote_data in jury_votes_data:
+            create_jury_vote(
+                db,
+                usefulness=vote_data.get('usefulness', False),
+                model_name=vote_data.get('model_name', 'unknown'),
+                runs_metrics_id=run_id,
+                jury_index=vote_data.get('jury_index'),
+                veridict=vote_data.get('veridict'),
+                created_at=vote_data.get('created_at', datetime.now())
+            )
+        
+        # 8. Explicit commit of transaction
+        db.commit()
+        
+        # 9. Return complete run information
+        return {
+            "run_id": run_id,
+            "run_metric": run_metric,
+            "attack_load_id": attack_load_id,
+            "workload_dataset_id": workload_dataset_id,
+            "results_path": results_storage_path,
+            "status": status,
+            "message": f"Run {run_id} stored successfully"
+        }
+        
+    except Exception as e:
+        # Rollback entire transaction on any error
+        db.rollback()
+        raise Exception(f"Error storing attack run (all DB writes rolled back): {str(e)}")
 

@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 export default function Navbar() {
   return (
     <div className="flex items-center justify-between px-8 py-2 bg-red-300">
-      <img src="/logo_GP.png" className="w-24 h-24" alt="Logo" />
+	  <Link to="/">
+      	<img src="/logo_GP.png" className="w-24 h-24" alt="Logo" />
+	  </Link>
 
       <div className="flex items-center space-x-6">
         <Link to="/register">

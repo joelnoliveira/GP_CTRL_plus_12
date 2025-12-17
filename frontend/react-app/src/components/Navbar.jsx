@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import Logo from "../components/Logo.jsx";
 import Button from "../components/Button.jsx"
-
 import "../styles/components/navbar.css"
 
 export default function Navbar() {

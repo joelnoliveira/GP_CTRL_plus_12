@@ -1,0 +1,7 @@
+.menu{
+    @apply h-dvh w-[15%] flex flex-col items-start gap-7 bg-black pl-6 py-4;
+}
+
+.menu__h2{
+    @apply text-white text-3xl mb-4 font-bold;
+}

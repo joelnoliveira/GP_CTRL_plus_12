@@ -1,0 +1,7 @@
+.menu-item{
+    @apply flex items-center text-white px-4 py-2 hover:font-bold hover:text-xl cursor-pointer;
+}
+
+.menu-item--active{
+    @apply underline font-bold text-2xl;
+}

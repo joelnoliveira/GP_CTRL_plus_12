@@ -1,11 +1,11 @@
-.icon--small{
-    @apply w-3 h-3;
+.arrow_icon--small{
+    @apply w-3 h-3 hover:cursor-pointer;
 }
 
-.icon--medium{
-    @apply w-5 h-5;
+.arrow_icon--medium{
+    @apply w-5 h-5 hover:cursor-pointer;
 }
 
-.icon--large{
-    @apply w-7 h-7;
+.arrow_icon--large{
+    @apply w-7 h-7 hover:cursor-pointer;
 }

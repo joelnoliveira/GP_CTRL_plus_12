@@ -16,11 +16,11 @@ const ArrowIcon = ({
 
   const icon_size =
     size === "small"
-      ? "icon--small"
+      ? "arrow_icon--small"
       : size === "medium"
-      ? "icon--medium"
+      ? "arrow_icon--medium"
       : size === "large"
-      ? "icon--large"
+      ? "arrow_icon--large"
       : ""
 
   return (

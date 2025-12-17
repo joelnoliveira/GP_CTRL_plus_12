@@ -1,11 +1,8 @@
 import { Link } from "react-router-dom";
 
 import Button from "../components/Button.jsx"
-import ArrowUp from "../components/ArrowIcon.jsx"
-
 
 import "../styles/pages/home.css"
-import ArrowIcon from "../components/ArrowIcon.jsx";
 
 export default function Home() {
   return (

@@ -2,17 +2,18 @@ import React from 'react'
 
 import Menu from '../components/Menu'
 
-const CompareResults = (
+const History = (
 ) => {
   return (
     <div className="w-full h-full flex justify-start items-center">
       <Menu 
-        currentPage={"Compare Results"}
+        currentPage={"History"}
       />
 
-      <p className="text-4xl">Comparar Resultados</p>
+      
+      <p className="text-4xl">Histórico</p>
     </div>
   )
 }
 
-export default CompareResults
+export default History

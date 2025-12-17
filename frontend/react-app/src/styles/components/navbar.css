@@ -1,0 +1,7 @@
+.navbar{
+    @apply flex items-center justify-between px-8 py-2 bg-red-300;
+}
+
+.navbar__btn-container{
+    @apply flex items-center space-x-6;
+}

@@ -1,0 +1,11 @@
+.icon--small{
+    @apply w-3 h-3;
+}
+
+.icon--medium{
+    @apply w-5 h-5;
+}
+
+.icon--large{
+    @apply w-7 h-7;
+}

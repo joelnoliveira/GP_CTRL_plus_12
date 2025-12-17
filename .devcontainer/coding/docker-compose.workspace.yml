@@ -213,9 +213,14 @@ services:
   frontend:
     build: ../../frontend
     container_name: react__ui
-    # volumes:
+    volumes:
+      - ../../frontend/react-app/:/react-app
+      - /react-app/node_modules
       # - ../frontend/react-app/:/react-app/
     # command: tail -f /dev/null
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     command: npm start
     user: root
     ports:

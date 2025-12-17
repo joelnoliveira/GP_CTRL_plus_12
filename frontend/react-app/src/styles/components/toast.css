@@ -1,0 +1,35 @@
+.toast{
+    @apply absolute top-4 right-4 z-50 pl-5 pr-20 pt-7 pb-8 rounded-md shadow-lg bg-black;
+}
+
+.toast__x{
+    @apply absolute top-3 right-3 text-white cursor-pointer;
+}
+
+.toast__content-wrapper{
+    @apply flex flex-col gap-1;
+}
+
+.toast__header{
+    @apply flex items-center justify-start gap-3 mb-2;
+}
+
+.toast__header__text{
+    @apply font-bold text-white text-xl;
+}
+
+.toast__message{
+    @apply text-white text-sm ml-10;
+}
+
+.toast__footer-line{
+    @apply absolute left-0 bottom-0 w-full h-1 rounded-b-md;
+}
+
+.toast__footer-line--error{
+    @apply bg-red-500;
+}
+
+.toast__footer-line--caution{
+    @apply bg-yellow-400;
+}

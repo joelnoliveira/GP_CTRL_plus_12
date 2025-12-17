@@ -1,26 +1,50 @@
 import React, { useState } from "react";
-import TextField from "../components/TextField";
+import Toast from "../components/Toast";
+//import TextField from "../components/TextField";
+import Label from "../components/Label";
 
 const Demo = () => {
-  const [value, setValue] = useState("");
+  //const [value, setValue] = useState("");
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 p-40">
-      {/* Default */}
+    <div className="relative flex flex-col items-center justify-center gap-4 p-40">
+      <Toast
+        icon_size="large"
+        type="error"
+        message="This is an error message."
+      />
+
+      <Toast
+        icon_size="large"
+        type="caution"
+        message="This is a caution message."
+      />
+
+      <Label
+        size="small"
+        text="This is a small label."
+      />
+
+      <Label
+        size="medium"
+        text="This is a medium label."
+      />
+
+      {/* Default 
       <TextField
         label="Placeholder"
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
 
-      {/* Active (auto focus) */}
+      {/* Active (auto focus) 
       <TextField
         label="Placeholder"
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
 
-      {/* Required */}
+      {/* Required
       <TextField
         label="Required"
         required
@@ -28,7 +52,7 @@ const Demo = () => {
         onChange={(e) => setValue(e.target.value)}
       />
 
-      {/* Error */}
+      {/* Error
       <TextField
         label="Error"
         value={value}
@@ -36,11 +60,11 @@ const Demo = () => {
         error="Error"
       />
 
-      {/* Disabled */}
+      {/* Disabled 
       <TextField
         label="Placeholder"
         disabled
-      />
+      />*/}
     </div>
   );
 };

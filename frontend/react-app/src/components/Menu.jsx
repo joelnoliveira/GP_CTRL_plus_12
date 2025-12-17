@@ -25,15 +25,18 @@ const Menu = ({
         <div className="menu">
             <h2 className="menu__h2">Menu</h2>
 
-            {menuItemsList.map((item, index) => (
-                <MenuItem 
-                    key={index}
-                    text={item.text}
-                    itemSelected={itemSelected}
-                    handleItemSelected={handleItemSelected}
-                    page={item.link_to}
-                />
-            ))}
+            <div className="menu__item-list">
+                {menuItemsList.map((item, index) => (
+                    <MenuItem 
+                        key={index}
+                        text={item.text}
+                        itemSelected={itemSelected}
+                        handleItemSelected={handleItemSelected}
+                        page={item.link_to}
+                    />
+                ))}
+            </div>
+            
         </div>
     )
 }

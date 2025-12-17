@@ -5,3 +5,7 @@
 .logo--medium{
     @apply w-24 h-24;
 }
+
+.logo--large{
+    @apply w-64 h-64;
+}

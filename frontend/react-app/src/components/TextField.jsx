@@ -1,9 +1,12 @@
 import React from "react";
 
+import "../styles/components/text_field.css";
+
 const TextField = ({
   label = "Placeholder",
   value,
   onChange,
+  onBlur,
   required = false,
   error = "",
   disabled = false,
@@ -12,22 +15,21 @@ const TextField = ({
   const hasValue = value && value.length > 0;
 
   return (
-    <div className="w-full relative">
-      {/* Input */}
+    <div className="textfield__wrapper">
       <input
         type={type}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         disabled={disabled}
         placeholder=" "
         className={`
-          peer w-full rounded-xl px-4 pt-5 pb-2 text-base
-          border transition-all duration-200 outline-none
+          textfield__input peer
           
           ${disabled
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
+            ? "textfield__input--disabled"
             : error
-            ? "border-red-500 border-2 focus:border-red-600"
+            ? "textfield__input--error"
             : "border-red-400 focus:border-red-500"
           }
 
@@ -35,25 +37,21 @@ const TextField = ({
         `}
       />
 
-      {/* Floating label */}
       <label
         className={`
-          absolute left-4 top-4 text-gray-400 pointer-events-none
-          transition-all duration-200
+          textfield__label 
+          peer-focus:-top-2 peer-focus:text-sm peer-focus:bg-white peer-focus:px-1
+          ${hasValue ? "textfield__label--hasValue" : ""}
 
-          peer-focus:-top-2 peer-focus:text-xs peer-focus:bg-white peer-focus:px-1
-          ${hasValue ? "-top-2 text-xs bg-white px-1" : ""}
-
-          ${error ? "text-red-500 font-bold" : ""}
-          ${disabled ? "text-gray-400" : ""}
+          ${error ? "textfield__label--error" : ""}
+          ${disabled ? "textfield__label--disabled" : ""}
         `}
       >
-        {label} {required && <span className="text-red-500">*</span>}
+        {label} {required && <span className="textfield__label--required">*</span>}
       </label>
 
-      {/* Error message */}
       {error && (
-        <p className="mt-1 text-sm text-red-500 font-bold pl-4 pt-1">
+        <p className="textfield__error-message">
           {error}
         </p>
       )}

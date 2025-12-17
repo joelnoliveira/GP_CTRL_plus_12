@@ -1,0 +1,19 @@
+.login-page__wrapper{
+    @apply flex flex-col justify-center items-center w-full h-full;
+}
+
+.login-page{
+    @apply flex flex-col justify-start items-center gap-16 py-12 w-screen h-screen;
+}
+
+.login__form{
+    @apply flex flex-col items-center justify-center w-1/2 max-w-md;
+}
+
+.login__signin-paragraph{
+    @apply text-gray-500 text-xs cursor-pointer;
+}
+
+.sign-__text{
+    @apply font-bold underline;
+}

@@ -1,17 +1,113 @@
+import { React, useState } from "react";
 import { Link } from "react-router-dom";
+import FormWrapper from "../components/FormWrapper";
+import TextField from "../components/TextField";
+import Button from "../components/Button.jsx"
+import Logo from "../components/Logo";
+
+import "../styles/pages/login.css";
 
 export default function Login() {
-  return (
-	<div>
-		<div
-        className="absolute left-0 bottom-0 w-2/5 h-3/5 bg-red-200 -z-2"
-        style={{ clipPath: "polygon(0% 100%, 0% 0%, 100% 100%)" }}
-		></div>
-		<div className="flex py-12 justify-center w-screen h-screen">
-			<Link to="/">
-				<img src="/logo_GP.png" className="w-64 h-64" alt="Logo" />
-			</Link>
+
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [errors, setErrors] = useState({});
+	const [touched, setTouched] = useState({});
+
+	const validateInputs = () => {
+		const newErrors = {};
+
+		if(!email) {
+			newErrors.email = "Email is required";
+		}else if (!/\S+@\S+\.\S+/.test(email)) {
+			newErrors.email = "Invalid email format";
+		}
+
+		if(!password) {
+			newErrors.password = "Password is required";
+		}else if (password.length < 6) {
+			newErrors.password = "Password must be at least 6 characters";
+		}
+
+		return newErrors;
+		};
+
+	const handleSubmit = (e) => {
+		e.preventDefault();
+
+		setTouched({
+			email: true,
+			password: true,
+		});
+
+		const validationErrors = validateInputs();
+		setErrors(validationErrors);
+
+		if (Object.keys(validationErrors).length > 0) return;
+
+		const payload = {
+		email,
+		password,
+		};
+
+		console.log("Login payload:", payload);
+
+		// call API 
+	};
+
+	return (
+		<div className="login-page__wrapper">
+			<div
+			className="absolute left-0 bottom-0 w-2/5 h-3/5 bg-red-200 -z-2"
+			style={{ clipPath: "polygon(0% 100%, 0% 0%, 100% 100%)" }}
+			></div>
+			<div className="login-page">
+				<Link to="/">
+					<Logo 
+						size="large" 
+					/>
+				</Link>
+
+				<div className="login__form">
+					<FormWrapper onSubmit={handleSubmit}>
+						<TextField
+							label="Email"
+							type="email"
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+							onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+							placeholder="you@example.com"
+							name="email"
+							required={true}
+							error={touched.email && errors.email}
+							/>
+
+						<TextField
+							label="Password"
+							type="password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+							placeholder="••••••••"
+							name="password"
+							required={true}
+							error={touched.password && errors.password}
+							/>
+
+						<Button
+							type="submit"
+							variant="default"
+							size="large"
+							text="Login"
+							styles="w-full"
+						/>
+					</FormWrapper>
+				</div>
+
+				<Link to="/register">
+					<p className="login__signin-paragraph">If you do not have an account, <span className="underline font-bold">sign up here</span>.</p>
+				</Link>
+			</div>
 		</div>
-	</div>
-  );
+	);
 }

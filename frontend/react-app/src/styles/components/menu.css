@@ -1,5 +1,5 @@
 .menu{
-    @apply h-dvh w-[15%] flex flex-col items-start gap-7 bg-black pl-6 py-4;
+    @apply h-dvh w-[20%] flex flex-col items-start gap-1 bg-black pl-6 pt-8;
 }
 
 .menu__h2{

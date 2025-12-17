@@ -21,6 +21,15 @@ export default function Home() {
       </p>
 
       <div className="flex space-x-6">
+
+    <Link to="/demo">
+      <Button 
+        size={"small"}
+        variant={"default"}
+        text={"Demo"}
+        styles={"text-lg"}
+      />
+		</Link>
 		<Link to="/run_experiment">
       <Button 
         size={"small"}

@@ -1,5 +1,5 @@
 .menu-item{
-    @apply flex items-center text-white px-4 py-2 hover:font-bold hover:text-xl cursor-pointer;
+    @apply flex items-center text-white px-4 py-2 min-h-[3rem];
 }
 
 .menu-item--active{

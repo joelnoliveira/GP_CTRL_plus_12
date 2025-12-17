@@ -14,7 +14,7 @@ const MenuItem = (
   return (
     <Link to={page}>
         <div 
-            className={`menu-item ${itemSelected === text ? 'menu-item--active' : ''}`} 
+            className={`menu-item ${itemSelected === text ? 'menu-item--active' : 'hover:font-bold hover:text-xl cursor-pointer'}`} 
             onClick={() => handleItemSelected(text)}
         >
             {text}

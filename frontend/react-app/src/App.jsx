@@ -8,6 +8,7 @@ import Register from "./pages/Register";
 import CompareResults from "./pages/CompareResults";
 import RunExperiments from "./pages/RunExperiment";
 import History from "./pages/History";
+import Demo from "./pages/Demo";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/run_experiment" element={<RunExperiments />} />
           <Route path="/compare" element={<CompareResults />} />
           <Route path="/history" element={<History />} />
+          <Route path="/demo" element={<Demo />} />
         </Route>
 		<Route element={<LoginRegisterLayout />}>
           <Route path="/login" element={<Login />} />

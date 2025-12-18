@@ -25,8 +25,8 @@ export default function Login() {
 
 		if(!password) {
 			newErrors.password = "Password is required";
-		}else if (password.length < 6) {
-			newErrors.password = "Password must be at least 6 characters";
+		}else if (password.length < 8) {
+			newErrors.password = "Password must be at least 8 characters";
 		}
 
 		return newErrors;
@@ -68,7 +68,7 @@ export default function Login() {
 					/>
 				</Link>
 
-				<div className="login__form">
+				<div className="login__form relative z-0">
 					<FormWrapper onSubmit={handleSubmit}>
 						<TextField
 							label="Email"
@@ -105,7 +105,7 @@ export default function Login() {
 				</div>
 
 				<Link to="/register">
-					<p className="login__signin-paragraph">If you do not have an account, <span className="underline font-bold">sign up here</span>.</p>
+					<p className="login__signin-paragraph relative z-0">If you do not have an account - <span className="underline font-bold relative z-0">Create an account!</span>.</p>
 				</Link>
 			</div>
 		</div>

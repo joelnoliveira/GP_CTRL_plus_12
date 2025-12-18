@@ -113,7 +113,7 @@ async def attack():
 @app.get("/attack-template")
 async def attack_template():
     try:
-        await launch_attack_template(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label=constants.Goals.MALICIOUS_GOALS.value)
+        await launch_attack_template(label=constants.Goals.MALICIOUS_GOALS.value)
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
     

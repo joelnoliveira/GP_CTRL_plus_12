@@ -1,0 +1,19 @@
+.progress-bar__container{
+    @apply w-full max-w-sm;
+}
+
+.progress-bar__label-div{
+    @apply mb-1 ml-4;
+}
+
+.progress-bar__outter-div{
+    @apply relative h-8 w-full rounded-full border border-black border-2 bg-white overflow-hidden p-1;
+}
+
+.progress-bar__inner-div{
+    @apply h-full rounded-full bg-gradient-to-r from-red-800 via-red-600 to-red-400 transition-all duration-300;
+}
+
+.progress-bar__value{
+    @apply absolute right-3 top-1/2 -translate-y-1/2 font-bold text-black;
+}

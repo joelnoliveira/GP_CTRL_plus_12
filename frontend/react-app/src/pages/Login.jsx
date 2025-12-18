@@ -1,4 +1,4 @@
-import { React, useState } from "react";
+import { React, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import FormWrapper from "../components/FormWrapper";
@@ -17,8 +17,15 @@ export default function Login() {
 	const [touched, setTouched] = useState({});
 	const [toastConfig, setToastConfig] = useState(null);
 
-	const { login } = useAuth(); // From your AuthContext
+	const { isLoggedIn, login } = useAuth(); // From your AuthContext
 	const navigate = useNavigate();
+
+	useEffect(() => {
+	console.log("Login sees isLoggedIn:", isLoggedIn);
+	if (isLoggedIn) {
+		navigate("/");
+	}
+	}, [isLoggedIn, navigate]);
 
 	const validateInputs = () => {
 		const newErrors = {};
@@ -92,7 +99,6 @@ export default function Login() {
 			
 			console.log("Login success:", data);
 			login(data.token); // Pass the token/user data to your auth context
-			navigate("/");
 
 		} catch (err) {
 			console.error("API Error:", err.message);

@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
 import Logo from "../components/Logo.jsx";
 import Button from "../components/Button.jsx"
 import UserIcon from "../components/UserIcon.jsx"
 import "../styles/components/navbar.css"
 
+
 export default function Navbar(
-  {
-    isLoggedIn = false,
-  }
 ) {
+  const { isLoggedIn } = useAuth();
   return (
     <div className="navbar">
       <Link to="/">

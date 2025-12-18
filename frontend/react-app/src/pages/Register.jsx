@@ -37,7 +37,7 @@ export default function Register() {
 			newErrors.confirm_password = "Password confirmation is required";
 		}else if (confirm_password.length < 8) {
 			newErrors.confirm_password = "Password confirmation must be at least 8 characters";
-		}else if (password!=confirm_password){
+		}else if (password!==confirm_password){
 			newErrors.confirm_password = "Passwords do not match";
 			newErrors.password = "Passwords do not match";
 		}

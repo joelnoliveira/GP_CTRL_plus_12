@@ -1,8 +1,9 @@
 import { React, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
 import FormWrapper from "../components/FormWrapper";
 import TextField from "../components/TextField";
-import Button from "../components/Button.jsx"
+import Button from "../components/Button";
 import Logo from "../components/Logo";
 
 import "../styles/pages/login.css";
@@ -13,6 +14,9 @@ export default function Login() {
 	const [password, setPassword] = useState("");
 	const [errors, setErrors] = useState({});
 	const [touched, setTouched] = useState({});
+
+	const { login } = useAuth(); // From your AuthContext
+	const navigate = useNavigate();
 
 	const validateInputs = () => {
 		const newErrors = {};
@@ -53,6 +57,13 @@ export default function Login() {
 		console.log("Login payload:", payload);
 
 		// call API 
+
+		const success = true; // Replace with actual API logic
+
+		if (success) {
+			login();
+			navigate("/");
+		}
 	};
 
 	return (

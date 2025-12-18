@@ -224,7 +224,7 @@ services:
     command: npm start
     user: root
     ports:
-      - "3001:3000" # use 3001 since 3000 is being used by langfuse webui
+      - "3001:3001" # use 3001 since 3000 is being used by langfuse webui
     restart: unless-stopped
     depends_on:
       - backend

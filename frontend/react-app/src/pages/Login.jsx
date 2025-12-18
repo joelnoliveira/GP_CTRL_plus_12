@@ -5,6 +5,7 @@ import FormWrapper from "../components/FormWrapper";
 import TextField from "../components/TextField";
 import Button from "../components/Button";
 import Logo from "../components/Logo";
+import Toast from "../components/Toast";
 
 import "../styles/pages/login.css";
 
@@ -14,6 +15,7 @@ export default function Login() {
 	const [password, setPassword] = useState("");
 	const [errors, setErrors] = useState({});
 	const [touched, setTouched] = useState({});
+	const [toastConfig, setToastConfig] = useState(null);
 
 	const { login } = useAuth(); // From your AuthContext
 	const navigate = useNavigate();
@@ -36,7 +38,22 @@ export default function Login() {
 		return newErrors;
 		};
 
-	const handleSubmit = (e) => {
+	const processErrors = (error_message) => {
+		const newErrors = {};
+
+		if(error_message==="Database tables not reflected yet"){
+			newErrors.showToast = { type: "error", message: "Internal Error." };
+		} else if(error_message==="Invalid credentials"){
+			newErrors.email = "Invalid credentials"
+			newErrors.password = "Invalid credentials"
+		} else{
+			newErrors.showToast = { type: "error", message: "Login Error." };
+		}
+			
+		return newErrors;
+		};
+
+	const handleSubmit = async (e) => {
 		e.preventDefault();
 
 		setTouched({
@@ -50,24 +67,55 @@ export default function Login() {
 		if (Object.keys(validationErrors).length > 0) return;
 
 		const payload = {
-		email,
-		password,
+		'email': email,
+		'password': password,
 		};
 
 		console.log("Login payload:", payload);
 
-		// call API 
 
-		const success = true; // Replace with actual API logic
+		try {
+			const response = await fetch("http://localhost:8000/auth/login", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(payload),
+			});
 
-		if (success) {
-			login();
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.detail || "Login failed");
+			}
+
+			const data = await response.json();
+			
+			console.log("Login success:", data);
+			login(data.token); // Pass the token/user data to your auth context
 			navigate("/");
+
+		} catch (err) {
+			console.error("API Error:", err.message);
+			const backendErrors = processErrors(err.message);
+			if (backendErrors.showToast) {
+				setToastConfig(backendErrors.showToast);
+				setTimeout(() => setToastConfig(null), 3000);
+			}
+			setErrors(backendErrors);
 		}
 	};
 
 	return (
 		<div className="login-page__wrapper">
+			{/* Only render if toastConfig is not null */}
+			{toastConfig && (
+				<Toast
+					icon_size="large"
+					type={toastConfig.type}
+					message={toastConfig.message}
+					onClose={() => setToastConfig(null)} 
+				/>
+			)}
 			<div
 			className="absolute left-0 bottom-0 w-2/5 h-3/5 bg-red-200 -z-2"
 			style={{ clipPath: "polygon(0% 100%, 0% 0%, 100% 100%)" }}

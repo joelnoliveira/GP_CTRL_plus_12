@@ -9,6 +9,7 @@ from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
+from .routers import auth
 from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
 
 
@@ -24,7 +25,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
+#Uses auth router
+app.include_router(auth.router)
 
 # liveness test, performed on container that depend on this one, do not delete!
 @app.get("/status/alive")

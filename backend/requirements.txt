@@ -8,6 +8,8 @@ fastapi-cloud-cli==0.5.1
 SQLAlchemy==2.0.44
 langfuse==3.10.1
 openai==2.8.1
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 aioconsole
 aiofiles
 appdirs

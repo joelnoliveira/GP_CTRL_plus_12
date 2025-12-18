@@ -7,6 +7,8 @@ import ToggleSwitch from "../components/ToggleSwitch";
 
 import RunCard from "../components/RunCard";
 
+import DropdownMenu from "../components/DropdownMenu";
+
 const Demo = () => {
   //const [value, setValue] = useState("");
   const [progress, setProgress] = useState(0);
@@ -64,6 +66,8 @@ const Demo = () => {
         attack_model={"gemma-2-2b-it"}
         target_model={"gemma-2-2b-it"}
       />
+
+      <DropdownMenu />
 
       {/* Default 
       <TextField

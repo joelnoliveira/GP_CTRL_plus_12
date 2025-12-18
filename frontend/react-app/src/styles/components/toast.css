@@ -1,5 +1,9 @@
 .toast{
     @apply absolute top-4 right-4 z-50 pl-5 pr-20 pt-7 pb-8 rounded-md shadow-lg bg-black;
+
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .toast__x{
@@ -32,4 +36,9 @@
 
 .toast__footer-line--caution{
     @apply bg-yellow-400;
+}
+
+.toast--closing {
+  opacity: 0;
+  transform: translateX(-20px); /* moves left while fading out */
 }

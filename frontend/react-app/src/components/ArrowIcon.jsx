@@ -12,7 +12,9 @@ const ArrowIcon = ({
   const icon_source =
     variant === "arrow_up"
       ? arrowUp
-      : arrowDown
+      : variant == "arrow_down"
+      ? arrowDown
+      : arrowUp
 
   const icon_size =
     size === "small"

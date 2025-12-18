@@ -6,10 +6,11 @@ const Label = (
     {
         size = "small",
         text,
+        styles,
     }
 ) => {
   return (
-    <p className={`label--${size}`}>
+    <p className={`label--${size} ${styles}`}>
       {text}
     </p>
   )

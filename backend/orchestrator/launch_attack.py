@@ -36,7 +36,7 @@ async def launch_attack(attack_option, label="malicious_goals"):
     attacks_dict = {
         TypesOfAttacks.CRESCENDO_ATTACK.value: attacks.launch_crescendo_attack,
         TypesOfAttacks.FLIP_ATTACK.value: attacks.launch_flip_attack,
-        TypesOfAttacks.MR_ROBOT_ATTACK.value: attacks.launch_role_play_attack,  
+        TypesOfAttacks.ROLE_PLAY_ATTACK.value: attacks.launch_role_play_attack,  
     }
     if attack_option not in attacks_dict:
         raise ValueError(f"Invalid attack option: {attack_option}")
@@ -53,6 +53,7 @@ async def launch_attack(attack_option, label="malicious_goals"):
             judge_model_name="llama3.2:1b",
             jury_models=["llama3.2:1b", "llama3.2:1b", "llama3.2:1b"],
             target_model_name="llama3.2:1b",
+            goals_list=load_labels(label=label),
             role_play_option=RolePlayPaths.MR_ROBOT.value,
         )
 

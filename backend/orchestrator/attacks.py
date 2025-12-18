@@ -100,7 +100,7 @@ async def over_refusal_test(
         refusal_scores = await refusal_scorer_2.score_responses_inferring_tasks_batch_async(request_responses=responses_flattened, batch_size=1)
 
     except Exception as e:
-        print(f"Error in over_refusal_test: {e}")
+        raise Exception(f"Error in over_refusal_test: {e}")
 
 #we need to change this for each type of attack (just a baseline for the people that will do this later)
 async def launch_attack_template(ollama_host, **kwargs):
@@ -113,6 +113,7 @@ async def launch_attack_template(ollama_host, **kwargs):
     target_model_name = args["target_model_name"]
     
     try:
+        ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type="InMemory")
 
         #template attack
@@ -130,7 +131,7 @@ async def launch_attack_template(ollama_host, **kwargs):
                 prompt_list.append(full_prompt)
                 goals_dictionary[full_prompt] = goal
         
-        initialize_pyrit(memory_db_type="InMemory")
+
         memory = CentralMemory.get_memory_instance()
         memory_labels = {"op_name": label, "user_name": "jd"}
 
@@ -176,7 +177,6 @@ async def launch_attack_template(ollama_host, **kwargs):
         responses = await prompt_sending_orchestrator.send_normalizer_requests_async(prompt_request_list=requests, memory_labels=memory_labels) #type: ignore
         #await prompt_sending_orchestrator.print_conversations_async()  # type: ignore
         prompt_sending_orchestrator.output_conversations_to_json(file_path="gemma3:27b_final.json")
-
         #score responses
         responses_flattened = PromptRequestResponse.flatten_to_prompt_request_pieces(responses)
 
@@ -189,7 +189,9 @@ async def launch_attack_template(ollama_host, **kwargs):
         refusal_scores = await refusal_scorer_2.score_responses_inferring_tasks_batch_async(request_responses=responses_flattened, batch_size=1)
 
     except Exception as e:
-        print(f"Error in launch_attack_template: {e}")
+        import traceback
+        traceback.print_exc()
+        raise Exception(f"Error in launch_attack_template: {e}")
 
 async def launch_crescendo_attack(ollama_host, **kwargs):
     args = {**DEFAULTS, **kwargs}
@@ -227,7 +229,7 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         with open("gemma3:27b_3.json", "w") as f:
             json.dump(data, f)
     except Exception as e:
-        print(f"Error in launch_crescendo_attack: {e}") 
+        raise Exception(f"Error in launch_crescendo_attack: {e}") 
 
 async def launch_flip_attack(ollama_host, **kwargs):
     args = {**DEFAULTS, **kwargs}
@@ -307,4 +309,4 @@ async def launch_role_play_attack(ollama_host, **kwargs):
         # with open("mr_robot_attack_results.json", "w") as f:
         #     json.dump(results, f)
     except Exception as e:
-        print(f"Error in launch_mr_robot_attack: {e}") 
+        raise Exception(f"Error in launch_mr_robot_attack: {e}") 

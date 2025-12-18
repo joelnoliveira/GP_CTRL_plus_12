@@ -105,7 +105,7 @@ async def get_dataset(dataset_name: str):
 @app.get("/attack")
 async def attack():
     try:
-        await launch_attack(attack_option=constants.TypesOfAttacks.MR_ROBOT_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value)
+        await launch_attack(attack_option=constants.TypesOfAttacks.ROLE_PLAY_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value)
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 

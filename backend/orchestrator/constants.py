@@ -3,7 +3,7 @@ from enum import Enum
 class TypesOfAttacks(Enum):
     CRESCENDO_ATTACK = "CRESCENDO_ATTACK"
     FLIP_ATTACK = "FLIP_ATTACK" 
-    MR_ROBOT_ATTACK = "MR_ROBOT_ATTACK"
+    ROLE_PLAY_ATTACK = "ROLE_PLAY_ATTACK"
     ALL_ATTACKS = "ALL_ATTACKS"
 
 class Goals(Enum):

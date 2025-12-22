@@ -1,5 +1,6 @@
 import json
 import pathlib
+import uuid
 
 from pyrit.common import IN_MEMORY, initialize_pyrit
 from pyrit.orchestrator import CrescendoOrchestrator
@@ -89,8 +90,8 @@ async def over_refusal_test(
 
         #score responses
         responses_flattened = PromptRequestResponse.flatten_to_prompt_request_pieces(responses)
-
-        judge_2 = OllamaChatTarget(model_name="deepseek-r1:70b", endpoint=ollama_host + "/api/chat", max_requests_per_minute=10, timeout=100)
+        #deepseek-r1:70b
+        judge_2 = OllamaChatTarget(model_name="llama3.2:1b", endpoint=ollama_host + "/api/chat", max_requests_per_minute=10, timeout=100)
 
         refusal_scorer_2 = SelfAskRefusalScorer(
             chat_target=judge_2,
@@ -99,30 +100,98 @@ async def over_refusal_test(
         refusal_scores = await refusal_scorer_2.score_responses_inferring_tasks_batch_async(request_responses=responses_flattened, batch_size=1)
 
     except Exception as e:
-        print(f"Error in over_refusal_test: {e}")
+        raise Exception(f"Error in over_refusal_test: {e}")
 
 #we need to change this for each type of attack (just a baseline for the people that will do this later)
 async def launch_attack_template(ollama_host, **kwargs):
     args = {**DEFAULTS, **kwargs}
     seed = args["seed"]
     goals_list = args["goals_list"] if args["goals_list"] is not None else []
-    initialize_pyrit(memory_db_type="InMemory")
+    label = args["label"]
+    jury_models = args["jury_models"]
+    temperature_judges = args["temperature_judges"]
+    target_model_name = args["target_model_name"]
+    
+    try:
+        ollama_host = ollama_host.rstrip('/').replace('/v1', '')
+        initialize_pyrit(memory_db_type="InMemory")
 
-    #template attack
-    seed_prompt_dataset = SeedPromptDataset.from_yaml_file(pathlib.Path("datasets/JailBreakV_28K_clean.yaml"))
+        #template attack
+        seed_prompt_dataset = SeedPromptDataset.from_yaml_file(pathlib.Path("datasets/JailBreakV_28K_clean.yaml"))
 
-    prompt_list = []
-    goals_dictionary = {}
+        prompt_list = []
+        goals_dictionary = {}
 
-    #baseline from Donato... it will need to be adapted to our needs
-    for p in seed_prompt_dataset.prompts:
-        for goal in goals_list:
-            full_prompt: str = p.render_template_value(
-                prompt=goal
-            )
-            prompt_list.append(full_prompt)
-            goals_dictionary[full_prompt] = goal
-    #... launch X attack
+        #baseline from Donato... it will need to be adapted to our needs
+        for p in seed_prompt_dataset.prompts:
+            for goal in goals_list:
+                full_prompt: str = p.render_template_value(
+                    prompt=goal
+                )
+                prompt_list.append(full_prompt)
+                goals_dictionary[full_prompt] = goal
+        
+
+        memory = CentralMemory.get_memory_instance()
+        memory_labels = {"op_name": label, "user_name": "jd"}
+
+
+        target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed})
+
+        jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_judges})
+        jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
+        jury_3 = OllamaChatTarget(model_name=jury_models[2], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
+
+        refusal_scorer_jury_1 = SelfAskRefusalScorer(
+            chat_target=jury_1,
+            system_prompt_path=pathlib.Path("pyrit/datasets/score/refusal/refusal_to_generate_code.yaml")
+        )
+
+        refusal_scorer_jury_2 = SelfAskRefusalScorer(
+            chat_target=jury_2,
+            system_prompt_path=pathlib.Path("pyrit/datasets/score/refusal/refusal_to_generate_code.yaml")
+        )
+
+        refusal_scorer_jury_3 = SelfAskRefusalScorer(
+            chat_target=jury_3,
+            system_prompt_path=pathlib.Path("pyrit/datasets/score/refusal/refusal_to_generate_code.yaml")
+        )
+
+        prompt_sending_orchestrator=  PromptSendingOrchestrator(target, scorers=[refusal_scorer_jury_1, refusal_scorer_jury_2, refusal_scorer_jury_3], verbose=True, batch_size=3)
+
+
+        requests: list[NormalizerRequest] = []
+        for prompt in prompt_list:
+            requests.append(
+                prompt_sending_orchestrator._create_normalizer_request(
+                prompt_text=prompt,
+                prompt_type="text",
+                converters=prompt_sending_orchestrator._prompt_converters,
+                metadata={"task": goals_dictionary[prompt]},
+                conversation_id=str(uuid.uuid4()),
+        )
+        )
+
+        requests = requests[900:]
+        #requests = requests[1000:]
+        responses = await prompt_sending_orchestrator.send_normalizer_requests_async(prompt_request_list=requests, memory_labels=memory_labels) #type: ignore
+        #await prompt_sending_orchestrator.print_conversations_async()  # type: ignore
+        prompt_sending_orchestrator.output_conversations_to_json(file_path="gemma3:27b_final.json")
+        #score responses
+        responses_flattened = PromptRequestResponse.flatten_to_prompt_request_pieces(responses)
+
+        judge_2 = OllamaChatTarget(model_name="llama3.2:1b", endpoint=ollama_host + "/api/chat", max_requests_per_minute=10, timeout=100)
+
+        refusal_scorer_2 = SelfAskRefusalScorer(
+            chat_target=judge_2,
+        )
+
+        refusal_scores = await refusal_scorer_2.score_responses_inferring_tasks_batch_async(request_responses=responses_flattened, batch_size=1)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise Exception(f"Error in launch_attack_template: {e}")
 
 async def launch_crescendo_attack(ollama_host, **kwargs):
     args = {**DEFAULTS, **kwargs}
@@ -160,7 +229,7 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         with open("gemma3:27b_3.json", "w") as f:
             json.dump(data, f)
     except Exception as e:
-        print(f"Error in launch_crescendo_attack: {e}") 
+        raise Exception(f"Error in launch_crescendo_attack: {e}") 
 
 async def launch_flip_attack(ollama_host, **kwargs):
     args = {**DEFAULTS, **kwargs}
@@ -194,7 +263,7 @@ async def launch_flip_attack(ollama_host, **kwargs):
     except Exception as e:
         print(f"Error in launch_flip_attack: {e}") 
 
-async def launch_mr_robot_attack(ollama_host, **kwargs):
+async def launch_role_play_attack(ollama_host, **kwargs):
     args = {**DEFAULTS, **kwargs}
     seed = args["seed"]
     attacker_model_name = args["attacker_model_name"]
@@ -202,7 +271,7 @@ async def launch_mr_robot_attack(ollama_host, **kwargs):
     temperature_judges = args["temperature_judges"]
     target_model_name = args["target_model_name"]
     goals_list = args["goals_list"] if args["goals_list"] is not None else []
-
+    role_play_option = args.get("role_play_option", RolePlayPaths.MR_ROBOT.value)
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -231,11 +300,13 @@ async def launch_mr_robot_attack(ollama_host, **kwargs):
         )
 
         #orchestrator = RolePlayOrchestrator(objective_target=objective_target, adversarial_chat=attacker, role_play_definition_path=RolePlayPaths.MR_ROBOT.value, scorers=[refusal_scorer_jury_1, refusal_scorer_jury_2, refusal_scorer_jury_3], batch_size=1 ,verbose=True)
-        orchestrator = RolePlayOrchestrator(objective_target=objective_target, adversarial_chat=attacker, role_play_definition_path=RolePlayPaths.VIDEO_GAME.value, scorers=[refusal_scorer_jury_1, refusal_scorer_jury_2, refusal_scorer_jury_3], batch_size=1 ,verbose=True)
+        #orchestrator = RolePlayOrchestrator(objective_target=objective_target, adversarial_chat=attacker, role_play_definition_path=RolePlayPaths.VIDEO_GAME.value, scorers=[refusal_scorer_jury_1, refusal_scorer_jury_2, refusal_scorer_jury_3], batch_size=1 ,verbose=True)
+        orchestrator = RolePlayOrchestrator(objective_target=objective_target, adversarial_chat=attacker, role_play_definition_path=role_play_option, scorers=[refusal_scorer_jury_1, refusal_scorer_jury_2, refusal_scorer_jury_3], batch_size=1 ,verbose=True)
+
         print("results:")
         results = await orchestrator.send_as_normalizer_requests_async(goals_list=goals_list) # type: ignore
         orchestrator.output_conversations_to_json(file_path="results/attacker_llm/malicious/single_turn/role_play/video_game2/gemma3_27b_3.json")
         # with open("mr_robot_attack_results.json", "w") as f:
         #     json.dump(results, f)
     except Exception as e:
-        print(f"Error in launch_mr_robot_attack: {e}") 
+        raise Exception(f"Error in launch_mr_robot_attack: {e}") 

@@ -18,7 +18,7 @@ from pyrit.models.prompt_request_response import PromptRequestResponse
 from pyrit.memory.central_memory import CentralMemory
 from orchestrator.constants import DEFAULTS
 
-from evaluation_service.run_metrics import get_run_metrics
+from evaluation_service.run_metrics import get_run_metrics, get_run_metrics_crescendo
 async def over_refusal_test(
         # ollama_host,
         # seed=2316,
@@ -217,8 +217,13 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
             await result.print_conversation_async()  # type: ignore
             data.append(await result.get_data_from_conversation_async())
 
+        orchestrator.output_conversations_to_json(file_path="debug_results/crescendo_atk_test.json")
+
+        metrics = get_run_metrics_crescendo(data)
+        print(f"[DEBUG] metrics: {metrics}")
+
         ##save variable data to a json file
-        with open("gemma3:27b_3.json", "w") as f:
+        with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
             json.dump(data, f)
     except Exception as e:
         raise Exception(f"Error in launch_crescendo_attack: {e}") 

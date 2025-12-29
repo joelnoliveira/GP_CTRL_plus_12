@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 from .models import reflect_tables, Base
+from .schemas import AttackRequest, AttackTemplateRequest, OverRefusalTestRequest
 import os
 import requests
 from requests.auth import HTTPBasicAuth
@@ -103,26 +104,47 @@ async def get_dataset(dataset_name: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-#change to post later to handle the options that we pass on the funciton
-@app.get("/attack")
-async def attack():
+@app.post("/attack")
+async def attack(request: AttackRequest):
     try:
-        await launch_attack(attack_option=constants.TypesOfAttacks.ROLE_PLAY_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value)
+        await launch_attack(
+            attack_option=request.attack_option.value,
+            label=request.label.value,
+            seed=request.seed,
+            temperature_judges=request.temperature_judges,
+            target_model_name=request.target_model_name,
+            attacker_model_name=request.attacker_model_name,
+            judge_model_name=request.judge_model_name,
+            jury_models=request.jury_models,
+            role_play_option=request.role_play_option.value if request.role_play_option else None,
+        )
+        return {"status": "success", "message": "Attack completed"}
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
-#change to post later to handle the options that we pass on the funciton
-@app.get("/attack-template")
-async def attack_template():
+@app.post("/attack-template")
+async def attack_template(request: AttackTemplateRequest):
     try:
-        await launch_attack_template(label=constants.Goals.MALICIOUS_GOALS.value)
+        await launch_attack_template(
+            label=request.label.value,
+            seed=request.seed,
+            temperature_judges=request.temperature_judges,
+            target_model_name=request.target_model_name,
+            jury_models=request.jury_models,
+        )
+        return {"status": "success", "message": "Attack template completed"}
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
     
-#change to post later to handle the options that we pass on the funciton
-@app.get("/over-refusal-test")
-async def over_refusal_test():
+@app.post("/over-refusal-test")
+async def over_refusal_test(request: OverRefusalTestRequest):
     try:
-        await launch_over_refusal_test()
+        await launch_over_refusal_test(
+            seed=request.seed,
+            temperature_judges=request.temperature_judges,
+            target_model_name=request.target_model_name,
+            jury_models=request.jury_models,
+        )
+        return {"status": "success", "message": "Over-refusal test completed"}
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,5 +1,6 @@
 import json
 import pathlib
+import httpx
 import uuid
 
 from pyrit.common import IN_MEMORY, initialize_pyrit
@@ -275,6 +276,26 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
+
+        required_models = [target_model_name, attacker_model_name, args["judge_model_name"], *jury_models]
+        required_models = [m for m in required_models if m]
+
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            tags_url = f"{ollama_host}/api/tags"
+            resp = await client.get(tags_url)
+            resp.raise_for_status()
+            installed = {m.get("name") for m in resp.json().get("models", []) if isinstance(m, dict)}
+
+        missing = [m for m in required_models if m not in installed]
+        if missing:
+            raise ValueError(
+                "Ollama is missing required models: "
+                + ", ".join(missing)
+                + ". Install them in the ollama container (example): "
+                + "docker-compose -f .devcontainer/coding/docker-compose.workspace.yml exec ollama ollama pull <model>"
+                + ". Current installed models: "
+                + (", ".join(sorted(installed)) if installed else "<none>")
+            )
 
         objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed})
         attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=2000, options={'seed': seed})

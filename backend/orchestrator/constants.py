@@ -1,14 +1,18 @@
 from enum import Enum
 
-class TypesOfAttacks(Enum):
+class TypesOfAttacks(str, Enum):
     CRESCENDO_ATTACK = "CRESCENDO_ATTACK"
     FLIP_ATTACK = "FLIP_ATTACK" 
     ROLE_PLAY_ATTACK = "ROLE_PLAY_ATTACK"
     ALL_ATTACKS = "ALL_ATTACKS"
 
-class Goals(Enum):
+class Goals(str, Enum):
     MALICIOUS_GOALS = "malicious_goals"
     VULNERABLE_GOALS = "vulnerable_goals"
+
+class RolePlayOption(str, Enum):
+    MR_ROBOT = "MR_ROBOT"
+    VIDEO_GAME = "VIDEO_GAME"
 
 DEFAULTS = dict(
     seed=2316,

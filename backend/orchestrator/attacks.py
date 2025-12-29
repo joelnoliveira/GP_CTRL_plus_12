@@ -3,6 +3,7 @@ import pathlib
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
+from sklearn import metrics
 from sqlalchemy.orm import Session
 from data_repository.crud import store_run
 
@@ -103,14 +104,15 @@ async def over_refusal_test(
         ended_at = datetime.now()
 
         # persist run if DB and context provided
+        metrics = {}
         try:
             data = []
             for r in responses_flattened:
                 data.append(r)
-
+    
             attack_results = {
                 "attack_type": "over_refusal_test",
-                "metrics": {},
+                "metrics": metrics,
                 "data": data,
             }
 
@@ -180,8 +182,9 @@ async def launch_crescendo_attack(
         ended_at = datetime.now()
 
         # attempt to persist run if DB and context provided
+        metrics = {}
         try:
-            attack_results = {"attack_type": "crescendo", "metrics": {}, "data": data}
+            attack_results = {"attack_type": "crescendo", "metrics": metrics, "data": data}
             if db is not None and user_id is not None and scenario_id is not None:
                 store_run(
                     db=db,
@@ -238,9 +241,9 @@ async def launch_flip_attack(
             json.dump(results, f)
 
         ended_at = datetime.now()
-
+        metrics = {}
         try:
-            attack_results = {"attack_type": "flip", "metrics": {}, "data": results}
+            attack_results = {"attack_type": "flip", "metrics": metrics, "data": results}
             if db is not None and user_id is not None and scenario_id is not None:
                 store_run(
                     db=db,
@@ -311,8 +314,9 @@ async def launch_mr_robot_attack(
 
         ended_at = datetime.now()
 
+        metrics = {}
         try:
-            attack_results = {"attack_type": "mr_robot", "metrics": {}, "data": results}
+            attack_results = {"attack_type": "mr_robot", "metrics": metrics, "data": results}
             if db is not None and user_id is not None and scenario_id is not None:
                 store_run(
                     db=db,

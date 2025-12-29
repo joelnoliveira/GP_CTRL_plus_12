@@ -14,3 +14,5 @@ yarn-error.log*
 .history/
 docker-compose.override.yml
 ollama/ollama_data/*
+backend/data_repository/scripts/*
+backend/data_repository/README.md

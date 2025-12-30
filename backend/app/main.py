@@ -119,6 +119,7 @@ async def attack(request: AttackRequest):
             judge_model_name=request.judge_model_name,
             jury_models=request.jury_models,
             role_play_option=request.role_play_option.value if request.role_play_option else None,
+            goals_file_name=request.goals_file_name,
         )
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:

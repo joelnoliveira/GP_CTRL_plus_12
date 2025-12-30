@@ -18,6 +18,7 @@ class AttackRequest(BaseModel):
     jury_models: list[str] = Field(default=["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"], description="List of 3 jury models")
     role_play_option: Optional[RolePlayOption] = Field(default=RolePlayOption.MR_ROBOT, description="Role play scenario (only for ROLE_PLAY_ATTACK)")
     config_file_name: Optional[str] = Field(default=None, description="Name of a custom configuration file to use")
+    goals_file_name: Optional[str] = Field(default=None, description="Name of an uploaded file containing custom goals")
 
     model_config = {
         "json_schema_extra": {
@@ -33,7 +34,8 @@ class AttackRequest(BaseModel):
                     "attacker_model_name": "gemma3:27b",
                     "judge_model_name": "gemma3:27b",
                     "jury_models": ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-                    "role_play_option": "MR_ROBOT"
+                    "role_play_option": "MR_ROBOT",
+                    "goals_file_name": "custom_goals_20241230.json"
                 }
             ]
         }

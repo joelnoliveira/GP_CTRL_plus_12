@@ -5,14 +5,52 @@ from ..models import Base
 from ..schemas import UserLogin, Token, UserCreate, UserResponse
 from ..security import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash, get_current_user
 from datetime import timedelta, datetime
+import os
+import requests
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
 
+RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
+RECAPTCHA_SECRET_KEY = os.environ.get("REACT_APP_RECAPTCHA_SECRET_KEY")
+
+
+def verify_recaptcha(token: str):
+    if not RECAPTCHA_SECRET_KEY:
+        raise HTTPException(
+            status_code=500, 
+            detail="reCAPTCHA secret key is not configured in environment variables"
+        )
+    
+    payload = {
+        "secret": RECAPTCHA_SECRET_KEY,
+        "response": token
+    }
+    
+    try:
+        response = requests.post(RECAPTCHA_VERIFY_URL, params=payload)
+        response.raise_for_status()
+        result = response.json()
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Could not connect to reCAPTCHA service"
+        )
+        
+    if not result.get("success"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid reCAPTCHA. {result.get('error-codes')}"
+        )
+    
+    return True
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    verify_recaptcha(user_data.captcha_token)
+
     if not hasattr(Base.classes, 'users'):
          raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database tables not reflected yet")
     
@@ -43,6 +81,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
+    verify_recaptcha(user_credentials.captcha_token)
+
     if not hasattr(Base.classes, 'users'):
          raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database tables not reflected yet")
     

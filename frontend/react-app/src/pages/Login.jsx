@@ -1,6 +1,7 @@
-import { React, useState, useEffect } from "react";
+import { React, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
+import ReCAPTCHA from "react-google-recaptcha";
 import FormWrapper from "../components/FormWrapper";
 import TextField from "../components/TextField";
 import Button from "../components/Button";
@@ -16,6 +17,8 @@ export default function Login() {
 	const [errors, setErrors] = useState({});
 	const [touched, setTouched] = useState({});
 	const [toastConfig, setToastConfig] = useState(null);
+
+	const recaptchaRef = useRef();
 
 	const { isLoggedIn, login } = useAuth(); // From your AuthContext
 	const navigate = useNavigate();
@@ -63,10 +66,18 @@ export default function Login() {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
+		const captchaToken = recaptchaRef.current.getValue();
+
 		setTouched({
 			email: true,
 			password: true,
 		});
+
+		if (!captchaToken) {
+            setToastConfig({ type: "error", message: "Please complete the reCAPTCHA" });
+            setTimeout(() => setToastConfig(null), 3000);
+            return;
+        }
 
 		const validationErrors = validateInputs();
 		setErrors(validationErrors);
@@ -76,9 +87,10 @@ export default function Login() {
 		const payload = {
 		'email': email,
 		'password': password,
+		'captcha_token': captchaToken,
 		};
 
-		console.log("Login payload:", payload);
+		// console.log("Login payload:", payload);
 
 
 		try {
@@ -91,13 +103,15 @@ export default function Login() {
 			});
 
 			if (!response.ok) {
+				recaptchaRef.current.reset();
 				const errorData = await response.json();
 				throw new Error(errorData.detail || "Login failed");
 			}
 
 			const data = await response.json();
 			
-			console.log("Login success:", data);
+			// console.log("Login success:", data);
+			console.log("Login success");
 			login(data.token); // Pass the token/user data to your auth context
 
 		} catch (err) {
@@ -158,6 +172,13 @@ export default function Login() {
 							required={true}
 							error={touched.password && errors.password}
 							/>
+
+						<div className="recaptcha-container" style={{ marginBottom: "1rem" }}>
+                            <ReCAPTCHA
+                                sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+                                ref={recaptchaRef}
+                            />
+                        </div>
 
 						<Button
 							type="submit"

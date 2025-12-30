@@ -1,5 +1,6 @@
-import { React, useState } from "react";
+import { React, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 import FormWrapper from "../components/FormWrapper";
 import TextField from "../components/TextField";
 import Button from "../components/Button.jsx"
@@ -13,6 +14,8 @@ export default function Register() {
 	const [errors, setErrors] = useState({});
 	const [touched, setTouched] = useState({});
 	const [toastConfig, setToastConfig] = useState(null);
+
+	const recaptchaRef = useRef();
 
 	const navigate = useNavigate();
 
@@ -60,11 +63,19 @@ export default function Register() {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
+		const captchaToken = recaptchaRef.current.getValue();
+
 		setTouched({
 			email: true,
 			password: true,
 			confirm_password: true,
 		});
+
+		if (!captchaToken) {
+            setToastConfig({ type: "error", message: "Please complete the reCAPTCHA" });
+            setTimeout(() => setToastConfig(null), 3000);
+            return;
+        }
 
 		const validationErrors = validateInputs();
 		setErrors(validationErrors);
@@ -74,9 +85,10 @@ export default function Register() {
 		const payload = {
 		'email': email,
 		'password': password,
+		'captcha_token': captchaToken,
 		};
 
-		console.log("Register payload:", payload);
+		// console.log("Register payload:", payload);
 
 		try {
 			const response = await fetch("http://localhost:8000/auth/register", {
@@ -88,6 +100,7 @@ export default function Register() {
 			});
 
 			if (!response.ok) {
+				recaptchaRef.current.reset();
 				const errorData = await response.json();
 				throw new Error(errorData.detail || "Register failed");
 			}
@@ -165,6 +178,13 @@ export default function Register() {
 							required={true}
 							error={touched.confirm_password && errors.confirm_password}
 							/>
+
+						<div className="recaptcha-container" style={{ marginBottom: "1rem" }}>
+							<ReCAPTCHA
+								sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+								ref={recaptchaRef}
+							/>
+						</div>
 
 						<Button
 							type="submit"

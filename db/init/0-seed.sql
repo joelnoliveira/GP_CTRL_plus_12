@@ -82,6 +82,12 @@ CREATE TABLE attack_loads (
 	PRIMARY KEY(id)
 );
 
+CREATE TABLE templates (
+    id BIGSERIAL,
+    path TEXT NOT NULL,
+    PRIMARY KEY(id)
+);
+
 CREATE TABLE runs_metrics_models (
 	runs_metrics_id BIGINT,
 	models_name	 BIGINT,

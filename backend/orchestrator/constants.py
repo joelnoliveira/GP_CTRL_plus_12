@@ -17,6 +17,8 @@ class RolePlayOption(str, Enum):
 DEFAULTS = dict(
     seed=2316,
     temperature_judges=0.1,
+    temperature_attacker=0.1,
+    temperature_target=0.1,
     attacker_model_name="gemma3:27b",
     judge_model_name="gemma3:27b",
     jury_models=["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],

@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import json
+import yaml
 #import attacks
 from orchestrator import attacks
 from orchestrator.constants import TypesOfAttacks, Goals, DEFAULTS
@@ -45,17 +46,47 @@ async def launch_attack(
     label: str = "malicious_goals",
     seed: int = None,
     temperature_judges: float = None,
+    temperature_target: float = None,
+    temperature_attacker: float = None,
     target_model_name: str = None,
     attacker_model_name: str = None,
     judge_model_name: str = None,
     jury_models: list[str] = None,
     role_play_option: str = None,
+    config_file_name: str = None,
 ):
     load_dotenv()
+
+    if config_file_name:
+        config_path = os.path.join("custom_configs", config_file_name)
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(f"Custom config file not found: {config_file_name}")
+            
+        try:
+            with open(config_path, "r") as f:
+                if config_file_name.endswith('.json'):
+                    config = json.load(f)
+                else:
+                    config = yaml.safe_load(f)
+            
+            if config.get("seed") is not None: seed = config.get("seed")
+            if config.get("temperature_judges") is not None: temperature_judges = config.get("temperature_judges")
+            if config.get("temperature_attacker") is not None: temperature_attacker = config.get("temperature_attacker")
+            if config.get("temperature_target") is not None: temperature_target = config.get("temperature_target")
+            if config.get("target_model_name") is not None: target_model_name = config.get("target_model_name")
+            if config.get("attacker_model_name") is not None: attacker_model_name = config.get("attacker_model_name")
+            if config.get("judge_model_name") is not None: judge_model_name = config.get("judge_model_name")
+            if config.get("jury_models") is not None: jury_models = config.get("jury_models")
+            if config.get("label") is not None: label = config.get("label")
+            if config.get("role_play_option") is not None: role_play_option = config.get("role_play_option")
+        except Exception as e:
+            raise ValueError(f"Error loading custom config: {e}")
     
     # Use defaults for any parameter not provided
     seed = seed if seed is not None else DEFAULTS["seed"]
     temperature_judges = temperature_judges if temperature_judges is not None else DEFAULTS["temperature_judges"]
+    temperature_attacker = temperature_attacker if temperature_attacker is not None else DEFAULTS["temperature_attacker"]
+    temperature_target = temperature_target if temperature_target is not None else DEFAULTS["temperature_target"]
     target_model_name = target_model_name if target_model_name is not None else DEFAULTS["target_model_name"]
     attacker_model_name = attacker_model_name if attacker_model_name is not None else DEFAULTS["attacker_model_name"]
     judge_model_name = judge_model_name if judge_model_name is not None else DEFAULTS["judge_model_name"]
@@ -78,6 +109,8 @@ async def launch_attack(
             ollama_host=os.getenv("OLLAMA_BASE_URL"),
             seed=seed,
             temperature_judges=temperature_judges,
+            temperature_attacker= temperature_attacker,
+            temperature_target = temperature_target,
             attacker_model_name=attacker_model_name,
             judge_model_name=judge_model_name,
             jury_models=jury_models,
@@ -91,14 +124,19 @@ async def launch_attack_template(
     label: str = Goals.MALICIOUS_GOALS.value,
     seed: int = None,
     temperature_judges: float = None,
+    temperature_attacker: float = None,
+    temperature_target: float = None,
     target_model_name: str = None,
     jury_models: list[str] = None,
+    template_path: str = None,
 ):
     load_dotenv()
     
     # Use defaults for any parameter not provided
     seed = seed if seed is not None else DEFAULTS["seed"]
     temperature_judges = temperature_judges if temperature_judges is not None else DEFAULTS["temperature_judges"]
+    temperature_attacker = temperature_attacker if temperature_attacker is not None else DEFAULTS["temperature_attacker"]
+    temperature_target = temperature_target if temperature_target is not None else DEFAULTS["temperature_target"]
     target_model_name = target_model_name if target_model_name is not None else DEFAULTS["target_model_name"]
     jury_models = jury_models if jury_models is not None else DEFAULTS["jury_models"]
     
@@ -106,12 +144,15 @@ async def launch_attack_template(
         ollama_host=os.getenv("OLLAMA_BASE_URL"),
         seed=seed,
         temperature_judges=temperature_judges,
+        temperature_attacker=temperature_attacker,
+        temperature_target=temperature_target,
         attacker_model_name=DEFAULTS["attacker_model_name"],  # Not configurable for template
         judge_model_name=DEFAULTS["judge_model_name"],  # Not configurable for template
         jury_models=jury_models,
         target_model_name=target_model_name,
         goals_list=load_labels(label=label),
         label=label,
+        template_path=template_path,
     )
 
 
@@ -126,6 +167,8 @@ async def launch_over_refusal_test(
     # Use defaults for any parameter not provided
     seed = seed if seed is not None else DEFAULTS["seed"]
     temperature_judges = temperature_judges if temperature_judges is not None else DEFAULTS["temperature_judges"]
+    temperature_attacker = temperature_attacker if temperature_attacker is not None else DEFAULTS["temperature_attacker"]
+    temperature_target = temperature_target if temperature_target is not None else DEFAULTS["temperature_target"]
     target_model_name = target_model_name if target_model_name is not None else DEFAULTS["target_model_name"]
     jury_models = jury_models if jury_models is not None else DEFAULTS["jury_models"]
     
@@ -133,6 +176,8 @@ async def launch_over_refusal_test(
         ollama_host=os.getenv("OLLAMA_BASE_URL"),
         seed=seed,
         temperature_judges=temperature_judges,
+        temperature_attacker=temperature_attacker,
+        temperature_target=temperature_target,
         target_model_name=target_model_name,
         jury_models=jury_models,
     )

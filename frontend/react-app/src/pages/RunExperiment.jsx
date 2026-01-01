@@ -63,7 +63,11 @@ const RunExperiment = (
                   placeholder={field.placeholder} 
                   items={field.options}
                 />
-                <AddIcon size='large' />
+                <AddIcon 
+                  size='large'
+                  disabled={!isLoggedIn}
+                  onClick={() => console.log("Add clicked!")}
+                />
               </div>
             ))}
           </div>

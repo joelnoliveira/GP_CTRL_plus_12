@@ -16,9 +16,10 @@ from pyrit.score import SelfAskRefusalScorer
 from pyrit.models import SeedPromptDataset
 from pyrit.models.prompt_request_response import PromptRequestResponse
 from pyrit.memory.central_memory import CentralMemory
-from orchestrator.constants import DEFAULTS
+from orchestrator.constants import DEFAULTS, Goals
 
 from evaluation_service.run_metrics import get_run_metrics, get_run_metrics_crescendo
+from evaluation_service.vulnerability_analysis import vuln_analysis
 async def over_refusal_test(
         # ollama_host,
         # seed=2316,
@@ -180,6 +181,9 @@ async def launch_attack_template(ollama_host, **kwargs):
 
         print(f"[DEBUG] metrics: {metrics}")
 
+        if label == Goals.VULNERABLE_GOALS.value:
+            vulnerabilities = vuln_analysis(result_json)
+
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -192,6 +196,7 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     judge_model_name = args["judge_model_name"]
     target_model_name = args["target_model_name"]
     goals_list = args["goals_list"] if args["goals_list"] is not None else []
+    label = args["label"]
 
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
@@ -222,6 +227,9 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         metrics = get_run_metrics_crescendo(data)
         print(f"[DEBUG] metrics: {metrics}")
 
+        if label == Goals.VULNERABLE_GOALS.value:
+            vulnerabilities = vuln_analysis(data)
+
         ##save variable data to a json file
         with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
             json.dump(data, f)
@@ -235,6 +243,7 @@ async def launch_flip_attack(ollama_host, **kwargs):
     judge_model_name = args["judge_model_name"]
     target_model_name = args["target_model_name"]
     goals_list = args["goals_list"] if args["goals_list"] is not None else []
+    label = args["label"]
 
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
@@ -269,6 +278,8 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     target_model_name = args["target_model_name"]
     goals_list = args["goals_list"] if args["goals_list"] is not None else []
     role_play_option = args.get("role_play_option", RolePlayPaths.MR_ROBOT.value)
+    label = args["label"]
+
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -308,6 +319,9 @@ async def launch_role_play_attack(ollama_host, **kwargs):
 
         metrics = get_run_metrics(result_json, atk_type='llm')
         print(f"[DEBUG] metrics: {metrics}")
+
+        if label == Goals.VULNERABLE_GOALS.value:
+            vulnerabilities = vuln_analysis(result_json)
 
     except Exception as e:
         raise Exception(f"Error in launch_mr_robot_attack: {e}") 

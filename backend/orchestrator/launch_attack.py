@@ -31,7 +31,7 @@ def load_labels(label: str):
         print(f"Error loading labels: {e}")
 
 
-async def launch_attack(attack_option, label="malicious_goals"):
+async def launch_attack(attack_option, label=Goals.MALICIOUS_GOALS.value):
     load_dotenv()
     attacks_dict = {
         TypesOfAttacks.CRESCENDO_ATTACK.value: attacks.launch_crescendo_attack,
@@ -54,6 +54,7 @@ async def launch_attack(attack_option, label="malicious_goals"):
             jury_models=["qwen2.5:7b", "qwen2.5:7b", "qwen2.5:7b"],
             target_model_name="qwen2.5:7b",
             goals_list=load_labels(label=label),
+            label=label,
             role_play_option=RolePlayPaths.MR_ROBOT.value,
         )
 

@@ -173,7 +173,7 @@ export default function Login() {
 							error={touched.password && errors.password}
 							/>
 
-						<div className="recaptcha-container" style={{ marginBottom: "1rem" }}>
+						<div className="login__recaptcha-container">
                             <ReCAPTCHA
                                 sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
                                 ref={recaptchaRef}
@@ -191,7 +191,7 @@ export default function Login() {
 				</div>
 
 				<Link to="/register">
-					<p className="login__signin-paragraph relative z-0">If you do not have an account - <span className="underline font-bold relative z-0">Create an account!</span>.</p>
+					<p className="login__signin-paragraph relative z-0">If you do not have an account - <span className="sign__text relative z-0">Create an account!</span></p>
 				</Link>
 			</div>
 		</div>

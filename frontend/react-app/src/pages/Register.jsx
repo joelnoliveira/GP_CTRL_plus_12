@@ -179,7 +179,7 @@ export default function Register() {
 							error={touched.confirm_password && errors.confirm_password}
 							/>
 
-						<div className="recaptcha-container" style={{ marginBottom: "1rem" }}>
+						<div className="login__recaptcha-container">
 							<ReCAPTCHA
 								sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
 								ref={recaptchaRef}

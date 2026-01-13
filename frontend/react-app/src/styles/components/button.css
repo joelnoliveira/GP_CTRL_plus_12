@@ -1,0 +1,15 @@
+.btn--small{
+    @apply px-6 py-3;
+}
+
+.btn--large{
+    @apply px-8 py-3;
+}
+
+.btn--default{
+    @apply bg-red-600 text-white rounded-md hover:bg-red-800 active:outline active:outline-1 active:outline-black disabled:bg-[#EAEAEA] disabled:text-[#C3C3C3] disabled:cursor-not-allowed;
+}
+
+.btn--alternative{
+    @apply bg-white border border-black rounded-md hover:bg-black hover:text-white disabled:bg-[#EAEAEA] disabled:text-[rgba(0,0,0,0.5)] disabled:cursor-not-allowed;
+}

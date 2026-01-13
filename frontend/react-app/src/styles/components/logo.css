@@ -1,0 +1,11 @@
+.logo--small{
+    @apply w-16 h-16;
+}
+
+.logo--medium{
+    @apply w-24 h-24;
+}
+
+.logo--large{
+    @apply w-64 h-64;
+}

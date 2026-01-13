@@ -1,0 +1,11 @@
+.menu{
+    @apply h-dvh w-[20%] flex flex-col items-start gap-1 bg-black pl-6 pt-8;
+}
+
+.menu__h2{
+    @apply text-white text-3xl mb-4 font-bold;
+}
+
+.menu__item-list{
+    @apply pl-2;
+}

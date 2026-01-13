@@ -10,7 +10,7 @@ export default function PageLayout() {
 
   return (
 
-    <div className="min-h-screen bg-white text-black font-anonymous-pro">
+    <div className="h-screen flex flex-col bg-white text-black font-anonymous-pro overflow-hidden">
       <Navbar />
       <Outlet />
     </div>

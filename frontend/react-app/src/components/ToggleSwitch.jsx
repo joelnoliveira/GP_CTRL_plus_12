@@ -7,10 +7,11 @@ const ToggleSwitch = (
     { 
         checked,
         onChange, 
+        options = ["Private", "Public"],
     }
 ) => {
 
-    const label = checked ? "Public" : "Private"
+    const label = checked ? options[1] : options[0];
     
     return (
         <label className="toggle__container">

@@ -13,3 +13,9 @@
 .add_icon--large{
     @apply w-9 h-9;
 }
+
+.add_icon--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}

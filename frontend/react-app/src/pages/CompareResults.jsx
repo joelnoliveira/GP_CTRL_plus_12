@@ -7,6 +7,7 @@ import Menu from "../components/Menu";
 import DropdownMenu from "../components/DropdownMenu";
 import ToggleSwitch from "../components/ToggleSwitch";
 import AddIcon from "../components/AddIcon";
+import Logo from "../components/Logo";
 
 import {
   BarChart,
@@ -21,6 +22,7 @@ import {
 
 const CompareResults = (
 ) => {
+  const MAX_EXPERIMENTS = 8;
   const { isLoggedIn } = useAuth();
 
   /* =======================
@@ -37,6 +39,15 @@ const CompareResults = (
     "Experiment 1": { ORR: 0.6, ASR: 0.8, AOR: 0.7, color: "#2563eb" },
     "Experiment 2": { ORR: 0.3, ASR: 0.6, AOR: 0.1, color: "#16a34a" },
     "Experiment 3": { ORR: 0.5, ASR: 0.3, AOR: 0.9, color: "#dc2626" },
+    "Experiment 4": { ORR: 0.6, ASR: 0.8, AOR: 0.7, color: "#2563eb" },
+    "Experiment 5": { ORR: 0.3, ASR: 0.6, AOR: 0.1, color: "#16a34a" },
+    "Experiment 6": { ORR: 0.5, ASR: 0.3, AOR: 0.9, color: "#dc2626" },
+    "Experiment 7": { ORR: 0.6, ASR: 0.8, AOR: 0.7, color: "#2563eb" },
+    "Experiment 8": { ORR: 0.3, ASR: 0.6, AOR: 0.1, color: "#16a34a" },
+    "Experiment 9": { ORR: 0.5, ASR: 0.3, AOR: 0.9, color: "#dc2626" },
+    "Experiment 10": { ORR: 0.6, ASR: 0.8, AOR: 0.7, color: "#2563eb" },
+    "Experiment 11": { ORR: 0.3, ASR: 0.6, AOR: 0.1, color: "#16a34a" },
+    "Experiment 12": { ORR: 0.5, ASR: 0.3, AOR: 0.9, color: "#dc2626" },
   };
 
   /* =======================
@@ -46,6 +57,17 @@ const CompareResults = (
     "Experiment 1",
     "Experiment 2",
   ]);
+
+  const allExperimentNames = Object.keys(experimentsMap);
+
+  const availableExperiments = allExperimentNames.filter(
+    (e) => !selectedExperiments.includes(e)
+  );
+
+  const canAddExperiment =
+    isLoggedIn && //Change to isLoggedIn - just testing
+    selectedExperiments.length < MAX_EXPERIMENTS &&
+    availableExperiments.length > 0;
 
   const updateExperiment = (index, newExperiment) => {
     setSelectedExperiments((prev) => {
@@ -62,12 +84,16 @@ const CompareResults = (
 
   const addExperiment = () => {
     setSelectedExperiments((prev) => {
+      if (prev.length >= MAX_EXPERIMENTS) {
+        return prev;
+      }
+
       const available = Object.keys(experimentsMap).filter(
         (e) => !prev.includes(e)
       );
 
       if (available.length === 0) {
-        return prev; // no-op
+        return prev;
       }
 
       return [...prev, available[0]];
@@ -88,10 +114,15 @@ const CompareResults = (
      Chart component
   ======================= */
   const ExperimentBarChart = ({ data }) => (
-    <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={data}>
+    <ResponsiveContainer width="100%" height={250}>
+      <BarChart data={data} margin={{ bottom: 10 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
+        <XAxis 
+          dataKey="name"
+          angle={-50} 
+          textAnchor="end" 
+          interval={0}  
+          height={85} />
         <YAxis domain={[0, 1]} />
         <Tooltip />
         <Bar dataKey="value">
@@ -108,6 +139,7 @@ const CompareResults = (
       <Menu currentPage={"Compare Results"} />
 
       <div className="compare_results__main_area">
+        {isLoggedIn ? ( //Change to isLoggedIn - just testing
         <div className="compare_results__content">
 
           {/* =======================
@@ -163,9 +195,17 @@ const CompareResults = (
 
               <AddIcon
                 size="medium"
-                disabled={isLoggedIn}
+                disabled={!canAddExperiment}
                 onClick={addExperiment}
               />
+
+              {!canAddExperiment && (
+                <p className="text-xs text-gray-300 mt-2">
+                  {selectedExperiments.length >= MAX_EXPERIMENTS
+                    ? "Maximum of 8 experiments reached"
+                    : "No more experiments available"}
+                </p>
+              )}
             </div>
 
             <div className="side_card">
@@ -197,6 +237,15 @@ const CompareResults = (
             </div>
           </div>
         </div>
+        ):(
+          <div className="flex flex-col items-center justify-center h-64">
+            <Logo 
+              size="large"
+            />
+            <h2 className="text-xl text-black">Please log in to view results</h2>
+            <p className="text-gray-800">Comparison tools are restricted to authenticated users.</p>
+          </div>
+        )}
       </div>
 
       {/* Background polygon */}

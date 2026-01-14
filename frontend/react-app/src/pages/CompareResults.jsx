@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/pages/compare_results.css";
 import "../styles/pages/home.css";
 
@@ -35,20 +35,40 @@ const CompareResults = (
   /* =======================
      Mock Experiments data - Replace With Backend Connection
   ======================= */
-  const experimentsMap = {
-    "Experiment 1": { ORR: 0.6, ASR: 0.8, AOR: 0.7, color: "#2563eb" },
-    "Experiment 2": { ORR: 0.3, ASR: 0.6, AOR: 0.1, color: "#16a34a" },
-    "Experiment 3": { ORR: 0.5, ASR: 0.3, AOR: 0.9, color: "#dc2626" },
-    "Experiment 4": { ORR: 0.6, ASR: 0.8, AOR: 0.7, color: "#2563eb" },
-    "Experiment 5": { ORR: 0.3, ASR: 0.6, AOR: 0.1, color: "#16a34a" },
-    "Experiment 6": { ORR: 0.5, ASR: 0.3, AOR: 0.9, color: "#dc2626" },
-    "Experiment 7": { ORR: 0.6, ASR: 0.8, AOR: 0.7, color: "#2563eb" },
-    "Experiment 8": { ORR: 0.3, ASR: 0.6, AOR: 0.1, color: "#16a34a" },
-    "Experiment 9": { ORR: 0.5, ASR: 0.3, AOR: 0.9, color: "#dc2626" },
-    "Experiment 10": { ORR: 0.6, ASR: 0.8, AOR: 0.7, color: "#2563eb" },
-    "Experiment 11": { ORR: 0.3, ASR: 0.6, AOR: 0.1, color: "#16a34a" },
-    "Experiment 12": { ORR: 0.5, ASR: 0.3, AOR: 0.9, color: "#dc2626" },
-  };
+  const [experimentsMap, setExperimentsMap] = useState({});
+
+  useEffect(() => {
+  const get_results = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch("http://localhost:8000/get_experiment_results", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+
+        const colors = ["#2563eb", "#16a34a", "#dc2626", "#9333ea","#c5ea33","#33ccea","#e133ea","#000000"];
+
+        const withColors = Object.fromEntries(
+          Object.entries(data).map(([name, values], i) => [
+            name,
+            { ...values, color: colors[i % colors.length] },
+          ])
+        );
+
+        setExperimentsMap(withColors); // ✅ triggers re-render
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    get_results();
+  }, []);
+
+  
 
   /* =======================
      Selected experiments
@@ -104,7 +124,9 @@ const CompareResults = (
      Chart data builder
   ======================= */
   const getChartData = (metric) =>
-    selectedExperiments.map((name) => ({
+  selectedExperiments
+    .filter((name) => experimentsMap[name])
+    .map((name) => ({
       name,
       value: experimentsMap[name][metric],
       color: experimentsMap[name].color,
@@ -175,23 +197,24 @@ const CompareResults = (
             <div className="side_card">
               <h4>Experiments to be compared</h4>
 
-              {selectedExperiments.map((exp, index) => (
-                <div key={index} className="experiment_selector">
-                  <span
-                    className="dot"
-                    style={{
-                      backgroundColor: experimentsMap[exp].color,
-                    }}
-                  />
-                  <DropdownMenu
-                    placeholder={exp}
-                    items={Object.keys(experimentsMap)}
-                    onSelect={(value) =>
-                      updateExperiment(index, value)
-                    }
-                  />
-                </div>
-              ))}
+              {selectedExperiments.map((exp, index) => {
+                const experiment = experimentsMap[exp];
+                if (!experiment) return null;
+
+                return (
+                  <div key={index} className="experiment_selector">
+                    <span
+                      className="dot"
+                      style={{ backgroundColor: experiment.color }}
+                    />
+                    <DropdownMenu
+                      placeholder={exp}
+                      items={Object.keys(experimentsMap)}
+                      onSelect={(value) => updateExperiment(index, value)}
+                    />
+                  </div>
+                );
+              })}
 
               <AddIcon
                 size="medium"

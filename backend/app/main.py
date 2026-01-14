@@ -12,7 +12,8 @@ from langfuse import get_client
 from urllib.parse import quote
 from .routers import auth
 from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
-
+from app.schemas import Token
+from app.security import get_current_user
 
 # Load .env from workspace root
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
@@ -144,3 +145,23 @@ async def over_refusal_test():
         await launch_over_refusal_test()
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/get_experiment_results")
+async def get_experiment_results(current_user_email: str = Depends(get_current_user)):
+    print(f"Email from token: {current_user_email}")
+    return {
+        "Experiment 1": { "ORR": 0.6, "ASR": 0.8, "AOR": 0.7},
+        "Experiment 2": { "ORR": 0.3, "ASR": 0.6, "AOR": 0.1},
+        "Experiment 3": { "ORR": 0.5, "ASR": 0.3, "AOR": 0.9},
+        "Experiment 4": { "ORR": 0.6, "ASR": 0.8, "AOR": 0.7},
+        "Experiment 5": { "ORR": 0.3, "ASR": 0.6, "AOR": 0.1},
+        "Experiment 6": { "ORR": 0.5, "ASR": 0.3, "AOR": 0.9},
+        "Experiment 7": { "ORR": 0.6, "ASR": 0.8, "AOR": 0.7},
+        "Experiment 8": { "ORR": 0.3, "ASR": 0.6, "AOR": 0.1},
+        "Experiment 9": { "ORR": 0.5, "ASR": 0.3, "AOR": 0.9},
+        "Experiment 10": { "ORR": 0.6, "ASR": 0.8, "AOR": 0.7},
+        "Experiment 11": { "ORR": 0.3, "ASR": 0.6, "AOR": 0.1},
+        "Experiment 12": { "ORR": 0.5, "ASR": 0.3, "AOR": 0.9},
+    }
+        

@@ -1,0 +1,7 @@
+.label--small{
+    @apply font-extrabold text-sm text-gray-500;
+}
+
+.label--medium{
+    @apply font-extrabold text-base text-gray-500;
+}

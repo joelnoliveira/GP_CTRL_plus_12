@@ -12,6 +12,7 @@ from urllib.parse import quote
 from .routers import auth
 from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
 
+from fastapi.middleware.cors import CORSMiddleware
 
 # Load .env from workspace root
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
@@ -25,6 +26,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3001"],  # or ["*"] for dev
+    allow_credentials=True,
+    allow_methods=["*"],  # <-- THIS enables OPTIONS
+    allow_headers=["*"],
+)
+
 #Uses auth router
 app.include_router(auth.router)
 
@@ -36,6 +45,74 @@ async def check_alive():
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+@app.get("/history/mock_filters")
+def get_mock_history_filters():
+    return [
+        {
+            "placeholder": "Attack Type",
+            "items": ["FGSM", "PGD", "CW"]
+        },
+        {
+            "placeholder": "Status",
+            "items": ["Ongoing", "Finished"]
+        }
+    ]
+
+@app.get("/history/mock_runs")
+def get_mock_history_runs():
+    return [
+        {
+            "run_name_id": "RUN-001",
+            "username": "joao.carvalho",
+            "attack_type": "FGSM",
+            "date": "2025-01-10",
+            "status": "finished",
+            "attack_model": "ResNet50",
+            "target_model": "EfficientNet-B0",
+            "isPublicValue": "true",
+        },
+        {
+            "run_name_id": "RUN-002",
+            "username": "joao.carvalho",
+            "attack_type": "PGD",
+            "date": "2025-01-12",
+            "status": "ongoing",
+            "attack_model": "ConvNeXt",
+            "target_model": "ViT-B16",
+            "isPublicValue": "true",
+        },
+        {
+            "run_name_id": "RUN-003",
+            "username": "maria.silva",
+            "attack_type": "CW",
+            "date": "2025-01-15",
+            "status": "loading",
+            "attack_model": "EfficientNet-B3",
+            "target_model": "ResNet101",
+            "isPublicValue": "true",
+        },
+        {
+            "run_name_id": "RUN-004",
+            "username": "pedro.oliveira",
+            "attack_type": "FGSM",
+            "date": "2025-01-18",
+            "status": "finished",
+            "attack_model": "MobileNetV3",
+            "target_model": "DenseNet121",
+            "isPublicValue": "true",
+        },
+        {
+            "run_name_id": "RUN-005",
+            "username": "ana.rodrigues",
+            "attack_type": "PGD",
+            "date": "2025-01-20",
+            "status": "finished",
+            "attack_model": "ResNet18",
+            "target_model": "EfficientNet-B1",
+            "isPublicValue": "true",
+        },
+    ]
 
 # Example endpoints using reflected ORM models
 

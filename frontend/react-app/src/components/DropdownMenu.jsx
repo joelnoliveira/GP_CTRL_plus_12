@@ -48,11 +48,11 @@ const DropdownMenu = ({ placeholder = "Placeholder", items = ["Item1", "Item2", 
             <ul className="dropdown__menu">
             {items.map((item, index) => (
                 <li
-                key={index}
-                onClick={() => handleSelect(item)}
-                className="dropdown__menu-item"
+                  key={index}
+                  onClick={() => handleSelect(item)}
+                  className="dropdown__menu-item"
                 >
-                {item}
+                  {item}
                 </li>
             ))}
             </ul>

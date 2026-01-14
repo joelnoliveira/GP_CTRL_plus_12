@@ -121,6 +121,14 @@ async def attack():
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+@app.get("/attack-crescendo")
+async def attack_crescendo():
+    try:
+        await launch_attack(attack_option=constants.TypesOfAttacks.CRESCENDO_ATTACK.value, label=constants.Goals.VULNERABLE_GOALS.value)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 #change to post later to handle the options that we pass on the funciton
 @app.get("/attack-template")
 async def attack_template():

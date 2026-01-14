@@ -118,6 +118,8 @@ class PromptNormalizer(abc.ABC):
             await self._calc_hash(request=error_response)
             self._memory.add_request_response_to_memory(request=error_response)
             cid = request.request_pieces[0].conversation_id if request and request.request_pieces else None
+            import traceback
+            traceback.print_exc()
             raise Exception(f"Error sending prompt with conversation ID: {cid}") from ex
 
         if response is None:

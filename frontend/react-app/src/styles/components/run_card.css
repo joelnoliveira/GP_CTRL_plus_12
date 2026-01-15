@@ -1,0 +1,81 @@
+.run-card__container{
+    @apply w-[32rem] flex flex-col p-6 rounded-lg shadow-md overflow-hidden;
+}
+
+.run-card__content__wrapper {
+    @apply flex flex-col gap-8 transition-transform duration-300 ease-in-out;
+}
+
+/* Only the inner wrapper scales */
+.run-card__container:hover {
+    @apply cursor-pointer;
+    transform: scale(1.03);
+}
+
+.run-card__header{
+    @apply w-full flex flex-col gap-2;
+}
+
+.run-card__header-top{
+    @apply w-full flex justify-between;
+}
+
+.run-card__header__title{
+    @apply font-bold text-black text-3xl;
+}
+
+.run-card__header-info{
+    @apply w-full flex items-center gap-2;
+}
+
+.run-card__header-info__text{
+    @apply font-bold text-gray-500 text-xs;
+}
+
+.run-card__header-info__status--ongoing{
+    @apply font-black text-green-400;
+}
+
+.run-card__header-info__status--loading{
+    @apply font-black text-yellow-400;
+}
+
+.run-card__header-info__status--finished{
+    @apply font-black text-red-400;
+}
+
+.run-card__header-info__divisor{
+    @apply h-[15px] w-px bg-gradient-to-b from-gray-100 via-gray-300 to-gray-100;
+}
+
+.run-card__footer{
+    @apply w-full flex items-start justify-evenly gap-12;
+}
+
+.run-card__footer__attack{
+    @apply w-full flex flex-col gap-1 items-start justify-start;
+}
+
+.run-card__footer__attack__title{
+    @apply font-bold text-black text-xl;
+}
+
+.run-card__footer__attack__model-name{
+    @apply font-bold text-gray-500 text-2xl;
+}
+
+.run-card__footer__versus{
+    @apply font-bold text-red-500 text-2xl;
+}
+
+.run-card__footer__target{
+    @apply w-full flex flex-col gap-1 items-end justify-start;
+}
+
+.run-card__footer__target__title{
+    @apply font-bold text-black text-xl;
+}
+
+.run-card__footer__target__model-name{
+    @apply font-bold text-gray-500 text-2xl;
+}

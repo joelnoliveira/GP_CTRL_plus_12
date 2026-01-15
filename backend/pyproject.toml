@@ -64,6 +64,8 @@ dependencies = [
     "PyYAML",
     "python-multipart",
     "magika"
+    "python-multipart"
+    "bcrypt==4.0.1"
 ]
 
 [project.optional-dependencies]

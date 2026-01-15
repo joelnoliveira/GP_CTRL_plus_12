@@ -62,7 +62,8 @@ dependencies = [
     "ipykernel",
     "passlib[bcrypt]==1.7.4",
     "PyYAML",
-    "python-multipart"
+    "python-multipart",
+    "magika"
 ]
 
 [project.optional-dependencies]

@@ -201,7 +201,7 @@ services:
     command: >
       --requirepass myredissecret
     ports:
-      - "6379:6379"
+      - "6500:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 3s

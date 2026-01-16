@@ -106,9 +106,132 @@ async def get_dataset(dataset_name: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@app.post("/attack")
-async def attack(request: AttackRequest):
+# ==================== Endpoints Workload Datasets (BD local) ====================
+@app.get("/workload-datasets")
+async def get_workload_datasets(
+    db: Session = Depends(get_db),
+    is_builtin: bool = None,
+    scenario: str = None
+):
+    """
+    Lista todos os workload datasets da base de dados.
+    
+    Filtros opcionais:
+    - is_builtin: True (só default), False (só uploaded), None (todos)
+    - scenario: Nome do scenario para filtrar
+    """
     try:
+        WorkloadDatasets = Base.classes.workload_datasets
+        Scenarios = Base.classes.scenarios
+        
+        query = db.query(WorkloadDatasets)
+        
+        # Filtrar por is_builtin se especificado
+        if is_builtin is not None:
+            query = query.filter(WorkloadDatasets.is_builtin == is_builtin)
+        
+        # Filtrar por scenario se especificado
+        if scenario:
+            scenario_obj = db.query(Scenarios).filter(Scenarios.name == scenario).first()
+            if scenario_obj:
+                query = query.filter(WorkloadDatasets.scenarios_id == scenario_obj.id)
+        
+        datasets = query.all()
+        
+        result = []
+        for ds in datasets:
+            scenario_obj = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
+            result.append({
+                "id": ds.id,
+                "name": ds.name,
+                "description": ds.description,
+                "storage_path": ds.storage_path,
+                "mime_path": ds.mime_path,
+                "is_builtin": ds.is_builtin,
+                "created_at": ds.created_at.isoformat() if ds.created_at else None,
+                "scenario": scenario_obj.name if scenario_obj else None
+            })
+        
+        return {
+            "total": len(result),
+            "datasets": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao listar datasets: {str(e)}")
+
+@app.get("/workload-datasets/{dataset_id}")
+async def get_workload_dataset(dataset_id: int, db: Session = Depends(get_db)):
+    """Obtém um workload dataset específico por ID."""
+    try:
+        WorkloadDatasets = Base.classes.workload_datasets
+        Scenarios = Base.classes.scenarios
+        
+        ds = db.query(WorkloadDatasets).filter(WorkloadDatasets.id == dataset_id).first()
+        
+        if not ds:
+            raise HTTPException(status_code=404, detail="Dataset não encontrado")
+        
+        scenario = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
+        
+        return {
+            "id": ds.id,
+            "name": ds.name,
+            "description": ds.description,
+            "storage_path": ds.storage_path,
+            "mime_path": ds.mime_path,
+            "is_builtin": ds.is_builtin,
+            "created_at": ds.created_at.isoformat() if ds.created_at else None,
+            "scenario": scenario.name if scenario else None
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao obter dataset: {str(e)}")
+
+@app.get("/scenarios")
+async def get_scenarios(db: Session = Depends(get_db)):
+    """Lista todos os scenarios disponíveis."""
+    try:
+        Scenarios = Base.classes.scenarios
+        scenarios = db.query(Scenarios).all()
+        
+        return [
+            {
+                "id": s.id,
+                "name": s.name,
+                "description": s.description,
+                "created_at": s.created_at.isoformat() if s.created_at else None
+            }
+            for s in scenarios
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao listar scenarios: {str(e)}")
+
+@app.post("/attack")
+async def attack(request: AttackRequest, db: Session = Depends(get_db)):
+    try:
+        # Se goals_file_name for fornecido, verificar se existe na BD
+        goals_path = None
+        if request.goals_file_name:
+            WorkloadDatasets = Base.classes.workload_datasets
+            # Tentar encontrar pelo storage_path (se o user passou o path completo)
+            record = db.query(WorkloadDatasets).filter(
+                WorkloadDatasets.storage_path == request.goals_file_name
+            ).first()
+            
+            if record:
+                goals_path = record.storage_path
+            else:
+                # Tentar encontrar pelo nome
+                record = db.query(WorkloadDatasets).filter(
+                    WorkloadDatasets.name == request.goals_file_name
+                ).first()
+                if record:
+                    goals_path = record.storage_path
+                else:
+                    # Fallback: usar como nome de ficheiro (compatibilidade)
+                    goals_path = request.goals_file_name
+        
         await launch_attack(
             attack_option=request.attack_option.value,
             label=request.label.value,
@@ -119,7 +242,7 @@ async def attack(request: AttackRequest):
             judge_model_name=request.judge_model_name,
             jury_models=request.jury_models,
             role_play_option=request.role_play_option.value if request.role_play_option else None,
-            goals_file_name=request.goals_file_name,
+            goals_file_name=goals_path,
         )
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:
@@ -130,28 +253,20 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
     try:
         template_path = None
         if request.template_path:
-            # Opção A: O user envia o path completo (ex: vindo do upload)
-            # Vamos validar se existe na BD para garantir integridade
-            # Ou simplesmente usamos o que foi enviado. 
-            # O requisito diz "buscar o caminho com base no path da base de dados"
-            # Assumimos que o request.template_path é a chave de procura (o próprio path).
-            
-            # Assegurar que templates está refletido (caso não tenha sido ainda)
-            if not hasattr(Base.classes, 'templates'):
+            # Procurar o dataset na tabela workload_datasets
+            if not hasattr(Base.classes, 'workload_datasets'):
                 reflect_tables()
             
-            Templates = Base.classes.templates
-            # Procura na BD pelo path exato
-            record = db.query(Templates).filter(Templates.path == request.template_path).first()
+            WorkloadDatasets = Base.classes.workload_datasets
+            # Procura na BD pelo storage_path
+            record = db.query(WorkloadDatasets).filter(
+                WorkloadDatasets.storage_path == request.template_path
+            ).first()
             
             if record:
-                template_path = record.path
+                template_path = record.storage_path
             else:
-                # Se não encontrar na BD, usamos o path enviado diretamente?
-                # Pela descrição rigida "buscar... com base no path da base de dados", 
-                # talvez devêssemos falhar se não estiver na BD via upload.
-                # Mas para ser flexivel, vamos assumir que se o user mandou um path válido, tentamos usar.
-                # Mas para cumprir fielmente, vamos logar warning.
+                # Se não encontrar na BD, usa o path enviado diretamente
                 template_path = request.template_path
 
         await launch_attack_template(

@@ -87,20 +87,20 @@ async def launch_attack(
     # Load goals
     final_goals_list = []
     if goals_file_name:
-        # Construct path to uploaded file
-        # Assuming datasets/uploads is relative to backend root, and we are in backend/orchestrator
-        # But file_upload.py puts it in backend/datasets/uploads
-        # launch_attack.py is in backend/orchestrator
-        # So ../datasets/uploads
-        
-        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        goals_path = os.path.join(base_path, "datasets", "uploads", goals_file_name)
+        # Se for um path absoluto, usar diretamente
+        if os.path.isabs(goals_file_name):
+            goals_path = goals_file_name
+        else:
+            # Path relativo - procurar em uploads primeiro, depois em datasets
+            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            goals_path = os.path.join(base_path, "datasets", "uploads", goals_file_name)
+            
+            if not os.path.exists(goals_path):
+                # Fallback para datasets (ficheiros builtin)
+                goals_path = os.path.join(base_path, "datasets", goals_file_name)
         
         if not os.path.exists(goals_path):
-             # Fallback to local datasets if not found in uploads (legacy support or if user provides relative path)
-             goals_path = os.path.join(base_path, "datasets", goals_file_name)
-             if not os.path.exists(goals_path):
-                raise FileNotFoundError(f"Custom goals file not found: {goals_path}")
+            raise FileNotFoundError(f"Custom goals file not found: {goals_path}")
         
         try:
             with open(goals_path, "r", encoding='utf-8') as f:

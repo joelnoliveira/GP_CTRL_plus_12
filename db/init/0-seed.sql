@@ -82,12 +82,6 @@ CREATE TABLE attack_loads (
 	PRIMARY KEY(id)
 );
 
-CREATE TABLE templates (
-    id BIGSERIAL,
-    path TEXT NOT NULL,
-    PRIMARY KEY(id)
-);
-
 CREATE TABLE runs_metrics_models (
 	runs_metrics_id BIGINT,
 	models_name	 BIGINT,
@@ -128,3 +122,27 @@ ALTER TABLE users_workload_datasets ADD CONSTRAINT users_workload_datasets_fk2 F
 ALTER TABLE scenarios_users ADD CONSTRAINT scenarios_users_fk1 FOREIGN KEY (scenarios_id) REFERENCES scenarios(id);
 ALTER TABLE scenarios_users ADD CONSTRAINT scenarios_users_fk2 FOREIGN KEY (users_id) REFERENCES users(id);
 
+
+-- ==================== SEED DATA: Scenarios ====================
+-- Scenarios definem o TIPO de teste/ataque que pode ser feito
+INSERT INTO scenarios (name, description, created_at) VALUES
+    ('Single Turn Attack', 'Ataque direto sem template - envia o prompt malicioso diretamente ao modelo', NOW()),
+    ('Template Attack', 'Ataque usando templates de jailbreak que envolvem o prompt malicioso', NOW()),
+    ('Over-Refusal Test', 'Teste para verificar se o modelo recusa pedidos legítimos incorretamente', NOW());
+
+
+-- ==================== SEED DATA: Default Datasets ====================
+-- Datasets são os ficheiros com prompts/objetivos usados nos testes
+INSERT INTO workload_datasets (name, description, storage_path, mime_path, is_builtin, created_at, scenarios_id) VALUES
+    -- Datasets para Single Turn Attack (scenario_id = 1)
+    ('Malicious Goals', 'Dataset com objetivos maliciosos para testes de segurança', '/backend/datasets/malicious_goals.json', 'application/json', TRUE, NOW(), 1),
+    ('Malicious Goals (80 entries)', 'Versão reduzida do dataset de objetivos maliciosos com 80 entradas', '/backend/datasets/malicious_goals_80entries.json', 'application/json', TRUE, NOW(), 1),
+    ('Vulnerable Goals', 'Dataset com objetivos vulneráveis baseados em CWE', '/backend/datasets/vulnerable_goals.json', 'application/json', TRUE, NOW(), 1),
+    ('LLM Security Eval', 'Dataset para avaliação de segurança de LLMs', '/backend/datasets/llmseceval.json', 'application/json', TRUE, NOW(), 1),
+    ('Cleaned LLM Security Eval', 'Versão limpa do dataset de avaliação de segurança de LLMs', '/backend/datasets/cleaned_llmseceval.json', 'application/json', TRUE, NOW(), 1),
+    ('RMC Bench', 'RMC Benchmark dataset', '/backend/datasets/rmc_bench.json', 'application/json', TRUE, NOW(), 1),
+    -- Datasets para Template Attack (scenario_id = 2)
+    ('JailBreak V 28K', 'Dataset com 28K templates de jailbreak', '/backend/datasets/JailBreakV_28K_clean.yaml', 'application/x-yaml', TRUE, NOW(), 2),
+    ('Pliny Prompts', 'Templates do Pliny para testes com caracteres escapados', '/backend/datasets/pliny_prompts_escaped.yaml', 'application/x-yaml', TRUE, NOW(), 2),
+    -- Datasets para Over-Refusal Test (scenario_id = 3)
+    ('OR-Bench Hard 1k', 'OR-Bench dataset com 1000 prompts legítimos que modelos frequentemente recusam', '/backend/datasets/or-bench-hard-1k.yaml', 'application/x-yaml', TRUE, NOW(), 3);

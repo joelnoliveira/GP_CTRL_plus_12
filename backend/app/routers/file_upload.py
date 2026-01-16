@@ -240,6 +240,20 @@ def detect_and_validate_yaml_format(data) -> tuple[bool, str, str, int]:
     )
 
 
+# ==================== Helper Functions ====================
+
+
+def _get_scenario_for_format(format_type: str) -> str:
+    """Retorna o nome do scenario baseado no formato do ficheiro."""
+    mapping = {
+        FileFormat.MALICIOUS_GOALS.value: "Single Turn Attack",
+        FileFormat.VULNERABLE_GOALS.value: "Single Turn Attack",
+        FileFormat.OR_BENCH.value: "Over-Refusal Test",
+        FileFormat.JAILBREAK.value: "Template Attack",
+    }
+    return mapping.get(format_type, "Single Turn Attack")
+
+
 # ==================== Endpoints ====================
 
 
@@ -305,27 +319,47 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
             else:
                 yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 
-        # Atualizar Base de Dados
+        # Atualizar Base de Dados - guardar em workload_datasets
         try:
             # Garantir que as tabelas estão refletidas
-            if not hasattr(Base.classes, 'templates'):
+            if not hasattr(Base.classes, 'workload_datasets'):
                 from ..models import reflect_tables
                 reflect_tables()
             
-            Templates = Base.classes.templates
-            new_template = Templates(path=file_path)
-            db.add(new_template)
+            WorkloadDatasets = Base.classes.workload_datasets
+            Scenarios = Base.classes.scenarios
+            
+            # Determinar o scenario_id baseado no formato
+            scenario_name = _get_scenario_for_format(detected_format)
+            scenario = db.query(Scenarios).filter(Scenarios.name == scenario_name).first()
+            
+            if not scenario:
+                raise HTTPException(status_code=500, detail=f"Scenario '{scenario_name}' não encontrado na BD")
+            
+            # Criar o novo dataset
+            new_dataset = WorkloadDatasets(
+                name=base_name,
+                description=f"Dataset uploaded: {file.filename}",
+                storage_path=file_path,
+                mime_path="application/json" if is_json else "application/x-yaml",
+                is_builtin=False,
+                created_at=datetime.now(),
+                scenarios_id=scenario.id
+            )
+            db.add(new_dataset)
             db.commit()
+        except HTTPException:
+            raise
         except Exception as e:
             db.rollback()
-            # Se falhar na BD, devemos remover o ficheiro?
-            # Por agora, vamos levantar erro e rollback
             if os.path.exists(file_path):
                 os.remove(file_path)
             raise HTTPException(
                 status_code=500, detail=f"Erro ao guardar na base de dados: {str(e)}"
             )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Erro ao guardar o ficheiro: {str(e)}"
@@ -412,17 +446,37 @@ async def upload_file_with_format(format_type: FileFormat, file: UploadFile = Fi
             else:
                 yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 
-        # Atualizar Base de Dados
+        # Atualizar Base de Dados - guardar em workload_datasets
         try:
             # Garantir que as tabelas estão refletidas
-            if not hasattr(Base.classes, 'templates'):
+            if not hasattr(Base.classes, 'workload_datasets'):
                 from ..models import reflect_tables
                 reflect_tables()
 
-            Templates = Base.classes.templates
-            new_template = Templates(path=file_path)
-            db.add(new_template)
+            WorkloadDatasets = Base.classes.workload_datasets
+            Scenarios = Base.classes.scenarios
+            
+            # Determinar o scenario_id baseado no formato
+            scenario_name = _get_scenario_for_format(format_type.value)
+            scenario = db.query(Scenarios).filter(Scenarios.name == scenario_name).first()
+            
+            if not scenario:
+                raise HTTPException(status_code=500, detail=f"Scenario '{scenario_name}' não encontrado na BD")
+            
+            # Criar o novo dataset
+            new_dataset = WorkloadDatasets(
+                name=base_name,
+                description=f"Dataset uploaded: {file.filename}",
+                storage_path=file_path,
+                mime_path="application/json" if is_json else "application/x-yaml",
+                is_builtin=False,
+                created_at=datetime.now(),
+                scenarios_id=scenario.id
+            )
+            db.add(new_dataset)
             db.commit()
+        except HTTPException:
+            raise
         except Exception as e:
             db.rollback()
             if os.path.exists(file_path):
@@ -431,6 +485,8 @@ async def upload_file_with_format(format_type: FileFormat, file: UploadFile = Fi
                 status_code=500, detail=f"Erro ao guardar na base de dados: {str(e)}"
             )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Erro ao guardar o ficheiro: {str(e)}"

@@ -61,7 +61,7 @@
 }
 
 .run-card__footer__attack__model-name{
-    @apply font-bold text-gray-500 text-2xl;
+    @apply font-bold text-gray-500 text-2xl truncate;
 }
 
 .run-card__footer__versus{
@@ -77,5 +77,5 @@
 }
 
 .run-card__footer__target__model-name{
-    @apply font-bold text-gray-500 text-2xl;
+    @apply font-bold text-gray-500 text-2xl truncate;
 }

@@ -4,9 +4,14 @@ import ArrowIcon from "./ArrowIcon";
 
 import "../styles/components/dropdown_menu.css";
 
-const DropdownMenu = ({ placeholder = "Placeholder", items = ["Item1", "Item2", "Item3"] }) => {
+const DropdownMenu = ({ 
+  placeholder = "Placeholder",
+  items = ["Item1", "Item2", "Item3"],
+  value,
+  onSelect,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState("");
+  //const [selected, setSelected] = useState("");
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -20,22 +25,19 @@ const DropdownMenu = ({ placeholder = "Placeholder", items = ["Item1", "Item2", 
   }, []);
 
   const handleSelect = (item) => {
-    setSelected(item);
     setIsOpen(false);
+    onSelect?.(item);
   };
 
   return (
     <div className="dropdown" ref={dropdownRef}>
-        {/*<button
-            onClick={() => setIsOpen(!isOpen)}
-            className={`dropdown__button
-                        ${isOpen ? "border-red-400" : "border-gray-300"}`}
-        >*/}
         <button
             onClick={() => setIsOpen(!isOpen)}
             className="dropdown__button"
         >
-            {selected || placeholder}
+            <div className="truncate">
+              {value || placeholder}
+            </div>
             <span className="dropdown__arrow">
                 {isOpen 
                     ? <ArrowIcon variant="arrow_up" /> 
@@ -50,7 +52,7 @@ const DropdownMenu = ({ placeholder = "Placeholder", items = ["Item1", "Item2", 
                 <li
                   key={index}
                   onClick={() => handleSelect(item)}
-                  className="dropdown__menu-item"
+                  className={`dropdown__menu-item ${item === value ? "dropdown__menu-item--selected" : ""}`}
                 >
                   {item}
                 </li>

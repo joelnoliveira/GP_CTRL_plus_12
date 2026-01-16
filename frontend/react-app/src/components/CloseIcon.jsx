@@ -6,6 +6,7 @@ import "../styles/components/close_icon.css"
 
 const CloseIcon = ({
   size = "small",
+  onClick,
 }) => {
   const icon_size =
     size === "small"
@@ -17,8 +18,12 @@ const CloseIcon = ({
       : ""
 
   return (
-    <img src={close} className={icon_size} alt="close icon" />
-  )
+    <div
+      onClick={onClick}
+    >
+      <img src={close} className={icon_size} alt="close icon" />
+    </div>
+  ) 
 }
 
 export default CloseIcon

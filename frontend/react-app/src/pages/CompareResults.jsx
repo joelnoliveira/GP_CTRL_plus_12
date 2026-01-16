@@ -8,6 +8,7 @@ import DropdownMenu from "../components/DropdownMenu";
 import ToggleSwitch from "../components/ToggleSwitch";
 import AddIcon from "../components/AddIcon";
 import Logo from "../components/Logo";
+import CloseIcon from "../components/CloseIcon";
 
 import {
   BarChart,
@@ -67,7 +68,7 @@ const CompareResults = (
 
     get_results();
   }, []);
-
+  
   
 
   /* =======================
@@ -168,26 +169,35 @@ const CompareResults = (
               Charts Area
           ======================= */}
           <div className="compare_results__charts">
-            <div className="chart_card">
+            {isOnORR && selectedExperiments.length !== 0 && (<div className="chart_card">
               <h3>Over-Refusal Rate</h3>
-              {isOnORR && (
-                <ExperimentBarChart data={getChartData("ORR")} />
-              )}
+              <ExperimentBarChart data={getChartData("ORR")} />
             </div>
+            )}
 
-            <div className="chart_card">
+            {isOnASR && selectedExperiments.length !== 0 && (<div className="chart_card">
               <h3>Attack Success Rate</h3>
-              {isOnASR && (
-                <ExperimentBarChart data={getChartData("ASR")} />
-              )}
+              <ExperimentBarChart data={getChartData("ASR")} />
             </div>
+            )}
 
-            <div className="chart_card chart_card--wide">
+            {isOnAOR && selectedExperiments.length !== 0 && (<div className="chart_card chart_card--wide">
               <h3>Achieved Objective Rate</h3>
-              {isOnAOR && (
-                <ExperimentBarChart data={getChartData("AOR")} />
-              )}
+              <ExperimentBarChart data={getChartData("AOR")} />
             </div>
+            )}
+
+            {!isOnORR && !isOnASR && !isOnAOR && selectedExperiments.length !== 0 && (
+              <div className="warning_message">
+                <h1 className="warning_message__text">Please select a metric</h1>
+              </div>
+            )}
+
+            {selectedExperiments.length === 0 &&(
+              <div className="warning_message">
+                <h1 className="warning_message__text">Please add an experiment to compare</h1>
+              </div>
+            )}
           </div>
 
           {/* =======================
@@ -211,6 +221,15 @@ const CompareResults = (
                       placeholder={exp}
                       items={Object.keys(experimentsMap)}
                       onSelect={(value) => updateExperiment(index, value)}
+                    />
+
+                    <CloseIcon
+                      size="small"
+                      onClick={() => {
+                        setSelectedExperiments((prev) =>
+                          prev.filter((_, i) => i !== index)
+                        );
+                      }}
                     />
                   </div>
                 );
@@ -239,6 +258,7 @@ const CompareResults = (
                   checked={isOnORR}
                   onChange={setIsOnORR}
                   options={["ORR", "ORR"]}
+                  styles="toggle_switch_text"
                 />
               </label>
 
@@ -247,6 +267,7 @@ const CompareResults = (
                   checked={isOnASR}
                   onChange={setIsOnASR}
                   options={["ASR", "ASR"]}
+                  styles="toggle_switch_text"
                 />
               </label>
 
@@ -255,6 +276,7 @@ const CompareResults = (
                   checked={isOnAOR}
                   onChange={setIsOnAOR}
                   options={["AOR", "AOR"]}
+                  styles="toggle_switch_text"
                 />
               </label>
             </div>

@@ -8,6 +8,7 @@ const ToggleSwitch = (
         checked,
         onChange, 
         options = ["Private", "Public"],
+        styles_text = "toggle__label",
     }
 ) => {
 
@@ -31,7 +32,7 @@ const ToggleSwitch = (
             <Label 
                 size={"medium"}
                 text={label}
-                styles={"toggle__label"}
+                styles={styles_text}
             />
         </label>
     );

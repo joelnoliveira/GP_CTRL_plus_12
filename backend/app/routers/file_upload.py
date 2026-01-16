@@ -528,14 +528,35 @@ async def list_uploaded_files():
 
 
 @router.delete("/uploads/{filename}")
-async def delete_uploaded_file(filename: str):
-    """Remove um ficheiro uploaded."""
+async def delete_uploaded_file(filename: str, db: Session = Depends(get_db)):
+    """Remove um ficheiro uploaded e o registo da base de dados."""
     file_path = os.path.join(UPLOAD_DIR, filename)
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Ficheiro não encontrado")
 
     try:
+        # Remover da base de dados primeiro
+        try:
+            if not hasattr(Base.classes, 'workload_datasets'):
+                from ..models import reflect_tables
+                reflect_tables()
+            
+            WorkloadDatasets = Base.classes.workload_datasets
+            # Procurar pelo storage_path (pode ter path completo ou só o nome)
+            record = db.query(WorkloadDatasets).filter(
+                WorkloadDatasets.storage_path == file_path
+            ).first()
+            
+            if record:
+                db.delete(record)
+                db.commit()
+        except Exception as db_error:
+            db.rollback()
+            # Log do erro mas continua a apagar o ficheiro
+            print(f"Aviso: Erro ao remover da BD: {db_error}")
+        
+        # Remover o ficheiro físico
         os.remove(file_path)
         return {"success": True, "message": f"Ficheiro '{filename}' removido com sucesso"}
     except Exception as e:

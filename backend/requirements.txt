@@ -56,3 +56,5 @@ seaborn>=0.11.0
 numpy>=1.21.0
 PyYAML
 python-multipart
+semgrep
+magika

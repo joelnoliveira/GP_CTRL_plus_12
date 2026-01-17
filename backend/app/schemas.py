@@ -98,6 +98,7 @@ class OverRefusalTestRequest(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    captcha_token: str
 
     #Input for swagger
     model_config = {
@@ -105,7 +106,8 @@ class UserLogin(BaseModel):
             "examples": [
                 {
                     "email": "user1@example.com",
-                    "password": "password"
+                    "password": "password",
+                    "captcha_token": "token"
                 }
             ]
         }
@@ -114,6 +116,7 @@ class UserLogin(BaseModel):
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, description="Password must be at least 8 characters long")
+    captcha_token: str
 
     #Input for swagger
     model_config = {
@@ -121,7 +124,8 @@ class UserCreate(BaseModel):
             "examples": [
                 {
                     "email": "user1@example.com",
-                    "password": "password"
+                    "password": "password",
+                    "captcha_token": "token"
                 }
             ]
         }

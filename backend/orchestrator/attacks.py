@@ -16,8 +16,10 @@ from pyrit.score import SelfAskRefusalScorer
 from pyrit.models import SeedPromptDataset
 from pyrit.models.prompt_request_response import PromptRequestResponse
 from pyrit.memory.central_memory import CentralMemory
-from orchestrator.constants import DEFAULTS
+from orchestrator.constants import DEFAULTS, Goals
 
+from evaluation_service.run_metrics import get_run_metrics, get_run_metrics_crescendo
+from evaluation_service.vulnerability_analysis import vuln_analysis
 async def over_refusal_test(
         # ollama_host,
         # seed=2316,
@@ -77,7 +79,7 @@ async def over_refusal_test(
         requests = [NormalizerRequest(seed_prompt_group=p) for p in prompt_groups]
 
 
-        requests = requests[750:]
+        # requests = requests[750:]
 
         print(len(requests))
 
@@ -87,18 +89,11 @@ async def over_refusal_test(
 
         #memory.export_conversations(file_path="conversations.json", export_type="json")
         #memory.dispose_engine()
-        prompt_sending_orchestrator.output_conversations_to_json(file_path="gemma3:27b_final.json")
+        result_json = prompt_sending_orchestrator.output_conversations_to_json(file_path="debug_results/orr_atks_test.json")
 
-        #score responses
-        responses_flattened = PromptRequestResponse.flatten_to_prompt_request_pieces(responses)
-        #deepseek-r1:70b
-        judge_2 = OllamaChatTarget(model_name="llama3.2:1b", endpoint=ollama_host + "/api/chat", max_requests_per_minute=10, timeout=100)
+        metrics = get_run_metrics(result_json, atk_type='over_refusal')
 
-        refusal_scorer_2 = SelfAskRefusalScorer(
-            chat_target=judge_2,
-        )
-
-        refusal_scores = await refusal_scorer_2.score_responses_inferring_tasks_batch_async(request_responses=responses_flattened, batch_size=1)
+        print(f"[DEBUG] metrics: {metrics}")
 
     except Exception as e:
         raise Exception(f"Error in over_refusal_test: {e}")
@@ -150,8 +145,8 @@ async def launch_attack_template(ollama_host, **kwargs):
         goals_dictionary = {}
 
         #baseline from Donato... it will need to be adapted to our needs
-        for p in seed_prompt_dataset.prompts:
-            for goal in goals_list:
+        for goal in goals_list:
+            for p in seed_prompt_dataset.prompts:
                 full_prompt: str = p.render_template_value(
                     prompt=goal
                 )
@@ -199,21 +194,22 @@ async def launch_attack_template(ollama_host, **kwargs):
         )
         )
 
-        requests = requests[900:]
+        # requests = requests[900:]
         #requests = requests[1000:]
         responses = await prompt_sending_orchestrator.send_normalizer_requests_async(prompt_request_list=requests, memory_labels=memory_labels) #type: ignore
         #await prompt_sending_orchestrator.print_conversations_async()  # type: ignore
-        prompt_sending_orchestrator.output_conversations_to_json(file_path="gemma3:27b_final.json")
+        
+        result_json = prompt_sending_orchestrator.output_conversations_to_json(file_path="debug_results/template_atks_test.json")
         #score responses
-        responses_flattened = PromptRequestResponse.flatten_to_prompt_request_pieces(responses)
+        # ??? responses_flattened = PromptRequestResponse.flatten_to_prompt_request_pieces(responses)
 
-        judge_2 = OllamaChatTarget(model_name="llama3.2:1b", endpoint=ollama_host + "/api/chat", max_requests_per_minute=10, timeout=100)
+        print(f"[DEBUG] goals list length: {len(goals_list)}")
+        metrics = get_run_metrics(result_json, atk_type='attack_template', n_goals=len(goals_list))
 
-        refusal_scorer_2 = SelfAskRefusalScorer(
-            chat_target=judge_2,
-        )
+        print(f"[DEBUG] metrics: {metrics}")
 
-        refusal_scores = await refusal_scorer_2.score_responses_inferring_tasks_batch_async(request_responses=responses_flattened, batch_size=1)
+        if label == Goals.VULNERABLE_GOALS.value:
+            vulnerabilities = vuln_analysis(result_json)
 
     except Exception as e:
         import traceback
@@ -230,6 +226,8 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     temperature_target = args["temperature_target"]
     temperature_attacker = args["temperature_attacker"]
     temperature_judge = args["jury_models"]
+    label = args["label"]
+
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -254,8 +252,16 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
             await result.print_conversation_async()  # type: ignore
             data.append(await result.get_data_from_conversation_async())
 
+        orchestrator.output_conversations_to_json(file_path="debug_results/crescendo_atk_test.json")
+
+        metrics = get_run_metrics_crescendo(data)
+        print(f"[DEBUG] metrics: {metrics}")
+
+        if label == Goals.VULNERABLE_GOALS.value:
+            vulnerabilities = vuln_analysis(data)
+
         ##save variable data to a json file
-        with open("gemma3:27b_3.json", "w") as f:
+        with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
             json.dump(data, f)
     except Exception as e:
         raise Exception(f"Error in launch_crescendo_attack: {e}") 
@@ -270,6 +276,7 @@ async def launch_flip_attack(ollama_host, **kwargs):
     temperature_target = args["temperature_target"]
     temperature_attacker = args["temperature_attacker"]
     temperature_judge = args["jury_models"]
+    label = args["label"]
 
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
@@ -306,6 +313,7 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     role_play_option = args.get("role_play_option", RolePlayPaths.MR_ROBOT.value)
     temperature_target = args["temperature_target"]
     temperature_attacker = args["temperature_attacker"]
+    label = args["label"]
 
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
@@ -340,8 +348,15 @@ async def launch_role_play_attack(ollama_host, **kwargs):
 
         print("results:")
         results = await orchestrator.send_as_normalizer_requests_async(goals_list=goals_list) # type: ignore
-        orchestrator.output_conversations_to_json(file_path="results/attacker_llm/malicious/single_turn/role_play/video_game2/gemma3_27b_3.json")
+        result_json = orchestrator.output_conversations_to_json(file_path="debug_results/role_play_atk_test.json")
         # with open("mr_robot_attack_results.json", "w") as f:
         #     json.dump(results, f)
+
+        metrics = get_run_metrics(result_json, atk_type='llm')
+        print(f"[DEBUG] metrics: {metrics}")
+
+        if label == Goals.VULNERABLE_GOALS.value:
+            vulnerabilities = vuln_analysis(result_json)
+
     except Exception as e:
         raise Exception(f"Error in launch_mr_robot_attack: {e}") 

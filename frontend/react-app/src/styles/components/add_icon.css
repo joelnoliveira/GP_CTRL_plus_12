@@ -1,0 +1,15 @@
+.add_icon__wrapper{
+    @apply bg-red-600 rounded-full flex items-center justify-center px-1 py-1 hover:cursor-pointer;
+}
+
+.add_icon--small{
+    @apply w-5 h-5;
+}
+
+.add_icon--medium{
+    @apply w-7 h-7;
+}
+
+.add_icon--large{
+    @apply w-9 h-9;
+}

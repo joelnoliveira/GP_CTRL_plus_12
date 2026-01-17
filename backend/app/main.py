@@ -299,6 +299,8 @@ async def over_refusal_test(request: OverRefusalTestRequest):
         await launch_over_refusal_test(
             seed=request.seed,
             temperature_judges=request.temperature_judges,
+            temperature_attacker=request.temperature_attacker,
+            temperature_target=request.temperature_target,
             target_model_name=request.target_model_name,
             jury_models=request.jury_models,
         )

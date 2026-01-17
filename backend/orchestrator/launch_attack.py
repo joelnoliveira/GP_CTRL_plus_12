@@ -147,6 +147,7 @@ async def launch_attack(
         await attacks_dict[attack](
             ollama_host=os.getenv("OLLAMA_BASE_URL"),
             seed=seed,
+            label=label,
             temperature_judges=temperature_judges,
             temperature_attacker= temperature_attacker,
             temperature_target = temperature_target,
@@ -198,6 +199,8 @@ async def launch_attack_template(
 async def launch_over_refusal_test(
     seed: int = None,
     temperature_judges: float = None,
+    temperature_attacker: float = None,
+    temperature_target: float = None,
     target_model_name: str = None,
     jury_models: list[str] = None,
 ):

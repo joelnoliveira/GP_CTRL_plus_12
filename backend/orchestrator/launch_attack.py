@@ -24,7 +24,6 @@ def load_labels(label: str):
 
         #convert malicious_goals to a list of prompts
         goals_list = [goal['Prompt'] for goal in goals]
-        #goals_list = goals_list[:10]
         return goals_list
 
     

@@ -145,6 +145,10 @@ async def launch_attack_template(ollama_host, **kwargs):
         goals_dictionary = {}
 
         #baseline from Donato... it will need to be adapted to our needs
+        #to quickly test the attack template, we will limit the number of goals and prompts
+        #goals_list = goals_list[:1]
+        #seed_prompt_dataset.prompts = seed_prompt_dataset.prompts[:3]
+
         for goal in goals_list:
             for p in seed_prompt_dataset.prompts:
                 full_prompt: str = p.render_template_value(
@@ -153,7 +157,6 @@ async def launch_attack_template(ollama_host, **kwargs):
                 prompt_list.append(full_prompt)
                 goals_dictionary[full_prompt] = goal
         
-
         memory = CentralMemory.get_memory_instance()
         memory_labels = {"op_name": label, "user_name": "jd"}
 

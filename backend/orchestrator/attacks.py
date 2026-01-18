@@ -16,9 +16,10 @@ from pyrit.score import SelfAskRefusalScorer
 from pyrit.models import SeedPromptDataset
 from pyrit.models.prompt_request_response import PromptRequestResponse
 from pyrit.memory.central_memory import CentralMemory
-from orchestrator.constants import DEFAULTS
+from orchestrator.constants import DEFAULTS, Goals
 
 from evaluation_service.run_metrics import get_run_metrics, get_run_metrics_crescendo
+from evaluation_service.vulnerability_analysis import vuln_analysis
 async def over_refusal_test(
         # ollama_host,
         # seed=2316,
@@ -30,6 +31,7 @@ async def over_refusal_test(
     args = {**DEFAULTS, **kwargs}
     seed = args["seed"]
     temperature_judges = args["temperature_judges"]
+    temperature_target = args["temperature_target"]
     target_model_name = args["target_model_name"]
     jury_models = args["jury_models"]
     try:
@@ -41,7 +43,7 @@ async def over_refusal_test(
 
 
         #judge = OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=200)
-        target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed})
+        target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
 
         jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
         jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
@@ -104,19 +106,49 @@ async def launch_attack_template(ollama_host, **kwargs):
     label = args["label"]
     jury_models = args["jury_models"]
     temperature_judges = args["temperature_judges"]
+    temperature_target = args["temperature_target"]
     target_model_name = args["target_model_name"]
+    template_path = args.get("template_path")
     
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type="InMemory")
 
-        #template attack
-        seed_prompt_dataset = SeedPromptDataset.from_yaml_file(pathlib.Path("datasets/JailBreakV_28K_clean.yaml"))
+        # template attack
+        path = pathlib.Path(template_path) if template_path else pathlib.Path("datasets/JailBreakV_28K_clean.yaml")
+        
+        if path.suffix.lower() == '.json':
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            if isinstance(data, list):
+                # Transform list-based JSON (e.g. malicious_goals) to SeedPrompt compatible format
+                formatted_prompts = []
+                for item in data:
+                    if "Prompt" in item:
+                        formatted_prompts.append({
+                            "value": item["Prompt"],
+                            "data_type": "text"
+                        })
+                    elif "value" in item:
+                         formatted_prompts.append(item)
+                
+                seed_prompt_dataset = SeedPromptDataset(prompts=formatted_prompts)
+            else:
+                 # Attempt to load as standard dict-based dataset
+                 seed_prompt_dataset = SeedPromptDataset.from_dict(data)
+        else:
+            seed_prompt_dataset = SeedPromptDataset.from_yaml_file(path)
+
 
         prompt_list = []
         goals_dictionary = {}
 
         #baseline from Donato... it will need to be adapted to our needs
+        #to quickly test the attack template, we will limit the number of goals and prompts
+        #goals_list = goals_list[:1]
+        #seed_prompt_dataset.prompts = seed_prompt_dataset.prompts[:3]
+
         for goal in goals_list:
             for p in seed_prompt_dataset.prompts:
                 full_prompt: str = p.render_template_value(
@@ -125,12 +157,11 @@ async def launch_attack_template(ollama_host, **kwargs):
                 prompt_list.append(full_prompt)
                 goals_dictionary[full_prompt] = goal
         
-
         memory = CentralMemory.get_memory_instance()
         memory_labels = {"op_name": label, "user_name": "jd"}
 
 
-        target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed})
+        target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_target})
 
         jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_judges})
         jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
@@ -180,6 +211,9 @@ async def launch_attack_template(ollama_host, **kwargs):
 
         print(f"[DEBUG] metrics: {metrics}")
 
+        if label == Goals.VULNERABLE_GOALS.value:
+            vulnerabilities = vuln_analysis(result_json)
+
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -192,14 +226,18 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     judge_model_name = args["judge_model_name"]
     target_model_name = args["target_model_name"]
     goals_list = args["goals_list"] if args["goals_list"] is not None else []
+    temperature_target = args["temperature_target"]
+    temperature_attacker = args["temperature_attacker"]
+    temperature_judge = args["jury_models"]
+    label = args["label"]
 
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
-        objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed})
-        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed})
-        judge= OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed})
+        objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_target})
+        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_attacker})
+        judge= OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_judge})
 
         orchestrator= CrescendoOrchestrator(
             objective_target=objective_target,
@@ -222,6 +260,9 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         metrics = get_run_metrics_crescendo(data)
         print(f"[DEBUG] metrics: {metrics}")
 
+        if label == Goals.VULNERABLE_GOALS.value:
+            vulnerabilities = vuln_analysis(data)
+
         ##save variable data to a json file
         with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
             json.dump(data, f)
@@ -235,14 +276,18 @@ async def launch_flip_attack(ollama_host, **kwargs):
     judge_model_name = args["judge_model_name"]
     target_model_name = args["target_model_name"]
     goals_list = args["goals_list"] if args["goals_list"] is not None else []
+    temperature_target = args["temperature_target"]
+    temperature_attacker = args["temperature_attacker"]
+    temperature_judge = args["jury_models"]
+    label = args["label"]
 
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
-        objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed})
-        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed})
-        judge= OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed})
+        objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_target})
+        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_attacker})
+        judge= OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_judge})
 
 
         refusal_scorer_judge = SelfAskRefusalScorer(
@@ -269,12 +314,16 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     target_model_name = args["target_model_name"]
     goals_list = args["goals_list"] if args["goals_list"] is not None else []
     role_play_option = args.get("role_play_option", RolePlayPaths.MR_ROBOT.value)
+    temperature_target = args["temperature_target"]
+    temperature_attacker = args["temperature_attacker"]
+    label = args["label"]
+
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
-        objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed})
-        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=2000, options={'seed': seed})
+        objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
+        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=2000, options={'seed': seed, 'temperature': temperature_attacker})
         jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
         jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
         jury_3 = OllamaChatTarget(model_name=jury_models[2], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
@@ -308,6 +357,9 @@ async def launch_role_play_attack(ollama_host, **kwargs):
 
         metrics = get_run_metrics(result_json, atk_type='llm')
         print(f"[DEBUG] metrics: {metrics}")
+
+        if label == Goals.VULNERABLE_GOALS.value:
+            vulnerabilities = vuln_analysis(result_json)
 
     except Exception as e:
         raise Exception(f"Error in launch_mr_robot_attack: {e}") 

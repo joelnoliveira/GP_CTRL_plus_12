@@ -109,7 +109,9 @@ export default function Login() {
 
 			const data = await response.json();
 			
-			login(data.access_token); // Pass the token/user data to your auth context
+			//console.log("Login success:", data);
+			//console.log("Login success");
+			login(data.access_token, data.email); // Pass the token/user data to your auth context
 
 		} catch (err) {
 			console.error("API Error:", err.message);

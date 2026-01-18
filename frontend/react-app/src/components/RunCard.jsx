@@ -12,11 +12,13 @@ const RunCard = (
         status,
         attack_model,
         target_model,
+        isPublicValue = false,
+        canChangeStatus = true,
     }
 ) => {
-    const [isPublic, setIsPublic] = useState(false);
+    const [isPublic, setIsPublic] = useState(isPublicValue);
     const handleIsPublic = (newValue) => {
-        setIsPublic(newValue);
+        if(canChangeStatus) setIsPublic(newValue);
     }
 
     const status_class = status === "Ongoing"

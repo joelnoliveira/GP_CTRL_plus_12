@@ -14,6 +14,8 @@ from langfuse import get_client
 from urllib.parse import quote
 from .routers import auth, file_upload
 from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
+
+from fastapi.middleware.cors import CORSMiddleware
 from app.schemas import Token
 from app.security import get_current_user
 
@@ -31,10 +33,9 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3001"
-    ],
-    allow_methods=["*"],
+    allow_origins=["http://localhost:3001"],  # or ["*"] for dev
+    allow_credentials=True,
+    allow_methods=["*"],  # <-- THIS enables OPTIONS
     allow_headers=["*"],
 )
 
@@ -50,6 +51,125 @@ async def check_alive():
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+@app.get("/history/mock_filters")
+def get_mock_history_filters():
+    return [
+        {
+            "key": "attack_type",
+            "placeholder": "Attack Type",
+            "items": ["FGSM", "PGD", "CW"]
+        },
+        {
+            "key": "attack_model",
+            "placeholder": "Attack Model",
+            "items": ["ResNet50", "ConvNeXt", "EfficientNet-B3", "MobileNetV3", "ResNet18"]
+        },
+        {
+            "key": "target_model",
+            "placeholder": "Target Model",
+            "items": ["EfficientNet-B0", "ViT-B16", "ResNet101", "DenseNet121", "EfficientNet-B1"]
+        },
+        {
+            "key": "jury_model",
+            "placeholder": "Jury Model",
+            "items": ["EfficientNet-B0", "ViT-B16", "ResNet101", "DenseNet121", "EfficientNet-B1"]
+        },
+        {
+            "key": "workload",
+            "placeholder": "Workload",
+            "items": ["Workload A", "Workload B", "Workload C"]
+        },
+        {
+            "key": "scenario",
+            "placeholder": "Scenario",
+            "items": ["Scenario A", "Scenario B", "Scenario C"]
+        },
+        {
+            "key": "status",
+            "placeholder": "Status",
+            "items": ["Ongoing", "Loading", "Finished"]
+        }
+    ]
+
+from fastapi import Query
+from typing import Optional, List
+
+@app.get("/history/mock_runs")
+def get_mock_history_runs(
+    attack_type: Optional[str] = Query(None),
+    attack_model: Optional[str] = Query(None),
+    target_model: Optional[str] = Query(None),
+    jury_model: Optional[str] = Query(None),
+    workload: Optional[str] = Query(None),
+    scenario: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+):
+    runs = [
+        {
+            "run_name_id": "RUN-001",
+            "username": "joao.carvalho",
+            "attack_type": "FGSM",
+            "date": "2025-01-10",
+            "status": "Finished",
+            "attack_model": "ResNet50",
+            "target_model": "EfficientNet-B0",
+            "isPublicValue": False,
+        },
+        {
+            "run_name_id": "RUN-002",
+            "username": "joao.carvalho",
+            "attack_type": "PGD",
+            "date": "2025-01-12",
+            "status": "Ongoing",
+            "attack_model": "ConvNeXt",
+            "target_model": "ViT-B16",
+            "isPublicValue": True,
+        },
+        {
+            "run_name_id": "RUN-003",
+            "username": "maria.silva",
+            "attack_type": "CW",
+            "date": "2025-01-15",
+            "status": "Loading",
+            "attack_model": "EfficientNet-B3",
+            "target_model": "ResNet101",
+            "isPublicValue": True,
+        },
+        {
+            "run_name_id": "RUN-004",
+            "username": "pedro.oliveira",
+            "attack_type": "FGSM",
+            "date": "2025-01-18",
+            "status": "Finished",
+            "attack_model": "MobileNetV3",
+            "target_model": "DenseNet121",
+            "isPublicValue": True,
+        },
+        {
+            "run_name_id": "RUN-005",
+            "username": "ana.rodrigues",
+            "attack_type": "PGD",
+            "date": "2025-01-20",
+            "status": "Finished",
+            "attack_model": "ResNet18",
+            "target_model": "EfficientNet-B1",
+            "isPublicValue": True,
+        },
+    ]
+
+    def matches(run):
+        return (
+            (attack_type is None or run["attack_type"] == attack_type) and
+            (attack_model is None or run["attack_model"] == attack_model) and
+            (target_model is None or run["target_model"] == target_model) and
+            (jury_model is None or run["jury_model"] == jury_model) and
+            (workload is None or run["workload"] == workload) and
+            (scenario is None or run["scenario"] == scenario) and
+            (status is None or run["status"] == status) 
+        )
+
+    return [run for run in runs if matches(run)]
 
 # Example endpoints using reflected ORM models
 

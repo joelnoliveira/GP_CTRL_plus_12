@@ -25,6 +25,7 @@ const DropdownMenu = ({ placeholder = "Placeholder", items = ["Item1", "Item2", 
     }
     setInternalSelected(item);
     setIsOpen(false);
+    onSelect?.(item);
   };
 
   return (

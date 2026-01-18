@@ -7,10 +7,12 @@ const ToggleSwitch = (
     { 
         checked,
         onChange, 
+        options = ["Private", "Public"],
+        styles_text = "toggle__label",
     }
 ) => {
 
-    const label = checked ? "Public" : "Private"
+    const label = checked ? options[1] : options[0];
     
     return (
         <label className="toggle__container">
@@ -30,11 +32,10 @@ const ToggleSwitch = (
             <Label 
                 size={"medium"}
                 text={label}
-                styles={"toggle__label"}
+                styles={styles_text}
             />
         </label>
     );
 };
 
 export default ToggleSwitch;
-

@@ -215,6 +215,8 @@ class PromptSendingOrchestrator(Orchestrator):
             }
         with open(file_path, "w") as f:
             json.dump(conversations_json, f)
+        
+        return conversations_json
 
     def _prepare_conversation(self):
         """

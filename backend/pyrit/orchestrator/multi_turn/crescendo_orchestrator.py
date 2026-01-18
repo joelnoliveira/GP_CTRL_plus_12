@@ -428,3 +428,22 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         target_messages = self._memory.get_prompt_request_pieces(conversation_id=conversation_id)
         for message in target_messages:
             logger.info(f"{message.role}: {message.converted_value}\n")
+
+    def output_conversations_to_json(self, file_path: str = "conversations.json"):
+        import json
+        """Outputs the conversation to a json file."""
+        messages = self.get_memory()
+        conversations_json = {}
+        #conversation_json is a dictionary of dictionaries, each main dictionary contains the conversation id and a dictionary of messages
+        for message in messages:
+            if message.conversation_id not in conversations_json:
+                conversations_json[message.conversation_id] = {}
+            conversations_json[message.conversation_id][str(message.id)] = {
+                "role": message.role,
+                "converted_value": message.converted_value,
+                "scores": [score.to_dict() for score in message.scores],
+            }
+        with open(file_path, "w") as f:
+            json.dump(conversations_json, f)
+        
+        return conversations_json

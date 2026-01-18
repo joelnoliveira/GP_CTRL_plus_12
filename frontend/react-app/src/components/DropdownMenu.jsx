@@ -2,14 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import ArrowIcon from "./ArrowIcon";
 import "../styles/components/dropdown_menu.css";
 
-const DropdownMenu = ({
-  value,
-  placeholder = "Placeholder",
-  items = ["Item1", "Item2", "Item3"],
-  onSelect,
-}) => {
+const DropdownMenu = ({ placeholder = "Placeholder", items = ["Item1", "Item2", "Item3"], onSelect, value }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [internalSelected, setInternalSelected] = useState("");
   const dropdownRef = useRef(null);
+
+  const selectedValue = value !== undefined ? value : internalSelected;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -22,22 +20,30 @@ const DropdownMenu = ({
   }, []);
 
   const handleSelect = (item) => {
-    onSelect(item);
+    if (onSelect) {
+      onSelect(item);
+    }
+    setInternalSelected(item);
     setIsOpen(false);
   };
 
   return (
     <div className="dropdown" ref={dropdownRef}>
+      {/*<button
+            onClick={() => setIsOpen(!isOpen)}
+            className={`dropdown__button
+                        ${isOpen ? "border-red-400" : "border-gray-300"}`}
+        >*/}
       <button
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => setIsOpen(!isOpen)}
         className="dropdown__button"
       >
-        {value || placeholder}
+        {selectedValue || placeholder}
         <span className="dropdown__arrow">
-          {isOpen 
-                    ? <ArrowIcon variant="arrow_up" /> 
-                    : <ArrowIcon variant="arrow_down" />
-                }
+          {isOpen
+            ? <ArrowIcon variant="arrow_up" />
+            : <ArrowIcon variant="arrow_down" />
+          }
         </span>
       </button>
 

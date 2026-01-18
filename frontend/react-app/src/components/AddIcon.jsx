@@ -19,15 +19,15 @@ const AddIcon = ({
       : ""
 
   return (
-    <div
-      className={`add_icon__wrapper ${disabled ? "add_icon--disabled" : ""}`}
-      onClick={!disabled ? onClick : undefined}
-      role="button"
-      aria-disabled={disabled}
+    <button 
+      className="add_icon__wrapper"
+      disabled={disabled} 
+      onClick={onClick}
+      type="button"
     >
       <img src={addIcon} className={icon_size} alt="add icon" />
-    </div>
-  );
-};
+    </button>
+  )
+}
 
 export default AddIcon;

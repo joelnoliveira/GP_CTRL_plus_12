@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-
 import ArrowIcon from "./ArrowIcon";
-
 import "../styles/components/dropdown_menu.css";
 
 const DropdownMenu = ({ placeholder = "Placeholder", items = ["Item1", "Item2", "Item3"], onSelect, value }) => {

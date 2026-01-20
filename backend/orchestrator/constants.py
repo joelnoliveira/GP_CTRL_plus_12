@@ -14,6 +14,12 @@ class RolePlayOption(str, Enum):
     MR_ROBOT = "MR_ROBOT"
     VIDEO_GAME = "VIDEO_GAME"
 
+class TargetModel(str, Enum):
+    OLLAMA = "OLLAMA"
+    OPEN_AI = "OPEN_AI"
+    HUGGING_FACE = "HUGGING_FACE"
+    AZURE = "AZURE_ML"
+
 DEFAULTS = dict(
     seed=2316,
     temperature_judges=0.1,

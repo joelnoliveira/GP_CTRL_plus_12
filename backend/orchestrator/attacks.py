@@ -10,13 +10,13 @@ from pyrit.orchestrator.single_turn.flip_attack_orchestrator import FlipAttackOr
 # from pyrit.score.self_ask_refusal_scorer import SelfAskRefusalScorer
 from pyrit.orchestrator.single_turn.role_play_orchestrator import RolePlayOrchestrator, RolePlayPaths 
 from pyrit.prompt_normalizer.normalizer_request import NormalizerRequest
-from pyrit.prompt_target import (OllamaChatTarget, OpenAIChatTarget)
+from pyrit.prompt_target import (OllamaChatTarget, OpenAIChatTarget, HuggingFaceChatTarget, AzureMLChatTarget)
 from pyrit.orchestrator import PromptSendingOrchestrator
 from pyrit.score import SelfAskRefusalScorer
 from pyrit.models import SeedPromptDataset
 from pyrit.models.prompt_request_response import PromptRequestResponse
 from pyrit.memory.central_memory import CentralMemory
-from orchestrator.constants import DEFAULTS, Goals
+from orchestrator.constants import DEFAULTS, Goals, TargetModel
 
 from evaluation_service.run_metrics import get_run_metrics, get_run_metrics_crescendo
 from evaluation_service.vulnerability_analysis import vuln_analysis
@@ -34,6 +34,7 @@ async def over_refusal_test(
     temperature_target = args["temperature_target"]
     target_model_name = args["target_model_name"]
     jury_models = args["jury_models"]
+    target_provider = args["target_provider"]
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         
@@ -43,7 +44,19 @@ async def over_refusal_test(
 
 
         #judge = OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=200)
-        target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
+        #target = target_provider_dict[target_provider](model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
+        if target_provider == TargetModel.OLLAMA.value:
+            target = OllamaChatTarget(
+                model_name=target_model_name,
+                endpoint= ollama_host + "/api/chat",
+                timeout=1000,
+                options={'seed': seed, 'temperature': temperature_target}
+            )
+        elif target_provider == TargetModel.OPEN_AI.value:
+            target = OpenAIChatTarget(
+                deployment_name=target_model_name,
+                api_key=api_key,  # ← vem da BD
+            )
 
         jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
         jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
@@ -109,7 +122,8 @@ async def launch_attack_template(ollama_host, **kwargs):
     temperature_target = args["temperature_target"]
     target_model_name = args["target_model_name"]
     template_path = args.get("template_path")
-    
+    target_provider = args["target_provider"]
+
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type="InMemory")
@@ -160,8 +174,22 @@ async def launch_attack_template(ollama_host, **kwargs):
         memory = CentralMemory.get_memory_instance()
         memory_labels = {"op_name": label, "user_name": "jd"}
 
+        if target_provider == TargetModel.OLLAMA.value:
+            target = OllamaChatTarget(
+                model_name=target_model_name,
+                endpoint= ollama_host + "/api/chat",
+                timeout=1000,
+                options={'seed': seed, 'temperature': temperature_target}
+            )
+        elif target_provider == TargetModel.OPEN_AI.value:
+            target = OpenAIChatTarget(
+                deployment_name=target_model_name,
+                api_key=api_key,  # ← vem da BD
+            )
+        #judge = OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=200)
+        #target = target_provider_dict[target_provider](model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_target})
 
-        target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_target})
+        #target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_target})
 
         jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_judges})
         jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
@@ -230,12 +258,28 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     temperature_attacker = args["temperature_attacker"]
     temperature_judge = args["jury_models"]
     label = args["label"]
-
+    target_provider = args["target_provider"]
+    
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
-        objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_target})
+        #judge = OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=200)
+        #objective_target = target_provider_dict[target_provider](model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
+        if target_provider == TargetModel.OLLAMA.value:
+            objective_target = OllamaChatTarget(
+                model_name=target_model_name,
+                endpoint= ollama_host + "/api/chat",
+                timeout=1000,
+                options={'seed': seed, 'temperature': temperature_target}
+            )
+        elif target_provider == TargetModel.OPEN_AI.value:
+            objective_target = OpenAIChatTarget(
+                deployment_name=target_model_name,
+                api_key=api_key,  # ← vem da BD
+            )
+
+        #objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_target})
         attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_attacker})
         judge= OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_judge})
 
@@ -280,12 +324,27 @@ async def launch_flip_attack(ollama_host, **kwargs):
     temperature_attacker = args["temperature_attacker"]
     temperature_judge = args["jury_models"]
     label = args["label"]
+    target_provider = args["target_provider"]
 
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
-        objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_target})
+        #judge = OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=200)
+        #objective_target = target_provider_dict[target_provider](model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
+        if target_provider == TargetModel.OLLAMA.value:
+            objective_target = OllamaChatTarget(
+                model_name=target_model_name,
+                endpoint= ollama_host + "/api/chat",
+                timeout=1000,
+                options={'seed': seed, 'temperature': temperature_target}
+            )
+        elif target_provider == TargetModel.OPEN_AI.value:
+            objective_target = OpenAIChatTarget(
+                deployment_name=target_model_name,
+                api_key=api_key,  # ← vem da BD
+            )
+        #objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_target})
         attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_attacker})
         judge= OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_judge})
 
@@ -317,12 +376,29 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     temperature_target = args["temperature_target"]
     temperature_attacker = args["temperature_attacker"]
     label = args["label"]
+    target_provider = args["target_provider"]
 
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
-        objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
+    
+        #judge = OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=200)
+        #objective_target = target_provider_dict[target_provider](model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
+        if target_provider == TargetModel.OLLAMA.value:
+            objective_target = OllamaChatTarget(
+                model_name=target_model_name,
+                endpoint= ollama_host + "/api/chat",
+                timeout=1000,
+                options={'seed': seed, 'temperature': temperature_target}
+            )
+        elif target_provider == TargetModel.OPEN_AI.value:
+            objective_target = OpenAIChatTarget(
+                deployment_name=target_model_name,
+                api_key=api_key,  # ← vem da BD
+            )
+
+        #objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
         attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=2000, options={'seed': seed, 'temperature': temperature_attacker})
         jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
         jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})

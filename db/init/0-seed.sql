@@ -106,6 +106,20 @@ CREATE TABLE scenarios_users (
 	PRIMARY KEY(scenarios_id)
 );
 
+CREATE TABLE api_key_configs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+    model_name VARCHAR(100),
+    api_key VARCHAR(500)
+);
+
+CREATE TABLE users_api_key_configs (
+    users_id BIGINT NOT NULL,
+    api_key_configs_id BIGINT NOT NULL,
+    PRIMARY KEY(api_key_configs_id)
+);
+
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk1 FOREIGN KEY (workload_datasets_id) REFERENCES workload_datasets(id);
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk2 FOREIGN KEY (attack_loads_id) REFERENCES attack_loads(id);
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk3 FOREIGN KEY (scenarios_id) REFERENCES scenarios(id);
@@ -121,6 +135,8 @@ ALTER TABLE users_workload_datasets ADD CONSTRAINT users_workload_datasets_fk1 F
 ALTER TABLE users_workload_datasets ADD CONSTRAINT users_workload_datasets_fk2 FOREIGN KEY (workload_datasets_id) REFERENCES workload_datasets(id);
 ALTER TABLE scenarios_users ADD CONSTRAINT scenarios_users_fk1 FOREIGN KEY (scenarios_id) REFERENCES scenarios(id);
 ALTER TABLE scenarios_users ADD CONSTRAINT scenarios_users_fk2 FOREIGN KEY (users_id) REFERENCES users(id);
+ALTER TABLE users_api_key_configs ADD CONSTRAINT users_api_key_configs_fk1 FOREIGN KEY (users_id) REFERENCES users(id);
+ALTER TABLE users_api_key_configs ADD CONSTRAINT users_api_key_configs_fk2 FOREIGN KEY (api_key_configs_id) REFERENCES api_key_configs(id);
 
 
 -- ==================== SEED DATA: Scenarios ====================

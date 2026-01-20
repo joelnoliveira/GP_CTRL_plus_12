@@ -54,6 +54,7 @@ async def launch_attack(
     role_play_option: str = None,
     config_file_name: str = None,
     goals_file_name: str = None,
+    target_provider: str = "OLLAMA",
 ):
     load_dotenv()
 
@@ -147,6 +148,7 @@ async def launch_attack(
             ollama_host=os.getenv("OLLAMA_BASE_URL"),
             seed=seed,
             label=label,
+            target_provider=target_provider,
             temperature_judges=temperature_judges,
             temperature_attacker= temperature_attacker,
             temperature_target = temperature_target,
@@ -168,6 +170,7 @@ async def launch_attack_template(
     target_model_name: str = None,
     jury_models: list[str] = None,
     template_path: str = None,
+    target_provider: str = "OLLAMA",
 ):
     load_dotenv()
     
@@ -182,6 +185,7 @@ async def launch_attack_template(
     await attacks.launch_attack_template(
         ollama_host=os.getenv("OLLAMA_BASE_URL"),
         seed=seed,
+        target_provider=target_provider,
         temperature_judges=temperature_judges,
         temperature_attacker=temperature_attacker,
         temperature_target=temperature_target,
@@ -202,6 +206,7 @@ async def launch_over_refusal_test(
     temperature_target: float = None,
     target_model_name: str = None,
     jury_models: list[str] = None,
+    target_provider: str = "OLLAMA",
 ):
     load_dotenv()
     
@@ -216,6 +221,7 @@ async def launch_over_refusal_test(
     await attacks.over_refusal_test(
         ollama_host=os.getenv("OLLAMA_BASE_URL"),
         seed=seed,
+        target_provider=target_provider,
         temperature_judges=temperature_judges,
         temperature_attacker=temperature_attacker,
         temperature_target=temperature_target,

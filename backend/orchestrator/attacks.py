@@ -35,6 +35,7 @@ async def over_refusal_test(
     target_model_name = args["target_model_name"]
     jury_models = args["jury_models"]
     target_provider = args["target_provider"]
+    api_key = args["api_key"]
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         
@@ -123,7 +124,7 @@ async def launch_attack_template(ollama_host, **kwargs):
     target_model_name = args["target_model_name"]
     template_path = args.get("template_path")
     target_provider = args["target_provider"]
-
+    api_key = args["api_key"]
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type="InMemory")
@@ -259,7 +260,7 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     temperature_judge = args["jury_models"]
     label = args["label"]
     target_provider = args["target_provider"]
-    
+    api_key = args["api_key"]
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -325,7 +326,7 @@ async def launch_flip_attack(ollama_host, **kwargs):
     temperature_judge = args["jury_models"]
     label = args["label"]
     target_provider = args["target_provider"]
-
+    api_key = args["api_key"]
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -377,7 +378,7 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     temperature_attacker = args["temperature_attacker"]
     label = args["label"]
     target_provider = args["target_provider"]
-
+    api_key = args["api_key"]
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)

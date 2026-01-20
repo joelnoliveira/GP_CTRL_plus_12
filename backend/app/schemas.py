@@ -19,7 +19,9 @@ class AttackRequest(BaseModel):
     role_play_option: Optional[RolePlayOption] = Field(default=RolePlayOption.MR_ROBOT, description="Role play scenario (only for ROLE_PLAY_ATTACK)")
     config_file_name: Optional[str] = Field(default=None, description="Name of a custom configuration file to use")
     goals_file_name: Optional[str] = Field(default=None, description="Name of an uploaded file containing custom goals")
-
+    target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
+    api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
+   
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -35,7 +37,9 @@ class AttackRequest(BaseModel):
                     "judge_model_name": "gemma3:27b",
                     "jury_models": ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
                     "role_play_option": "MR_ROBOT",
-                    "goals_file_name": "custom_goals_20241230.json"
+                    "goals_file_name": "custom_goals_20241230.json",
+                    "target_provider": "OLLAMA",
+                    "api_key": "sk-xxxx"
                 }
             ]
         }
@@ -51,7 +55,11 @@ class AttackTemplateRequest(BaseModel):
     target_model_name: str = Field(default="gemma3:27b", description="Target model to attack")
     jury_models: list[str] = Field(default=["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"], description="List of 3 jury models")
     template_path: Optional[str] = Field(default=None, description="Path to the template file (optional)")
-
+    target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
+    api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
+    target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
+    api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
+   
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -63,7 +71,9 @@ class AttackTemplateRequest(BaseModel):
                     "temperature_target": 0.1,
                     "target_model_name": "gemma3:27b",
                     "jury_models": ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-                    "template_path": "datasets/uploads/example.yaml"
+                    "template_path": "datasets/uploads/example.yaml",
+                    "target_provider": "OLLAMA",
+                    "api_key": "sk-xxxx"
                 }
             ]
         }
@@ -77,7 +87,11 @@ class OverRefusalTestRequest(BaseModel):
     temperature_target: float = Field(default=0.1, ge=0.0, le=2.0, description="Temperature for target model")
     target_model_name: str = Field(default="gemma3:27b", description="Target model to test")
     jury_models: list[str] = Field(default=["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"], description="List of 3 jury models")
-
+    target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
+    api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
+    target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
+    api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
+   
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -87,7 +101,9 @@ class OverRefusalTestRequest(BaseModel):
                     "temperature_attacker": 0.1,
                     "temperature_target": 0.1,
                     "target_model_name": "gemma3:27b",
-                    "jury_models": ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"]
+                    "jury_models": ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
+                    "target_provider": "OLLAMA",
+                    "api_key": "sk-xxxx"
                 }
             ]
         }

@@ -89,11 +89,27 @@ async def root():
 #     comments = db.query(Comment).all()
 #     return [{"id": c.id, "post_id": c.post_id, "user_id": c.user_id, "comment_text": c.comment_text} for c in comments]
 
+
+# ==================== API Key Configs ====================
+class ApiKeyConfigRequest(BaseModel):
+    name: str
+    provider: str = "OPEN_AI"
+    model_name: str = None
+    api_key: str
+
+class ApiKeyConfigResponse(BaseModel):
+    id: int
+    name: str
+    provider: str
+    model_name: str = None
+    api_key: str = None
+
 class CreateDatasetRequest(BaseModel):
     name: str
     description: str = None
     metadata: dict = None
 
+# ==================== Endpoints ==================== 
 @app.post("/datasets")
 async def create_dataset(request: CreateDatasetRequest):
     langfuse = get_client()
@@ -241,7 +257,7 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
                 else:
                     # Fallback: usar como nome de ficheiro (compatibilidade)
                     goals_path = request.goals_file_name
-        
+
         await launch_attack(
             attack_option=request.attack_option.value,
             label=request.label.value,
@@ -253,6 +269,8 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
             jury_models=request.jury_models,
             role_play_option=request.role_play_option.value if request.role_play_option else None,
             goals_file_name=goals_path,
+            target_provider=request.target_provider,
+            api_key=request.api_key
         )
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:
@@ -287,7 +305,9 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
             temperature_target=request.temperature_target,
             target_model_name=request.target_model_name,
             jury_models=request.jury_models,
-            template_path=template_path
+            template_path=template_path,
+            target_provider=request.target_provider,
+            api_key=request.api_key
         )
         return {"status": "success", "message": "Attack template completed"}
     except Exception as e:
@@ -303,8 +323,210 @@ async def over_refusal_test(request: OverRefusalTestRequest):
             temperature_target=request.temperature_target,
             target_model_name=request.target_model_name,
             jury_models=request.jury_models,
+            target_provider=request.target_provider,
+            api_key=request.api_key
         )
         return {"status": "success", "message": "Over-refusal test completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/api-key-configs")
+async def create_api_key_config(request: ApiKeyConfigRequest, db: Session = Depends(get_db)):
+    """Create a new API key configuration for the current user."""
+    try:
+        # Get current user from auth (you'll need to implement get_current_user)
+        current_user_id = 1  # TODO: Replace with actual user from auth
+        
+        ApiKeyConfigs = Base.classes.api_key_configs
+        UsersApiKeyConfigs = Base.classes.users_api_key_configs
+        
+        # Create the API key config
+        api_config = ApiKeyConfigs(
+            name=request.name,
+            provider=request.provider,
+            model_name=request.model_name,
+            api_key=request.api_key
+        )
+        db.add(api_config)
+        db.flush()  # Get the ID without committing yet
+        
+        # Link to user
+        user_api_config = UsersApiKeyConfigs(
+            users_id=current_user_id,
+            api_key_configs_id=api_config.id
+        )
+        db.add(user_api_config)
+        db.commit()
+        
+        return {
+            "id": api_config.id,
+            "name": api_config.name,
+            "provider": api_config.provider,
+            "model_name": api_config.model_name,
+            "message": "API key config created successfully"
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao criar config: {str(e)}")
+
+@app.get("/api-key-configs/{user_id}")
+async def get_user_api_key_configs(user_id: int, db: Session = Depends(get_db)):
+    """Get all API key configurations for a specific user."""
+    try:
+        ApiKeyConfigs = Base.classes.api_key_configs
+        UsersApiKeyConfigs = Base.classes.users_api_key_configs
+        
+        # Query all api_key_configs for this user
+        user_configs = db.query(UsersApiKeyConfigs).filter(
+            UsersApiKeyConfigs.users_id == user_id
+        ).all()
+        
+        if not user_configs:
+            return {
+                "user_id": user_id,
+                "total": 0,
+                "configs": []
+            }
+        
+        configs = []
+        for uc in user_configs:
+            api_config = db.query(ApiKeyConfigs).filter(
+                ApiKeyConfigs.id == uc.api_key_configs_id
+            ).first()
+            
+            if api_config:
+                configs.append({
+                    "id": api_config.id,
+                    "name": api_config.name,
+                    "provider": api_config.provider,
+                    "model_name": api_config.model_name,
+                    # Don't return the full API key for security
+                    "api_key_masked": f"***{api_config.api_key[-4:]}" if api_config.api_key else None
+                })
+        
+        return {
+            "user_id": user_id,
+            "total": len(configs),
+            "configs": configs
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao listar configs: {str(e)}")
+
+@app.get("/api-key-configs/{user_id}/{config_id}")
+async def get_api_key_config_by_id(user_id: int, config_id: int, db: Session = Depends(get_db)):
+    """Get a specific API key configuration by ID (must belong to user)."""
+    try:
+        ApiKeyConfigs = Base.classes.api_key_configs
+        UsersApiKeyConfigs = Base.classes.users_api_key_configs
+        
+        # Verify the config belongs to the user
+        user_config = db.query(UsersApiKeyConfigs).filter(
+            UsersApiKeyConfigs.users_id == user_id,
+            UsersApiKeyConfigs.api_key_configs_id == config_id
+        ).first()
+        
+        if not user_config:
+            raise HTTPException(status_code=404, detail="API key config not found for this user")
+        
+        api_config = db.query(ApiKeyConfigs).filter(
+            ApiKeyConfigs.id == config_id
+        ).first()
+        
+        if not api_config:
+            raise HTTPException(status_code=404, detail="API key config not found")
+        
+        return {
+            "id": api_config.id,
+            "name": api_config.name,
+            "provider": api_config.provider,
+            "model_name": api_config.model_name,
+            "api_key_masked": f"***{api_config.api_key[-4:]}" if api_config.api_key else None
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao obter config: {str(e)}")
+
+@app.put("/api-key-configs/{user_id}/{config_id}")
+async def update_api_key_config(user_id: int, config_id: int, request: ApiKeyConfigRequest, db: Session = Depends(get_db)):
+    """Update an API key configuration (must belong to user)."""
+    try:
+        ApiKeyConfigs = Base.classes.api_key_configs
+        UsersApiKeyConfigs = Base.classes.users_api_key_configs
+        
+        # Verify the config belongs to the user
+        user_config = db.query(UsersApiKeyConfigs).filter(
+            UsersApiKeyConfigs.users_id == user_id,
+            UsersApiKeyConfigs.api_key_configs_id == config_id
+        ).first()
+        
+        if not user_config:
+            raise HTTPException(status_code=404, detail="API key config not found for this user")
+        
+        api_config = db.query(ApiKeyConfigs).filter(
+            ApiKeyConfigs.id == config_id
+        ).first()
+        
+        if not api_config:
+            raise HTTPException(status_code=404, detail="API key config not found")
+        
+        # Update fields
+        api_config.name = request.name
+        api_config.provider = request.provider
+        api_config.model_name = request.model_name
+        api_config.api_key = request.api_key
+        
+        db.commit()
+        
+        return {
+            "id": api_config.id,
+            "name": api_config.name,
+            "provider": api_config.provider,
+            "model_name": api_config.model_name,
+            "message": "API key config updated successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar config: {str(e)}")
+
+@app.delete("/api-key-configs/{user_id}/{config_id}")
+async def delete_api_key_config(user_id: int, config_id: int, db: Session = Depends(get_db)):
+    """Delete an API key configuration (must belong to user)."""
+    try:
+        ApiKeyConfigs = Base.classes.api_key_configs
+        UsersApiKeyConfigs = Base.classes.users_api_key_configs
+        
+        # Verify the config belongs to the user
+        user_config = db.query(UsersApiKeyConfigs).filter(
+            UsersApiKeyConfigs.users_id == user_id,
+            UsersApiKeyConfigs.api_key_configs_id == config_id
+        ).first()
+        
+        if not user_config:
+            raise HTTPException(status_code=404, detail="API key config not found for this user")
+        
+        # Delete the user-config association
+        db.delete(user_config)
+        
+        # Delete the API key config
+        api_config = db.query(ApiKeyConfigs).filter(
+            ApiKeyConfigs.id == config_id
+        ).first()
+        
+        if api_config:
+            db.delete(api_config)
+        
+        db.commit()
+        
+        return {
+            "message": "API key config deleted successfully",
+            "deleted_id": config_id
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao deletar config: {str(e)}")

@@ -109,7 +109,7 @@ CREATE TABLE scenarios_users (
 CREATE TABLE api_key_configs (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    provider VARCHAR(50) NOT NULL,
+    provider VARCHAR(50) Default 'OPEN_AI',
     model_name VARCHAR(100),
     api_key VARCHAR(500)
 );

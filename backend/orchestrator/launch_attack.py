@@ -55,6 +55,7 @@ async def launch_attack(
     config_file_name: str = None,
     goals_file_name: str = None,
     target_provider: str = "OLLAMA",
+    api_key:str = None,
 ):
     load_dotenv()
 
@@ -158,6 +159,7 @@ async def launch_attack(
             target_model_name=target_model_name,
             goals_list=final_goals_list,
             role_play_option=role_play_path,
+            api_key=api_key,
         )
 
 
@@ -171,6 +173,7 @@ async def launch_attack_template(
     jury_models: list[str] = None,
     template_path: str = None,
     target_provider: str = "OLLAMA",
+    api_key:str = None,
 ):
     load_dotenv()
     
@@ -196,6 +199,7 @@ async def launch_attack_template(
         goals_list=load_labels(label=label),
         label=label,
         template_path=template_path,
+        api_key=api_key,
     )
 
 
@@ -207,6 +211,7 @@ async def launch_over_refusal_test(
     target_model_name: str = None,
     jury_models: list[str] = None,
     target_provider: str = "OLLAMA",
+    api_key:str = None,
 ):
     load_dotenv()
     
@@ -227,4 +232,5 @@ async def launch_over_refusal_test(
         temperature_target=temperature_target,
         target_model_name=target_model_name,
         jury_models=jury_models,
+        api_key=api_key,
     )

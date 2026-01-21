@@ -19,6 +19,7 @@ import "../styles/components/button.css"
 
 const Button = (
   {
+    children,
     size,
     variant,
     text,
@@ -27,12 +28,12 @@ const Button = (
   }
 ) => {
 
-  const btn_size = size == "small" ? 
-  "btn--small" : size == "large" ?
+  const btn_size = size === "small" ? 
+  "btn--small" : size === "large" ?
   "btn--large" : ""
 
-  const btn_variant = variant == "default" ? 
-  "btn--default" : variant == "alternative" ?
+  const btn_variant = variant === "default" ? 
+  "btn--default" : variant === "alternative" ?
   "btn--alternative" : ""
 
 
@@ -41,6 +42,7 @@ const Button = (
       className={`${btn_size} ${btn_variant} ${styles}`}
       {...props}>
       {text}
+      {children}
     </button>
   )
 }

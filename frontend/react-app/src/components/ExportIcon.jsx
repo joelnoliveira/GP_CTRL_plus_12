@@ -6,6 +6,7 @@ import "../styles/components/export_icon.css"
 
 const ExportIcon = ({
   size = "small",
+  hasWrapper = true,
 }) => {
   const icon_size =
     size === "small"
@@ -17,10 +18,14 @@ const ExportIcon = ({
       : ""
 
   return (
-    <div className="export_icon__wrapper">
+    hasWrapper ? (
+      <div className="export_icon__wrapper">
+        <img src={exportIcon} className={icon_size} alt="export icon" />
+      </div>
+    ) : (
       <img src={exportIcon} className={icon_size} alt="export icon" />
-    </div>
-  )
-}
+    )
+  );
+};
 
-export default ExportIcon
+export default ExportIcon;

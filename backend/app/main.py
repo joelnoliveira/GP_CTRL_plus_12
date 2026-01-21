@@ -20,6 +20,8 @@ from orchestrator import launch_attack, constants, launch_attack_template, launc
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
 load_dotenv(dotenv_path)
 
+AVAILABLE_EXTERNAL_TARGET_MODELS = ["gpt-3.5-turbo", "gpt-5.2-codex", "gpt-4o-mini-tts-2025-12-15", "gpt-realtime-mini-2025-12-15"]
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Reflect database tables when the app starts"""
@@ -258,6 +260,9 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
                     # Fallback: usar como nome de ficheiro (compatibilidade)
                     goals_path = request.goals_file_name
 
+        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+            raise Exception("The target model is not supported by the external API")
+        
         await launch_attack(
             attack_option=request.attack_option.value,
             label=request.label.value,
@@ -296,7 +301,10 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
             else:
                 # Se não encontrar na BD, usa o path enviado diretamente
                 template_path = request.template_path
-
+        
+        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+            raise Exception("The target model is not supported by the external API")
+        
         await launch_attack_template(
             label=request.label.value,
             seed=request.seed,
@@ -316,6 +324,9 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
 @app.post("/over-refusal-test")
 async def over_refusal_test(request: OverRefusalTestRequest):
     try:
+        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+            raise Exception("The target model is not supported by the external API")
+        
         await launch_over_refusal_test(
             seed=request.seed,
             temperature_judges=request.temperature_judges,
@@ -329,7 +340,6 @@ async def over_refusal_test(request: OverRefusalTestRequest):
         return {"status": "success", "message": "Over-refusal test completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/api-key-configs")
 async def create_api_key_config(
@@ -349,23 +359,16 @@ async def create_api_key_config(
         current_user_id = 1  # Hardcoded for testing - remove when enabling JWT auth
 
         ApiKeyConfigs = Base.classes.api_key_configs
-        UsersApiKeyConfigs = Base.classes.users_api_key_configs
 
-        # Create the API key config
+        # Create the API key config with user_id directly
         api_config = ApiKeyConfigs(
             name=request.name,
             provider=request.provider,
             model_name=request.model_name,
             api_key=request.api_key,
+            user_id=current_user_id,
         )
         db.add(api_config)
-        db.flush()  # Get the ID without committing yet
-
-        # Link to user
-        user_api_config = UsersApiKeyConfigs(
-            users_id=current_user_id, api_key_configs_id=api_config.id
-        )
-        db.add(user_api_config)
         db.commit()
 
         return {
@@ -397,46 +400,29 @@ async def get_user_api_key_configs(
         #     raise HTTPException(status_code=403, detail="Access denied")
 
         ApiKeyConfigs = Base.classes.api_key_configs
-        UsersApiKeyConfigs = Base.classes.users_api_key_configs
 
-        # Query all api_key_configs for this user
-        user_configs = (
-            db.query(UsersApiKeyConfigs)
-            .filter(UsersApiKeyConfigs.users_id == user_id)
-            .all()
+        # Query all api_key_configs for this user directly
+        api_configs = (
+            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.user_id == user_id).all()
         )
 
-        if not user_configs:
-            return {"user_id": user_id, "total": 0, "configs": []}
-
-        configs = []
-        for uc in user_configs:
-            api_config = (
-                db.query(ApiKeyConfigs)
-                .filter(ApiKeyConfigs.id == uc.api_key_configs_id)
-                .first()
-            )
-
-            if api_config:
-                configs.append(
-                    {
-                        "id": api_config.id,
-                        "name": api_config.name,
-                        "provider": api_config.provider,
-                        "model_name": api_config.model_name,
-                        # Don't return the full API key for security
-                        "api_key_masked": f"***{api_config.api_key[-4:]}"
-                        if api_config.api_key
-                        else None,
-                    }
-                )
+        configs = [
+            {
+                "id": config.id,
+                "name": config.name,
+                "provider": config.provider,
+                "model_name": config.model_name,
+                "api_key_masked": f"***{config.api_key[-4:]}"
+                if config.api_key
+                else None,
+            }
+            for config in api_configs
+        ]
 
         return {"user_id": user_id, "total": len(configs), "configs": configs}
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erro ao listar configs: {str(e)}")
 
 
@@ -456,29 +442,18 @@ async def get_api_key_config_by_id(
         #     raise HTTPException(status_code=403, detail="Access denied")
 
         ApiKeyConfigs = Base.classes.api_key_configs
-        UsersApiKeyConfigs = Base.classes.users_api_key_configs
 
-        # Verify the config belongs to the user
-        user_config = (
-            db.query(UsersApiKeyConfigs)
-            .filter(
-                UsersApiKeyConfigs.users_id == user_id,
-                UsersApiKeyConfigs.api_key_configs_id == config_id,
-            )
+        # Query config directly with user_id filter
+        api_config = (
+            db.query(ApiKeyConfigs)
+            .filter(ApiKeyConfigs.id == config_id, ApiKeyConfigs.user_id == user_id)
             .first()
         )
 
-        if not user_config:
+        if not api_config:
             raise HTTPException(
                 status_code=404, detail="API key config not found for this user"
             )
-
-        api_config = (
-            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.id == config_id).first()
-        )
-
-        if not api_config:
-            raise HTTPException(status_code=404, detail="API key config not found")
 
         return {
             "id": api_config.id,
@@ -512,29 +487,18 @@ async def update_api_key_config(
         #     raise HTTPException(status_code=403, detail="Access denied")
 
         ApiKeyConfigs = Base.classes.api_key_configs
-        UsersApiKeyConfigs = Base.classes.users_api_key_configs
 
-        # Verify the config belongs to the user
-        user_config = (
-            db.query(UsersApiKeyConfigs)
-            .filter(
-                UsersApiKeyConfigs.users_id == user_id,
-                UsersApiKeyConfigs.api_key_configs_id == config_id,
-            )
+        # Query config directly with user_id filter
+        api_config = (
+            db.query(ApiKeyConfigs)
+            .filter(ApiKeyConfigs.id == config_id, ApiKeyConfigs.user_id == user_id)
             .first()
         )
 
-        if not user_config:
+        if not api_config:
             raise HTTPException(
                 status_code=404, detail="API key config not found for this user"
             )
-
-        api_config = (
-            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.id == config_id).first()
-        )
-
-        if not api_config:
-            raise HTTPException(status_code=404, detail="API key config not found")
 
         # Update fields
         api_config.name = request.name
@@ -576,34 +540,20 @@ async def delete_api_key_config(
         #     raise HTTPException(status_code=403, detail="Access denied")
 
         ApiKeyConfigs = Base.classes.api_key_configs
-        UsersApiKeyConfigs = Base.classes.users_api_key_configs
 
-        # Verify the config belongs to the user
-        user_config = (
-            db.query(UsersApiKeyConfigs)
-            .filter(
-                UsersApiKeyConfigs.users_id == user_id,
-                UsersApiKeyConfigs.api_key_configs_id == config_id,
-            )
+        # Query config directly with user_id filter
+        api_config = (
+            db.query(ApiKeyConfigs)
+            .filter(ApiKeyConfigs.id == config_id, ApiKeyConfigs.user_id == user_id)
             .first()
         )
 
-        if not user_config:
+        if not api_config:
             raise HTTPException(
                 status_code=404, detail="API key config not found for this user"
             )
 
-        # Delete the user-config association
-        db.delete(user_config)
-
-        # Delete the API key config
-        api_config = (
-            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.id == config_id).first()
-        )
-
-        if api_config:
-            db.delete(api_config)
-
+        db.delete(api_config)
         db.commit()
 
         return {

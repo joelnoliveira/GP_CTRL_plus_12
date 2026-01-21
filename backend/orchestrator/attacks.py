@@ -57,6 +57,7 @@ async def over_refusal_test(
             target = OpenAIChatTarget(
                 deployment_name=target_model_name,
                 api_key=api_key,  # ← vem da BD
+                is_azure_target=False
             )
 
         jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
@@ -186,6 +187,7 @@ async def launch_attack_template(ollama_host, **kwargs):
             target = OpenAIChatTarget(
                 deployment_name=target_model_name,
                 api_key=api_key,  # ← vem da BD
+                is_azure_target=False
             )
         #judge = OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=200)
         #target = target_provider_dict[target_provider](model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_target})
@@ -278,6 +280,7 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
             objective_target = OpenAIChatTarget(
                 deployment_name=target_model_name,
                 api_key=api_key,  # ← vem da BD
+                is_azure_target=False
             )
 
         #objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_target})
@@ -344,6 +347,8 @@ async def launch_flip_attack(ollama_host, **kwargs):
             objective_target = OpenAIChatTarget(
                 deployment_name=target_model_name,
                 api_key=api_key,  # ← vem da BD
+                is_azure_target=False
+
             )
         #objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_target})
         attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_attacker})
@@ -397,6 +402,8 @@ async def launch_role_play_attack(ollama_host, **kwargs):
             objective_target = OpenAIChatTarget(
                 deployment_name=target_model_name,
                 api_key=api_key,  # ← vem da BD
+                is_azure_target=False
+
             )
 
         #objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})

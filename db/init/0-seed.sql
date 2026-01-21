@@ -106,6 +106,18 @@ CREATE TABLE scenarios_users (
 	PRIMARY KEY(scenarios_id)
 );
 
+CREATE TABLE api_key_configs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    provider VARCHAR(50) DEFAULT 'OPEN_AI',
+    model_name VARCHAR(100),
+    api_key VARCHAR(500),
+    user_id BIGINT NOT NULL
+);
+
+ALTER TABLE api_key_configs ADD CONSTRAINT api_key_configs_fk1 
+    FOREIGN KEY (user_id) REFERENCES users(id);
+
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk1 FOREIGN KEY (workload_datasets_id) REFERENCES workload_datasets(id);
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk2 FOREIGN KEY (attack_loads_id) REFERENCES attack_loads(id);
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk3 FOREIGN KEY (scenarios_id) REFERENCES scenarios(id);
@@ -121,6 +133,8 @@ ALTER TABLE users_workload_datasets ADD CONSTRAINT users_workload_datasets_fk1 F
 ALTER TABLE users_workload_datasets ADD CONSTRAINT users_workload_datasets_fk2 FOREIGN KEY (workload_datasets_id) REFERENCES workload_datasets(id);
 ALTER TABLE scenarios_users ADD CONSTRAINT scenarios_users_fk1 FOREIGN KEY (scenarios_id) REFERENCES scenarios(id);
 ALTER TABLE scenarios_users ADD CONSTRAINT scenarios_users_fk2 FOREIGN KEY (users_id) REFERENCES users(id);
+ALTER TABLE users_api_key_configs ADD CONSTRAINT users_api_key_configs_fk1 FOREIGN KEY (users_id) REFERENCES users(id);
+ALTER TABLE users_api_key_configs ADD CONSTRAINT users_api_key_configs_fk2 FOREIGN KEY (api_key_configs_id) REFERENCES api_key_configs(id);
 
 
 -- ==================== SEED DATA: Scenarios ====================
@@ -146,3 +160,6 @@ INSERT INTO workload_datasets (name, description, storage_path, mime_path, is_bu
     ('Pliny Prompts', 'Templates do Pliny para testes com caracteres escapados', '/backend/datasets/pliny_prompts_escaped.yaml', 'application/x-yaml', TRUE, NOW(), 2),
     -- Datasets para Over-Refusal Test (scenario_id = 3)
     ('OR-Bench Hard 1k', 'OR-Bench dataset com 1000 prompts legítimos que modelos frequentemente recusam', '/backend/datasets/or-bench-hard-1k.yaml', 'application/x-yaml', TRUE, NOW(), 3);
+
+INSERT INTO users (email, password, role, created_at) VALUES
+    ('test@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V.qHfiJA.yLz2e', FALSE, NOW());

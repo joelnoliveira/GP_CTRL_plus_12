@@ -332,198 +332,283 @@ async def over_refusal_test(request: OverRefusalTestRequest):
 
 
 @app.post("/api-key-configs")
-async def create_api_key_config(request: ApiKeyConfigRequest, db: Session = Depends(get_db)):
+async def create_api_key_config(
+    request: ApiKeyConfigRequest,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
     """Create a new API key configuration for the current user."""
     try:
-        # Get current user from auth (you'll need to implement get_current_user)
-        current_user_id = 1  # TODO: Replace with actual user from auth
-        
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user:
+        #     raise HTTPException(status_code=401, detail="User not found")
+        # current_user_id = user.id
+
+        current_user_id = 1  # Hardcoded for testing - remove when enabling JWT auth
+
         ApiKeyConfigs = Base.classes.api_key_configs
         UsersApiKeyConfigs = Base.classes.users_api_key_configs
-        
+
         # Create the API key config
         api_config = ApiKeyConfigs(
             name=request.name,
             provider=request.provider,
             model_name=request.model_name,
-            api_key=request.api_key
+            api_key=request.api_key,
         )
         db.add(api_config)
         db.flush()  # Get the ID without committing yet
-        
+
         # Link to user
         user_api_config = UsersApiKeyConfigs(
-            users_id=current_user_id,
-            api_key_configs_id=api_config.id
+            users_id=current_user_id, api_key_configs_id=api_config.id
         )
         db.add(user_api_config)
         db.commit()
-        
+
         return {
             "id": api_config.id,
             "name": api_config.name,
             "provider": api_config.provider,
             "model_name": api_config.model_name,
-            "message": "API key config created successfully"
+            "message": "API key config created successfully",
         }
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao criar config: {str(e)}")
 
+
 @app.get("/api-key-configs/{user_id}")
-async def get_user_api_key_configs(user_id: int, db: Session = Depends(get_db)):
+async def get_user_api_key_configs(
+    user_id: int,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
     """Get all API key configurations for a specific user."""
     try:
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user or user.id != user_id:
+        #     raise HTTPException(status_code=403, detail="Access denied")
+
         ApiKeyConfigs = Base.classes.api_key_configs
         UsersApiKeyConfigs = Base.classes.users_api_key_configs
-        
+
         # Query all api_key_configs for this user
-        user_configs = db.query(UsersApiKeyConfigs).filter(
-            UsersApiKeyConfigs.users_id == user_id
-        ).all()
-        
+        user_configs = (
+            db.query(UsersApiKeyConfigs)
+            .filter(UsersApiKeyConfigs.users_id == user_id)
+            .all()
+        )
+
         if not user_configs:
-            return {
-                "user_id": user_id,
-                "total": 0,
-                "configs": []
-            }
-        
+            return {"user_id": user_id, "total": 0, "configs": []}
+
         configs = []
         for uc in user_configs:
-            api_config = db.query(ApiKeyConfigs).filter(
-                ApiKeyConfigs.id == uc.api_key_configs_id
-            ).first()
-            
+            api_config = (
+                db.query(ApiKeyConfigs)
+                .filter(ApiKeyConfigs.id == uc.api_key_configs_id)
+                .first()
+            )
+
             if api_config:
-                configs.append({
-                    "id": api_config.id,
-                    "name": api_config.name,
-                    "provider": api_config.provider,
-                    "model_name": api_config.model_name,
-                    # Don't return the full API key for security
-                    "api_key_masked": f"***{api_config.api_key[-4:]}" if api_config.api_key else None
-                })
-        
-        return {
-            "user_id": user_id,
-            "total": len(configs),
-            "configs": configs
-        }
+                configs.append(
+                    {
+                        "id": api_config.id,
+                        "name": api_config.name,
+                        "provider": api_config.provider,
+                        "model_name": api_config.model_name,
+                        # Don't return the full API key for security
+                        "api_key_masked": f"***{api_config.api_key[-4:]}"
+                        if api_config.api_key
+                        else None,
+                    }
+                )
+
+        return {"user_id": user_id, "total": len(configs), "configs": configs}
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erro ao listar configs: {str(e)}")
 
+
 @app.get("/api-key-configs/{user_id}/{config_id}")
-async def get_api_key_config_by_id(user_id: int, config_id: int, db: Session = Depends(get_db)):
+async def get_api_key_config_by_id(
+    user_id: int,
+    config_id: int,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
     """Get a specific API key configuration by ID (must belong to user)."""
     try:
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user or user.id != user_id:
+        #     raise HTTPException(status_code=403, detail="Access denied")
+
         ApiKeyConfigs = Base.classes.api_key_configs
         UsersApiKeyConfigs = Base.classes.users_api_key_configs
-        
+
         # Verify the config belongs to the user
-        user_config = db.query(UsersApiKeyConfigs).filter(
-            UsersApiKeyConfigs.users_id == user_id,
-            UsersApiKeyConfigs.api_key_configs_id == config_id
-        ).first()
-        
+        user_config = (
+            db.query(UsersApiKeyConfigs)
+            .filter(
+                UsersApiKeyConfigs.users_id == user_id,
+                UsersApiKeyConfigs.api_key_configs_id == config_id,
+            )
+            .first()
+        )
+
         if not user_config:
-            raise HTTPException(status_code=404, detail="API key config not found for this user")
-        
-        api_config = db.query(ApiKeyConfigs).filter(
-            ApiKeyConfigs.id == config_id
-        ).first()
-        
+            raise HTTPException(
+                status_code=404, detail="API key config not found for this user"
+            )
+
+        api_config = (
+            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.id == config_id).first()
+        )
+
         if not api_config:
             raise HTTPException(status_code=404, detail="API key config not found")
-        
+
         return {
             "id": api_config.id,
             "name": api_config.name,
             "provider": api_config.provider,
             "model_name": api_config.model_name,
-            "api_key_masked": f"***{api_config.api_key[-4:]}" if api_config.api_key else None
+            "api_key_masked": f"***{api_config.api_key[-4:]}"
+            if api_config.api_key
+            else None,
         }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao obter config: {str(e)}")
 
+
 @app.put("/api-key-configs/{user_id}/{config_id}")
-async def update_api_key_config(user_id: int, config_id: int, request: ApiKeyConfigRequest, db: Session = Depends(get_db)):
+async def update_api_key_config(
+    user_id: int,
+    config_id: int,
+    request: ApiKeyConfigRequest,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
     """Update an API key configuration (must belong to user)."""
     try:
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user or user.id != user_id:
+        #     raise HTTPException(status_code=403, detail="Access denied")
+
         ApiKeyConfigs = Base.classes.api_key_configs
         UsersApiKeyConfigs = Base.classes.users_api_key_configs
-        
+
         # Verify the config belongs to the user
-        user_config = db.query(UsersApiKeyConfigs).filter(
-            UsersApiKeyConfigs.users_id == user_id,
-            UsersApiKeyConfigs.api_key_configs_id == config_id
-        ).first()
-        
+        user_config = (
+            db.query(UsersApiKeyConfigs)
+            .filter(
+                UsersApiKeyConfigs.users_id == user_id,
+                UsersApiKeyConfigs.api_key_configs_id == config_id,
+            )
+            .first()
+        )
+
         if not user_config:
-            raise HTTPException(status_code=404, detail="API key config not found for this user")
-        
-        api_config = db.query(ApiKeyConfigs).filter(
-            ApiKeyConfigs.id == config_id
-        ).first()
-        
+            raise HTTPException(
+                status_code=404, detail="API key config not found for this user"
+            )
+
+        api_config = (
+            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.id == config_id).first()
+        )
+
         if not api_config:
             raise HTTPException(status_code=404, detail="API key config not found")
-        
+
         # Update fields
         api_config.name = request.name
         api_config.provider = request.provider
         api_config.model_name = request.model_name
         api_config.api_key = request.api_key
-        
+
         db.commit()
-        
+
         return {
             "id": api_config.id,
             "name": api_config.name,
             "provider": api_config.provider,
             "model_name": api_config.model_name,
-            "message": "API key config updated successfully"
+            "message": "API key config updated successfully",
         }
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro ao atualizar config: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao atualizar config: {str(e)}"
+        )
+
 
 @app.delete("/api-key-configs/{user_id}/{config_id}")
-async def delete_api_key_config(user_id: int, config_id: int, db: Session = Depends(get_db)):
+async def delete_api_key_config(
+    user_id: int,
+    config_id: int,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
     """Delete an API key configuration (must belong to user)."""
     try:
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user or user.id != user_id:
+        #     raise HTTPException(status_code=403, detail="Access denied")
+
         ApiKeyConfigs = Base.classes.api_key_configs
         UsersApiKeyConfigs = Base.classes.users_api_key_configs
-        
+
         # Verify the config belongs to the user
-        user_config = db.query(UsersApiKeyConfigs).filter(
-            UsersApiKeyConfigs.users_id == user_id,
-            UsersApiKeyConfigs.api_key_configs_id == config_id
-        ).first()
-        
+        user_config = (
+            db.query(UsersApiKeyConfigs)
+            .filter(
+                UsersApiKeyConfigs.users_id == user_id,
+                UsersApiKeyConfigs.api_key_configs_id == config_id,
+            )
+            .first()
+        )
+
         if not user_config:
-            raise HTTPException(status_code=404, detail="API key config not found for this user")
-        
+            raise HTTPException(
+                status_code=404, detail="API key config not found for this user"
+            )
+
         # Delete the user-config association
         db.delete(user_config)
-        
+
         # Delete the API key config
-        api_config = db.query(ApiKeyConfigs).filter(
-            ApiKeyConfigs.id == config_id
-        ).first()
-        
+        api_config = (
+            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.id == config_id).first()
+        )
+
         if api_config:
             db.delete(api_config)
-        
+
         db.commit()
-        
+
         return {
             "message": "API key config deleted successfully",
-            "deleted_id": config_id
+            "deleted_id": config_id,
         }
     except HTTPException:
         raise

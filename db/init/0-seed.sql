@@ -109,16 +109,14 @@ CREATE TABLE scenarios_users (
 CREATE TABLE api_key_configs (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    provider VARCHAR(50) Default 'OPEN_AI',
+    provider VARCHAR(50) DEFAULT 'OPEN_AI',
     model_name VARCHAR(100),
-    api_key VARCHAR(500)
+    api_key VARCHAR(500),
+    user_id BIGINT NOT NULL
 );
 
-CREATE TABLE users_api_key_configs (
-    users_id BIGINT NOT NULL,
-    api_key_configs_id BIGINT NOT NULL,
-    PRIMARY KEY(api_key_configs_id)
-);
+ALTER TABLE api_key_configs ADD CONSTRAINT api_key_configs_fk1 
+    FOREIGN KEY (user_id) REFERENCES users(id);
 
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk1 FOREIGN KEY (workload_datasets_id) REFERENCES workload_datasets(id);
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk2 FOREIGN KEY (attack_loads_id) REFERENCES attack_loads(id);
@@ -162,3 +160,6 @@ INSERT INTO workload_datasets (name, description, storage_path, mime_path, is_bu
     ('Pliny Prompts', 'Templates do Pliny para testes com caracteres escapados', '/backend/datasets/pliny_prompts_escaped.yaml', 'application/x-yaml', TRUE, NOW(), 2),
     -- Datasets para Over-Refusal Test (scenario_id = 3)
     ('OR-Bench Hard 1k', 'OR-Bench dataset com 1000 prompts legítimos que modelos frequentemente recusam', '/backend/datasets/or-bench-hard-1k.yaml', 'application/x-yaml', TRUE, NOW(), 3);
+
+INSERT INTO users (email, password, role, created_at) VALUES
+    ('test@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V.qHfiJA.yLz2e', FALSE, NOW());

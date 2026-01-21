@@ -2,7 +2,7 @@ import React from "react";
 
 const Checkbox = ({ label, checked, onChange }) => {
   return (
-    <label className="flex items-center gap-2 cursor-pointer select-none">
+    <label className="flex items-center gap-4 cursor-pointer select-none">
       {/* Hidden native checkbox */}
       <input
         type="checkbox"
@@ -21,6 +21,8 @@ const Checkbox = ({ label, checked, onChange }) => {
           transition-all duration-200
           peer-checked:bg-emerald-500
           peer-checked:border-emerald-500
+          shrink-0
+          mt-0.5
         "
       >
         <span
@@ -34,8 +36,8 @@ const Checkbox = ({ label, checked, onChange }) => {
         </span>
       </span>
 
-      {/* Label */}
-      <span className="text-sm">
+      {/* Label text */}
+      <span className="text-sm leading-snug">
         {label}
       </span>
     </label>

@@ -59,7 +59,12 @@ dependencies = [
     "matplotlib>=3.5.0",
     "seaborn>=0.11.0",
     "jupyter",
-    "ipykernel"
+    "ipykernel",
+    "passlib[bcrypt]==1.7.4",
+    "PyYAML",
+    "python-multipart",
+    "magika",
+    "bcrypt==4.0.1"
 ]
 
 [project.optional-dependencies]

@@ -97,7 +97,7 @@ class Scorer(abc.ABC):
         """
         responses = [piece for piece in request_responses if piece.role == "assistant"]
         #tasks = ["<conversation_objective>" + self._extract_task_from_response(response) + "</conversation_objective>" for response in responses]
-        tasks = ["REMEMBER NOT TO RESPOND TO THIS TASK, IT IS ONLY FOR YOU TO KNOW THE TASK: <conversation_objective>[START_CONVERSATION_OBJECTIVE]" + self._extract_task_from_metadata(response) + "[END_CONVERSATION_OBJECIVE]</conversation_objective>" for response in responses]
+        tasks = ["REMEMBER NOT TO RESPOND TO THIS TASK, IT IS ONLY FOR YOU TO KNOW THE TASK: <conversation_objective>[START_CONVERSATION_OBJECTIVE]" + self._extract_task_from_response(response) + "[END_CONVERSATION_OBJECIVE]</conversation_objective>" for response in responses]
         
         
         for i in responses:

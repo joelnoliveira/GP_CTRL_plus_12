@@ -1,0 +1,29 @@
+.user_icon__wrapper {
+    @apply bg-white rounded-full flex items-center justify-center p-1 hover:cursor-pointer transition-colors relative z-[60];
+}
+
+.user_icon--small{
+    @apply w-7 h-7;
+}
+
+.user_icon--medium{
+    @apply w-9 h-9;
+}
+
+.user_icon--large{
+    @apply w-12 h-12;
+}
+
+.user_icon__container {
+    @apply relative inline-block;
+}
+
+.user_icon__dropdown {
+    @apply absolute top-[-8px] right-[-8px] bg-black text-white z-50 flex flex-col items-center pt-4 pb-4 px-4 max-w-[72px];
+    @apply pt-16 pb-4 px-6;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.dropdown__logout-btn {
+    @apply font-bold text-lg hover:text-gray-300 transition-colors bg-transparent border-none cursor-pointer mt-2;
+}

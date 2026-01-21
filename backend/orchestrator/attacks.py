@@ -1,12 +1,6 @@
 import json
 import pathlib
 import uuid
-from typing import Optional, List, Dict, Any
-from datetime import datetime
-
-from sklearn import metrics
-from sqlalchemy.orm import Session
-from data_repository.crud import store_run
 
 from pyrit.common import IN_MEMORY, initialize_pyrit
 from pyrit.orchestrator import CrescendoOrchestrator
@@ -43,7 +37,6 @@ async def over_refusal_test(
     target_provider = args["target_provider"]
     api_key = args["api_key"]
     try:
-        started_at = datetime.now()
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         
         initialize_pyrit(memory_db_type="InMemory")
@@ -252,37 +245,6 @@ async def launch_attack_template(ollama_host, **kwargs):
         if label == Goals.VULNERABLE_GOALS.value:
             vulnerabilities = vuln_analysis(result_json)
 
-        ended_at = datetime.now()
-
-        # persist run if DB and context provided
-        metrics = {}
-        try:
-            data = []
-            for r in responses_flattened:
-                data.append(r)
-    
-            attack_results = {
-                "attack_type": "over_refusal_test",
-                "metrics": metrics,
-                "data": data,
-            }
-
-            if db is not None and user_id is not None and scenario_id is not None:
-                store_run(
-                    db=db,
-                    user_id=user_id,
-                    scenario_id=scenario_id,
-                    target_model=target_model_name,
-                    attack_model=target_model_name,
-                    attack_type="over_refusal_test",
-                    attack_results=attack_results,
-                    jury_votes_data=[],
-                    started_at=started_at,
-                    ended_at=ended_at,
-                )
-        except Exception as _err:
-            print(f"Failed to store over_refusal_test run: {_err}")
-
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -302,7 +264,6 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     target_provider = args["target_provider"]
     api_key = args["api_key"]
     try:
-        started_at = datetime.now()
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
@@ -353,29 +314,6 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         ##save variable data to a json file
         with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
             json.dump(data, f)
-
-        ended_at = datetime.now()
-
-        # attempt to persist run if DB and context provided
-        metrics = {}
-        try:
-            attack_results = {"attack_type": "crescendo", "metrics": metrics, "data": data}
-            if db is not None and user_id is not None and scenario_id is not None:
-                store_run(
-                    db=db,
-                    user_id=user_id,
-                    scenario_id=scenario_id,
-                    target_model=target_model_name,
-                    attack_model=attacker_model_name,
-                    attack_type="crescendo",
-                    attack_results=attack_results,
-                    jury_votes_data=[],
-                    started_at=started_at,
-                    ended_at=ended_at,
-                    results_storage_path=results_path,
-                )
-        except Exception as _err:
-            print(f"Failed to store crescendo run: {_err}")
     except Exception as e:
         raise Exception(f"Error in launch_crescendo_attack: {e}") 
 
@@ -393,7 +331,6 @@ async def launch_flip_attack(ollama_host, **kwargs):
     target_provider = args["target_provider"]
     api_key = args["api_key"]
     try:
-        started_at = datetime.now()
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 
@@ -448,7 +385,6 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     target_provider = args["target_provider"]
     api_key = args["api_key"]
     try:
-        started_at = datetime.now()
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
 

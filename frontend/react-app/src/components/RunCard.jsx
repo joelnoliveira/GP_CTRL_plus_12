@@ -19,6 +19,7 @@ const RunCard = (
         exportMode,
         isSelected,
         onSelect,
+        onClick,
     }
 ) => {
     const [isPublic, setIsPublic] = useState(isPublicValue);
@@ -37,10 +38,10 @@ const RunCard = (
     : ""
 
     return (
-        <div className="flex items-start">
+        <div className="flex items-start" onClick={onClick}>
             {exportMode && (
                 <div className="run-card__checkbox">
-                <Checkbox checked={isSelected} onChange={onSelect} />
+                    <Checkbox checked={isSelected} onChange={onSelect} />
                 </div>
             )}
         

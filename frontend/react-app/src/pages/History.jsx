@@ -12,6 +12,7 @@ import useHistoryFilters from "../hooks/useHistoryFilters";
 import useHistoryRuns from "../hooks/useHistoryRuns";
 
 import "../styles/pages/history.css"
+import RunModal from '../components/RunModal';
 
 const History = () => {
   const { isLoggedIn, user } = useAuth();
@@ -28,6 +29,10 @@ const History = () => {
 
   const [selectedRunIds, setSelectedRunIds] = useState(new Set());
 
+  // MODAL CONTROL
+  const [isRunModalOpen, setIsRunModalOpen] = useState(false);
+  const [selectedRun, setSelectedRun] = useState(null);
+
   const exportRef = useRef(null);
   const filtersRef = useRef(null);
 
@@ -41,6 +46,16 @@ const History = () => {
   const handleExportClick = () => {
     setShowExportDropdown(prev => !prev);
     setShowFilters(false);
+  };
+
+  const handleRunModalOpen = (run) => {
+    setSelectedRun(run);
+    setIsRunModalOpen(true);
+  };
+
+  const handleRunModalClose = () => {
+    setSelectedRun(null);
+    setIsRunModalOpen(false);
   };
 
   /* ───── Manual selection ───── */
@@ -213,21 +228,32 @@ const History = () => {
         {/* RUNS */}
         <div className="history-page__runs-container">
           {runs.map((run, index) => (
-            <RunCard
-              key={index}
-              run_name_id={run.run_name_id}
-              username={run.username}
-              attack_type={run.attack_type}
-              date={run.date}
-              status={run.status.charAt(0).toUpperCase() + run.status.slice(1)}
-              attack_model={run.attack_model}
-              target_model={run.target_model}
-              isPublicValue={run.isPublicValue}
-              exportMode={true}
-              isSelected={selectedRunIds.has(run.run_name_id)}
-              onSelect={() => toggleRunSelection(run.run_name_id)}
-              canChangeStatus={isLoggedIn && user?.username === run.username}
-            />
+            <>
+              <RunCard
+                key={index}
+                run_name_id={run.run_name_id}
+                username={run.username}
+                attack_type={run.attack_type}
+                date={run.date}
+                status={run.status.charAt(0).toUpperCase() + run.status.slice(1)}
+                attack_model={run.attack_model}
+                target_model={run.target_model}
+                isPublicValue={run.isPublicValue}
+                exportMode={true}
+                isSelected={selectedRunIds.has(run.run_name_id)}
+                onSelect={() => toggleRunSelection(run.run_name_id)}
+                onClick={() => handleRunModalOpen(run)}
+                canChangeStatus={isLoggedIn && user?.username === run.username}
+              />
+            
+              {selectedRun && (
+                <RunModal
+                  run_data={selectedRun}
+                  isOpen={isRunModalOpen}
+                  handleOnOpen={handleRunModalClose}
+                />
+              )}
+            </>
           ))}
         </div>
 

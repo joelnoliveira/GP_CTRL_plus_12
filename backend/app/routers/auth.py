@@ -15,9 +15,14 @@ router = APIRouter(
 
 RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
 RECAPTCHA_SECRET_KEY = os.environ.get("REACT_APP_RECAPTCHA_SECRET_KEY")
+SKIP_RECAPTCHA = os.environ.get("SKIP_RECAPTCHA", "false").lower() == "true"
 
 
 def verify_recaptcha(token: str):
+    # Skip reCAPTCHA verification in development/testing
+    if SKIP_RECAPTCHA:
+        return True
+    
     if not RECAPTCHA_SECRET_KEY:
         raise HTTPException(
             status_code=500, 

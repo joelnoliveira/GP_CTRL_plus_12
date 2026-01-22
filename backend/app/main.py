@@ -12,7 +12,7 @@ from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
-from .routers import auth, file_upload
+from .routers import auth, file_upload, user_data
 from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
 
 
@@ -42,6 +42,7 @@ app.add_middleware(
 #Uses auth router
 app.include_router(auth.router)
 app.include_router(file_upload.router)
+app.include_router(user_data.router)
 
 # liveness test, performed on container that depend on this one, do not delete!
 @app.get("/status/alive")

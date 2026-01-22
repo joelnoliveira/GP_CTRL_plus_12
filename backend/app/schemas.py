@@ -158,3 +158,85 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+# ============== User Data Management Schemas (GDPR Compliance) ==============
+
+class UserDataExportMetadata(BaseModel):
+    """Metadata for exported user data"""
+    export_date: str
+    export_version: str
+    user_email: EmailStr
+
+class UserDataPersonalInfo(BaseModel):
+    """User's personal information"""
+    id: int
+    email: EmailStr
+    role: str
+    created_at: Optional[str] = None
+
+class UserDataApiKeyConfig(BaseModel):
+    """Masked API key configuration"""
+    id: int
+    name: str
+    provider: Optional[str] = None
+    model_name: Optional[str] = None
+    api_key_masked: str
+
+class UserDataRunMetrics(BaseModel):
+    """User's run metrics data"""
+    id: int
+    target_model: str
+    attack_model: str
+    visibility: str
+    status: str
+    langfuse_trace_id: str
+    started_at: Optional[str] = None
+    ended_at: Optional[str] = None
+    metrics_asr: Optional[int] = None
+    metrics_orr: int
+    metrics_aor: int
+    metrics_useful_majority: bool
+    metrics_veridict_majority: bool
+
+class UserDataExportResponse(BaseModel):
+    """Complete user data export response"""
+    export_metadata: UserDataExportMetadata
+    personal_information: UserDataPersonalInfo
+    api_key_configs: list[UserDataApiKeyConfig] = []
+    runs_metrics: list[UserDataRunMetrics] = []
+    attack_loads: list[dict] = []
+    workload_datasets: list[dict] = []
+    scenarios: list[dict] = []
+
+class UserDataDeleteSummary(BaseModel):
+    """Summary of deleted items"""
+    api_key_configs: int = 0
+    runs_metrics: int = 0
+    jury_votes: int = 0
+    users_attack_loads: int = 0
+    users_workload_datasets: int = 0
+    scenarios_users: int = 0
+    user_account: bool = False
+
+class UserDataDeleteResponse(BaseModel):
+    """Response after deleting user data"""
+    message: str
+    status: str
+    deleted_at: str
+    summary: UserDataDeleteSummary
+
+class UserDataCountSummary(BaseModel):
+    """Counts of user's data items"""
+    api_key_configs: int = 0
+    runs_metrics: int = 0
+    attack_loads: int = 0
+    workload_datasets: int = 0
+    scenarios: int = 0
+
+class UserDataSummaryResponse(BaseModel):
+    """Summary of user's stored data"""
+    user_id: int
+    email: EmailStr
+    account_created: Optional[str] = None
+    data_counts: UserDataCountSummary

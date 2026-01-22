@@ -39,6 +39,13 @@ async def over_refusal_test(
     jury_models = args["jury_models"]
     target_provider = args["target_provider"]
     api_key = args["api_key"]
+    db = args["db"]
+    scenario_id = args["scenario_id"]
+
+    begin_started_at = time.time()
+    started_at = time.localtime(begin_started_at)
+    started_at = datetime.fromtimestamp(begin_started_at)
+    
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         
@@ -110,7 +117,27 @@ async def over_refusal_test(
         result_json = prompt_sending_orchestrator.output_conversations_to_json(file_path="debug_results/orr_atks_test.json")
 
         metrics = get_run_metrics(result_json, atk_type='over_refusal')
-
+                
+        ended_at = time.time()
+        ended_at = time.localtime(begin_started_at)
+        ended_at = datetime.fromtimestamp(time.time())
+        
+        store_run(
+            db=db,
+            user_id=1,
+            scenario_id=scenario_id,
+            template_datasets_id=None,
+            target_model=target_model_name,
+            attack_model=None,
+            attack_results={
+                "metrics": metrics,
+            },
+            started_at=started_at,
+            ended_at=ended_at,
+            langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
+            attacker_visibility="standard"
+        )
+        
         print(f"[DEBUG] metrics: {metrics}")
 
     except Exception as e:
@@ -292,6 +319,13 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     label = args["label"]
     target_provider = args["target_provider"]
     api_key = args["api_key"]
+    db = args["db"]
+    scenario_id = args["scenario_id"]
+    
+    begin_started_at = time.time()
+    started_at = time.localtime(begin_started_at)
+    started_at = datetime.fromtimestamp(begin_started_at)
+    
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -340,6 +374,25 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         if label == Goals.VULNERABLE_GOALS.value:
             vulnerabilities = vuln_analysis(data)
 
+        ended_at = time.time()
+        ended_at = time.localtime(begin_started_at)
+        ended_at = datetime.fromtimestamp(time.time())
+        
+        store_run(
+            db=db,
+            user_id=1,
+            scenario_id=scenario_id,
+            template_datasets_id=None,
+            target_model=target_model_name,
+            attack_model=None,
+            attack_results={
+                "metrics": metrics,
+            },
+            started_at=started_at,
+            ended_at=ended_at,
+            langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
+            attacker_visibility="standard"
+        )
         ##save variable data to a json file
         with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
             json.dump(data, f)
@@ -413,6 +466,13 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     label = args["label"]
     target_provider = args["target_provider"]
     api_key = args["api_key"]
+    db = args["db"]
+    scenario_id = args["scenario_id"]
+    
+    begin_started_at = time.time()
+    started_at = time.localtime(begin_started_at)
+    started_at = datetime.fromtimestamp(begin_started_at)
+    
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -474,5 +534,24 @@ async def launch_role_play_attack(ollama_host, **kwargs):
         if label == Goals.VULNERABLE_GOALS.value:
             vulnerabilities = vuln_analysis(result_json)
 
+        ended_at = time.time()
+        ended_at = time.localtime(begin_started_at)
+        ended_at = datetime.fromtimestamp(time.time())
+        
+        store_run(
+            db=db,
+            user_id=1,
+            scenario_id=scenario_id,
+            template_datasets_id=None,
+            target_model=target_model_name,
+            attack_model=None,
+            attack_results={
+                "metrics": metrics,
+            },
+            started_at=started_at,
+            ended_at=ended_at,
+            langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
+            attacker_visibility="standard"
+        )
     except Exception as e:
         raise Exception(f"Error in launch_mr_robot_attack: {e}") 

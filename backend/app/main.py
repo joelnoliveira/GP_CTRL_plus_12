@@ -225,27 +225,9 @@ async def get_scenarios(db: Session = Depends(get_db)):
 @app.post("/attack")
 async def attack(request: AttackRequest, db: Session = Depends(get_db)):
     try:
-        # Se goals_file_name for fornecido, verificar se existe na BD
-        goals_path = None
-        if request.goals_file_name:
-            TemplateDatasets = Base.classes.template_datasets
-            # Tentar encontrar pelo storage_path (se o user passou o path completo)
-            record = db.query(TemplateDatasets).filter(
-                TemplateDatasets.storage_path == request.goals_file_name
-            ).first()
-            
-            if record:
-                goals_path = record.storage_path
-            else:
-                # Tentar encontrar pelo nome
-                record = db.query(TemplateDatasets).filter(
-                    TemplateDatasets.name == request.goals_file_name
-                ).first()
-                if record:
-                    goals_path = record.storage_path
-                else:
-                    # Fallback: usar como nome de ficheiro (compatibilidade)
-                    goals_path = request.goals_file_name
+        Scenario = Base.classes.scenarios
+        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
+        goals_file_name = request.goals_file_name if request.goals_file_name is not None else f"{request.label.value}.json"
 
         if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
@@ -260,9 +242,11 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
             judge_model_name=request.judge_model_name,
             jury_models=request.jury_models,
             role_play_option=request.role_play_option.value if request.role_play_option else None,
-            goals_file_name=goals_path,
+            goals_file_name=goals_file_name,
             target_provider=request.target_provider,
-            api_key=request.api_key
+            api_key=request.api_key,
+            scenario_id=scenario_id,
+            db=db,
         )
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:

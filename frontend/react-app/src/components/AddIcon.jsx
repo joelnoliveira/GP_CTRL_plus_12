@@ -6,6 +6,8 @@ import "../styles/components/add_icon.css"
 
 const AddIcon = ({
   size = "small",
+  onClick,
+  disabled = false,
 }) => {
   const icon_size =
     size === "small"
@@ -17,10 +19,15 @@ const AddIcon = ({
       : ""
 
   return (
-    <div className="add_icon__wrapper">
+    <button 
+      className="add_icon__wrapper"
+      disabled={disabled} 
+      onClick={onClick}
+      type="button"
+    >
       <img src={addIcon} className={icon_size} alt="add icon" />
-    </div>
+    </button>
   )
 }
 
-export default AddIcon
+export default AddIcon;

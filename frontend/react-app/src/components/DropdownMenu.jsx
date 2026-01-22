@@ -1,18 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-
 import ArrowIcon from "./ArrowIcon";
-
 import "../styles/components/dropdown_menu.css";
 
-const DropdownMenu = ({ 
-  placeholder = "Placeholder",
-  items = ["Item1", "Item2", "Item3"],
-  value,
-  onSelect,
-}) => {
+const DropdownMenu = ({ placeholder = "Placeholder", items = ["Item1", "Item2", "Item3"], onSelect, value }) => {
   const [isOpen, setIsOpen] = useState(false);
-  //const [selected, setSelected] = useState("");
+  const [internalSelected, setInternalSelected] = useState("");
   const dropdownRef = useRef(null);
+
+  const selectedValue = value !== undefined ? value : internalSelected;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -25,40 +20,47 @@ const DropdownMenu = ({
   }, []);
 
   const handleSelect = (item) => {
+    if (onSelect) {
+      onSelect(item);
+    }
+    setInternalSelected(item);
     setIsOpen(false);
     onSelect?.(item);
   };
 
   return (
     <div className="dropdown" ref={dropdownRef}>
-        <button
+      {/*<button
             onClick={() => setIsOpen(!isOpen)}
-            className="dropdown__button"
-        >
-            <div className="truncate">
-              {value || placeholder}
-            </div>
-            <span className="dropdown__arrow">
-                {isOpen 
-                    ? <ArrowIcon variant="arrow_up" /> 
-                    : <ArrowIcon variant="arrow_down" />
-                }
-            </span>
-        </button>
+            className={`dropdown__button
+                        ${isOpen ? "border-red-400" : "border-gray-300"}`}
+        >*/}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="dropdown__button"
+      >
+        {selectedValue || placeholder}
+        <span className="dropdown__arrow">
+          {isOpen
+            ? <ArrowIcon variant="arrow_up" />
+            : <ArrowIcon variant="arrow_down" />
+          }
+        </span>
+      </button>
 
-        {isOpen && (
-            <ul className="dropdown__menu">
-            {items.map((item, index) => (
-                <li
-                  key={index}
-                  onClick={() => handleSelect(item)}
-                  className={`dropdown__menu-item ${item === value ? "dropdown__menu-item--selected" : ""}`}
-                >
-                  {item}
-                </li>
-            ))}
-            </ul>
-        )}
+      {isOpen && (
+        <ul className="dropdown__menu">
+          {items.map((item, index) => (
+            <li
+              key={index}
+              onClick={() => handleSelect(item)}
+              className="dropdown__menu-item"
+            >
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

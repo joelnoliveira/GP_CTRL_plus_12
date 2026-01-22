@@ -71,16 +71,16 @@ export default function Register() {
 			confirm_password: true,
 		});
 
+		const validationErrors = validateInputs();
+		setErrors(validationErrors);
+
+		if (Object.keys(validationErrors).length > 0) return;
+
 		if (!captchaToken) {
             setToastConfig({ type: "error", message: "Please complete the reCAPTCHA" });
             setTimeout(() => setToastConfig(null), 3000);
             return;
         }
-
-		const validationErrors = validateInputs();
-		setErrors(validationErrors);
-
-		if (Object.keys(validationErrors).length > 0) return;
 
 		const payload = {
 		'email': email,

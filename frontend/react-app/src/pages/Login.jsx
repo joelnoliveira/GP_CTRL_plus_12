@@ -24,7 +24,7 @@ export default function Login() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-	console.log("Login sees isLoggedIn:", isLoggedIn);
+	// console.log("Login sees isLoggedIn:", isLoggedIn);
 	if (isLoggedIn) {
 		navigate("/");
 	}
@@ -54,8 +54,7 @@ export default function Login() {
 		if(error_message==="Database tables not reflected yet"){
 			newErrors.showToast = { type: "error", message: "Internal Error." };
 		} else if(error_message==="Invalid credentials"){
-			newErrors.email = "Invalid credentials"
-			newErrors.password = "Invalid credentials"
+			newErrors.showToast = { type: "error", message: "Invalid credentials"};
 		} else{
 			newErrors.showToast = { type: "error", message: "Login Error." };
 		}
@@ -73,16 +72,16 @@ export default function Login() {
 			password: true,
 		});
 
+		const validationErrors = validateInputs();
+		setErrors(validationErrors);
+
+		if (Object.keys(validationErrors).length > 0) return;
+
 		if (!captchaToken) {
             setToastConfig({ type: "error", message: "Please complete the reCAPTCHA" });
             setTimeout(() => setToastConfig(null), 3000);
             return;
         }
-
-		const validationErrors = validateInputs();
-		setErrors(validationErrors);
-
-		if (Object.keys(validationErrors).length > 0) return;
 
 		const payload = {
 		'email': email,

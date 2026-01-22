@@ -174,6 +174,9 @@ async def launch_attack_template(
     template_path: str = None,
     target_provider: str = "OLLAMA",
     api_key:str = None,
+    db = None,
+    template_dataset_id: int = None,
+    scenario_id: int = None
 ):
     load_dotenv()
     
@@ -200,6 +203,9 @@ async def launch_attack_template(
         label=label,
         template_path=template_path,
         api_key=api_key,
+        db=db,
+        template_dataset_id=template_dataset_id,
+        scenario_id=scenario_id
     )
 
 

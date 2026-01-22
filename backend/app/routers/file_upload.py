@@ -319,14 +319,14 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
             else:
                 yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 
-        # Atualizar Base de Dados - guardar em workload_datasets
+        # Atualizar Base de Dados - guardar em template_datasets
         try:
             # Garantir que as tabelas estão refletidas
-            if not hasattr(Base.classes, 'workload_datasets'):
+            if not hasattr(Base.classes, 'template_datasets'):
                 from ..models import reflect_tables
                 reflect_tables()
             
-            WorkloadDatasets = Base.classes.workload_datasets
+            WorkloadDatasets = Base.classes.template_datasets
             Scenarios = Base.classes.scenarios
             
             # Determinar o scenario_id baseado no formato
@@ -446,14 +446,14 @@ async def upload_file_with_format(format_type: FileFormat, file: UploadFile = Fi
             else:
                 yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 
-        # Atualizar Base de Dados - guardar em workload_datasets
+        # Atualizar Base de Dados - guardar em template_datasets
         try:
             # Garantir que as tabelas estão refletidas
-            if not hasattr(Base.classes, 'workload_datasets'):
+            if not hasattr(Base.classes, 'template_datasets'):
                 from ..models import reflect_tables
                 reflect_tables()
 
-            WorkloadDatasets = Base.classes.workload_datasets
+            WorkloadDatasets = Base.classes.template_datasets
             Scenarios = Base.classes.scenarios
             
             # Determinar o scenario_id baseado no formato
@@ -538,11 +538,11 @@ async def delete_uploaded_file(filename: str, db: Session = Depends(get_db)):
     try:
         # Remover da base de dados primeiro
         try:
-            if not hasattr(Base.classes, 'workload_datasets'):
+            if not hasattr(Base.classes, 'template_datasets'):
                 from ..models import reflect_tables
                 reflect_tables()
             
-            WorkloadDatasets = Base.classes.workload_datasets
+            WorkloadDatasets = Base.classes.template_datasets
             # Procurar pelo storage_path (pode ter path completo ou só o nome)
             record = db.query(WorkloadDatasets).filter(
                 WorkloadDatasets.storage_path == file_path

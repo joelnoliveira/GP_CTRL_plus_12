@@ -1,7 +1,10 @@
 import json
 import pathlib
 import uuid
+import time 
+from datetime import datetime
 
+from data_repository.crud import store_run
 from pyrit.common import IN_MEMORY, initialize_pyrit
 from pyrit.orchestrator import CrescendoOrchestrator
 # from pyrit.prompt_target import OllamaChatTarget
@@ -126,6 +129,14 @@ async def launch_attack_template(ollama_host, **kwargs):
     template_path = args.get("template_path")
     target_provider = args["target_provider"]
     api_key = args["api_key"]
+    db = args["db"]
+    scenario_id = args["scenario_id"]
+    template_datasets_id = args["template_dataset_id"]
+    
+    begin_started_at = time.time()
+    started_at = time.localtime(begin_started_at)
+    started_at = datetime.fromtimestamp(begin_started_at)
+    
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type="InMemory")
@@ -136,7 +147,7 @@ async def launch_attack_template(ollama_host, **kwargs):
         if path.suffix.lower() == '.json':
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            
+                
             if isinstance(data, list):
                 # Transform list-based JSON (e.g. malicious_goals) to SeedPrompt compatible format
                 formatted_prompts = []
@@ -156,14 +167,13 @@ async def launch_attack_template(ollama_host, **kwargs):
         else:
             seed_prompt_dataset = SeedPromptDataset.from_yaml_file(path)
 
-
         prompt_list = []
         goals_dictionary = {}
 
         #baseline from Donato... it will need to be adapted to our needs
         #to quickly test the attack template, we will limit the number of goals and prompts
-        #goals_list = goals_list[:1]
-        #seed_prompt_dataset.prompts = seed_prompt_dataset.prompts[:3]
+        goals_list = goals_list[:1]
+        seed_prompt_dataset.prompts = seed_prompt_dataset.prompts[:3]
 
         for goal in goals_list:
             for p in seed_prompt_dataset.prompts:
@@ -243,8 +253,27 @@ async def launch_attack_template(ollama_host, **kwargs):
         print(f"[DEBUG] metrics: {metrics}")
 
         if label == Goals.VULNERABLE_GOALS.value:
-            vulnerabilities = vuln_analysis(result_json)
-
+            vuln_analysis(result_json)
+        
+        ended_at = time.time()
+        ended_at = time.localtime(begin_started_at)
+        ended_at = datetime.fromtimestamp(time.time())
+        
+        store_run(
+            db=db,
+            user_id=1,
+            scenario_id=scenario_id,
+            template_datasets_id=template_datasets_id,
+            target_model=target_model_name,
+            attack_model=None,
+            attack_results={
+                "metrics": metrics,
+            },
+            started_at=started_at,
+            ended_at=ended_at,
+            langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
+            attacker_visibility="standard"
+        )
     except Exception as e:
         import traceback
         traceback.print_exc()

@@ -134,41 +134,33 @@ async def get_dataset(dataset_name: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-# ==================== Endpoints Workload Datasets (BD local) ====================
-@app.get("/workload-datasets")
-async def get_workload_datasets(
+# ==================== Endpoints Template Datasets (BD local) ====================
+@app.get("/template-datasets")
+async def get_template_datasets(
     db: Session = Depends(get_db),
     is_builtin: bool = None,
-    scenario: str = None
 ):
     """
-    Lista todos os workload datasets da base de dados.
+    Lista todos os template datasets da base de dados.
     
     Filtros opcionais:
     - is_builtin: True (só default), False (só uploaded), None (todos)
-    - scenario: Nome do scenario para filtrar
     """
     try:
-        WorkloadDatasets = Base.classes.workload_datasets
-        Scenarios = Base.classes.scenarios
+        TemplateDatasets = Base.classes.template_datasets
         
-        query = db.query(WorkloadDatasets)
+        query = db.query(TemplateDatasets)
         
         # Filtrar por is_builtin se especificado
         if is_builtin is not None:
-            query = query.filter(WorkloadDatasets.is_builtin == is_builtin)
+            query = query.filter(TemplateDatasets.is_builtin == is_builtin)
         
         # Filtrar por scenario se especificado
-        if scenario:
-            scenario_obj = db.query(Scenarios).filter(Scenarios.name == scenario).first()
-            if scenario_obj:
-                query = query.filter(WorkloadDatasets.scenarios_id == scenario_obj.id)
-        
         datasets = query.all()
         
         result = []
         for ds in datasets:
-            scenario_obj = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
+            #scenario_obj = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
             result.append({
                 "id": ds.id,
                 "name": ds.name,
@@ -177,7 +169,6 @@ async def get_workload_datasets(
                 "mime_path": ds.mime_path,
                 "is_builtin": ds.is_builtin,
                 "created_at": ds.created_at.isoformat() if ds.created_at else None,
-                "scenario": scenario_obj.name if scenario_obj else None
             })
         
         return {
@@ -187,19 +178,16 @@ async def get_workload_datasets(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar datasets: {str(e)}")
 
-@app.get("/workload-datasets/{dataset_id}")
-async def get_workload_dataset(dataset_id: int, db: Session = Depends(get_db)):
-    """Obtém um workload dataset específico por ID."""
+@app.get("/template-datasets/{dataset_id}")
+async def get_template_dataset(dataset_id: int, db: Session = Depends(get_db)):
+    """Obtém um template dataset específico por ID."""
     try:
-        WorkloadDatasets = Base.classes.workload_datasets
-        Scenarios = Base.classes.scenarios
+        TemplateDatasets = Base.classes.template_datasets
         
-        ds = db.query(WorkloadDatasets).filter(WorkloadDatasets.id == dataset_id).first()
+        ds = db.query(TemplateDatasets).filter(TemplateDatasets.id == dataset_id).first()
         
         if not ds:
             raise HTTPException(status_code=404, detail="Dataset não encontrado")
-        
-        scenario = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
         
         return {
             "id": ds.id,
@@ -208,8 +196,7 @@ async def get_workload_dataset(dataset_id: int, db: Session = Depends(get_db)):
             "storage_path": ds.storage_path,
             "mime_path": ds.mime_path,
             "is_builtin": ds.is_builtin,
-            "created_at": ds.created_at.isoformat() if ds.created_at else None,
-            "scenario": scenario.name if scenario else None
+            "created_at": ds.created_at.isoformat() if ds.created_at else None
         }
     except HTTPException:
         raise
@@ -241,18 +228,18 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
         # Se goals_file_name for fornecido, verificar se existe na BD
         goals_path = None
         if request.goals_file_name:
-            WorkloadDatasets = Base.classes.workload_datasets
+            TemplateDatasets = Base.classes.template_datasets
             # Tentar encontrar pelo storage_path (se o user passou o path completo)
-            record = db.query(WorkloadDatasets).filter(
-                WorkloadDatasets.storage_path == request.goals_file_name
+            record = db.query(TemplateDatasets).filter(
+                TemplateDatasets.storage_path == request.goals_file_name
             ).first()
             
             if record:
                 goals_path = record.storage_path
             else:
                 # Tentar encontrar pelo nome
-                record = db.query(WorkloadDatasets).filter(
-                    WorkloadDatasets.name == request.goals_file_name
+                record = db.query(TemplateDatasets).filter(
+                    TemplateDatasets.name == request.goals_file_name
                 ).first()
                 if record:
                     goals_path = record.storage_path
@@ -286,14 +273,14 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
     try:
         template_path = None
         if request.template_path:
-            # Procurar o dataset na tabela workload_datasets
-            if not hasattr(Base.classes, 'workload_datasets'):
+            # Procurar o dataset na tabela template_datasets
+            if not hasattr(Base.classes, 'template_datasets'):
                 reflect_tables()
             
-            WorkloadDatasets = Base.classes.workload_datasets
+            TemplateDatasets = Base.classes.template_datasets
             # Procura na BD pelo storage_path
-            record = db.query(WorkloadDatasets).filter(
-                WorkloadDatasets.storage_path == request.template_path
+            record = db.query(TemplateDatasets).filter(
+                TemplateDatasets.storage_path == request.template_path
             ).first()
             
             if record:
@@ -305,6 +292,14 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
         if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
         
+        Scenario = Base.classes.scenarios
+        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
+
+        TemplateDatasets = Base.classes.template_datasets
+        template_dataset_id = (db.query(TemplateDatasets).filter(TemplateDatasets.storage_path == template_path).first()).id
+        
+
+        print("Template Dataset ID:", template_dataset_id)
         await launch_attack_template(
             label=request.label.value,
             seed=request.seed,
@@ -315,7 +310,12 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
             jury_models=request.jury_models,
             template_path=template_path,
             target_provider=request.target_provider,
-            api_key=request.api_key
+            api_key=request.api_key,
+            db=db,
+            template_dataset_id=template_dataset_id,
+            scenario_id=scenario_id,            
+            #langfuse,
+            #user
         )
         return {"status": "success", "message": "Attack template completed"}
     except Exception as e:

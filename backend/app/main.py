@@ -551,3 +551,25 @@ async def delete_api_key_config(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao deletar config: {str(e)}")
+
+@app.get("/runs-metrics/{run_id}")
+async def get_runs_metrics(
+    run_id: int,
+    db: Session = Depends(get_db)
+):
+    RunsMetrics = Base.classes.runs_metrics
+
+    run_metrics = (
+        db.query(RunsMetrics)
+        .filter(RunsMetrics.id == run_id)
+        .all()
+    )
+
+    return run_metrics
+
+@app.get("/runs-metrics")
+async def get_all_runs_metrics(
+    db: Session = Depends(get_db)
+):
+    RunsMetrics = Base.classes.runs_metrics
+    return db.query(RunsMetrics).all()

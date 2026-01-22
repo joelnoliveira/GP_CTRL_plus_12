@@ -27,15 +27,11 @@
 	@apply text-gray-400 mb-2 text-sm;
 }
 
-.format-code-block {
-	@apply bg-black text-blue-400 p-3 rounded-lg text-xs font-mono border border-gray-700 mb-3;
-}
-
 .upload-zone {
-	@apply relative border-2 border-dashed rounded-xl p-6 flex items-center justify-center cursor-pointer transition-colors;
+	@apply mt-5 relative border-2 border-dashed rounded-xl p-6 flex items-center justify-center cursor-pointer transition-colors;
 }
 .upload-zone.has-file {
-	@apply border-blue-500;
+	@apply border-red-500;
 }
 .upload-zone input[type="file"] {
 	position: absolute;
@@ -62,11 +58,11 @@
 }
 
 .format-label {
- 	@apply mb-1 text-xs text-gray-400;
+ 	@apply mb-1 text-sm font-bold text-gray-400;
 }
 
 .format-code-block {
-  	@apply bg-black text-blue-400 p-3 rounded-lg text-[10px] font-mono border border-gray-700 overflow-x-auto;
+  	@apply bg-black text-red-400 p-3 rounded-lg text-[10px] font-mono border border-gray-700 overflow-x-auto;
 }
 
 .format-name {

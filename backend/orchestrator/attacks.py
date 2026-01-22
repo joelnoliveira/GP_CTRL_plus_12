@@ -103,7 +103,7 @@ async def over_refusal_test(
         requests = [NormalizerRequest(seed_prompt_group=p) for p in prompt_groups]
 
 
-        requests = requests[:2]
+        #requests = requests[:2]
 
         print(len(requests))
 

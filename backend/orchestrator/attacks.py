@@ -60,7 +60,7 @@ async def over_refusal_test(
                 model_name=target_model_name,
                 endpoint= ollama_host + "/api/chat",
                 timeout=1000,
-                options={'seed': seed, 'temperature': temperature_target}
+                options={'seed': seed}#, 'temperature': temperature_target}
             )
         elif target_provider == TargetModel.OPEN_AI.value:
             target = OpenAIChatTarget(
@@ -69,9 +69,9 @@ async def over_refusal_test(
                 is_azure_target=False
             )
 
-        jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
-        jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
-        jury_3 = OllamaChatTarget(model_name=jury_models[2], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
+        jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed}) #'temperature': temperature_judges})
+        jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed}) #'temperature': temperature_judges})
+        jury_3 = OllamaChatTarget(model_name=jury_models[2], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed}) #'temperature': temperature_judges})
 
         refusal_scorer_jury_1 = SelfAskRefusalScorer(
             chat_target=jury_1,
@@ -218,7 +218,7 @@ async def launch_attack_template(ollama_host, **kwargs):
                 model_name=target_model_name,
                 endpoint= ollama_host + "/api/chat",
                 timeout=1000,
-                options={'seed': seed, 'temperature': temperature_target}
+                options={'seed': seed}#, 'temperature': temperature_target}
             )
         elif target_provider == TargetModel.OPEN_AI.value:
             target = OpenAIChatTarget(
@@ -231,9 +231,9 @@ async def launch_attack_template(ollama_host, **kwargs):
 
         #target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_target})
 
-        jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed, 'temperature': temperature_judges})
-        jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
-        jury_3 = OllamaChatTarget(model_name=jury_models[2], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
+        jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 5000, 'seed': seed}) #'temperature': temperature_judges})
+        jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed}) #'temperature': temperature_judges})
+        jury_3 = OllamaChatTarget(model_name=jury_models[2], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed}) #'temperature': temperature_judges})
 
         refusal_scorer_jury_1 = SelfAskRefusalScorer(
             chat_target=jury_1,
@@ -327,7 +327,6 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
     started_at = datetime.fromtimestamp(begin_started_at)
-    
     try:
         ollama_host = ollama_host.rstrip('/').replace('/v1', '')
         initialize_pyrit(memory_db_type=IN_MEMORY)
@@ -335,12 +334,11 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         #judge = OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=200)
         #objective_target = target_provider_dict[target_provider](model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
         if target_provider == TargetModel.OLLAMA.value:
-            objective_target = OllamaChatTarget(
-                model_name=target_model_name,
-                endpoint= ollama_host + "/api/chat",
-                timeout=1000,
-                options={'seed': seed, 'temperature': temperature_target}
-            )
+            objective_target = OllamaChatTarget(model_name=target_model_name, 
+                                                endpoint=ollama_host + "/api/chat", 
+                                                timeout=5000, 
+                                                options={'seed': seed})
+        
         elif target_provider == TargetModel.OPEN_AI.value:
             objective_target = OpenAIChatTarget(
                 deployment_name=target_model_name,
@@ -348,15 +346,14 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
                 is_azure_target=False
             )
 
-        #objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_target})
-        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_attacker})
-        judge= OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed, 'temperature': temperature_judge})
+        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed})
+        judge= OllamaChatTarget(model_name=judge_model_name, endpoint=ollama_host + "/api/chat", timeout=5000, options={'seed': seed})
 
         orchestrator= CrescendoOrchestrator(
             objective_target=objective_target,
             adversarial_chat=attacker,
-            max_turns=2,
-            max_backtracks=2,
+            max_turns=10,
+            max_backtracks=5,
             scoring_target=judge,
             verbose=True
         )
@@ -492,7 +489,7 @@ async def launch_role_play_attack(ollama_host, **kwargs):
                 model_name=target_model_name,
                 endpoint= ollama_host + "/api/chat",
                 timeout=1000,
-                options={'seed': seed, 'temperature': temperature_target}
+                options={'seed': seed}#, 'temperature': temperature_target}
             )
         elif target_provider == TargetModel.OPEN_AI.value:
             objective_target = OpenAIChatTarget(
@@ -504,10 +501,10 @@ async def launch_role_play_attack(ollama_host, **kwargs):
 
         
         #objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
-        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=2000, options={'seed': seed, 'temperature': temperature_attacker})
-        jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
-        jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
-        jury_3 = OllamaChatTarget(model_name=jury_models[2], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
+        attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=2000, options={'seed': seed}) #'temperature': temperature_attacker})
+        jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed}) #'temperature': temperature_judges})
+        jury_2 = OllamaChatTarget(model_name=jury_models[1], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed}) #'temperature': temperature_judges})
+        jury_3 = OllamaChatTarget(model_name=jury_models[2], endpoint=ollama_host + "/api/chat", timeout=10000, options={'num_predict': 1000, 'seed': seed}) #'temperature': temperature_judges})
 
 
         print("Setting up refusal scorers...")

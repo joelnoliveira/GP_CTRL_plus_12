@@ -6,8 +6,11 @@ from contextlib import asynccontextmanager
 from .models import reflect_tables, Base
 from .database import get_db
 from .schemas import AttackRequest, AttackTemplateRequest, OverRefusalTestRequest
+from .security import get_current_user
 import os
 import requests
+import json
+from datetime import datetime
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from langfuse import get_client
@@ -236,8 +239,12 @@ async def get_scenarios(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Erro ao listar scenarios: {str(e)}")
 
 @app.post("/attack")
-async def attack(request: AttackRequest, db: Session = Depends(get_db)):
+async def attack(request: AttackRequest, db: Session = Depends(get_db), current_user_email: str = Depends(get_current_user)):
     try:
+        # Get user_id for audit
+        User = Base.classes.users
+        user = db.query(User).filter(User.email == current_user_email).first()
+        
         # Se goals_file_name for fornecido, verificar se existe na BD
         goals_path = None
         if request.goals_file_name:
@@ -277,13 +284,31 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
             target_provider=request.target_provider,
             api_key=request.api_key
         )
+        
+        # Audit log
+        AuditLog = Base.classes.audit_logs
+        request_data = request.model_dump()
+        request_data.pop('api_key', None)  # Remove sensitive data
+        audit_entry = AuditLog(
+            user_id=user.id,
+            endpoint="/attack",
+            request_body=json.dumps(request_data, default=str),
+            created_at=datetime.now()
+        )
+        db.add(audit_entry)
+        db.commit()
+        
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/attack-template")
-async def attack_template(request: AttackTemplateRequest, db: Session = Depends(get_db)):
+async def attack_template(request: AttackTemplateRequest, db: Session = Depends(get_db), current_user_email: str = Depends(get_current_user)):
     try:
+        # Get user_id for audit
+        User = Base.classes.users
+        user = db.query(User).filter(User.email == current_user_email).first()
+        
         template_path = None
         if request.template_path:
             # Procurar o dataset na tabela workload_datasets
@@ -317,6 +342,20 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
             target_provider=request.target_provider,
             api_key=request.api_key
         )
+        
+        # Audit log
+        AuditLog = Base.classes.audit_logs
+        request_data = request.model_dump()
+        request_data.pop('api_key', None)  # Remove sensitive data
+        audit_entry = AuditLog(
+            user_id=user.id,
+            endpoint="/attack-template",
+            request_body=json.dumps(request_data, default=str),
+            created_at=datetime.now()
+        )
+        db.add(audit_entry)
+        db.commit()
+        
         return {"status": "success", "message": "Attack template completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

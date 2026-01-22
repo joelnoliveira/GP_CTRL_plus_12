@@ -7,6 +7,7 @@ from ..security import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE
 from datetime import timedelta, datetime
 import os
 import requests
+import json
 
 router = APIRouter(
     prefix="/auth",
@@ -107,6 +108,18 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(
         data={"sub": user.email, "user_id": user.id}, expires_delta=access_token_expires
     )
+    
+    # Audit log
+    AuditLog = Base.classes.audit_logs
+    audit_entry = AuditLog(
+        user_id=user.id,
+        endpoint="/auth/login",
+        request_body=json.dumps({"email": user_credentials.email}),
+        created_at=datetime.now()
+    )
+    db.add(audit_entry)
+    db.commit()
+    
     return {"access_token": access_token, "token_type": "bearer"}
 
 

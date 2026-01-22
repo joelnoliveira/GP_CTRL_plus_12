@@ -268,11 +268,13 @@ const handleExecute = async () => {
                       )
                     }
                   />
+                  {(field.id === "scenario" || field.id === "template_path") && (
                   <AddIcon
                     size='large'
                     disabled={!isLoggedIn}
                     onClick={() => console.log('Add clicked!')}
-                  />
+                  />)
+                  }
                 </div>
               );
             })}

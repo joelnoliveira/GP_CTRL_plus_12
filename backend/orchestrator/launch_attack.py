@@ -21,7 +21,7 @@ def load_labels(label: str):
 
         with open(file_path, "r") as f:
             goals = json.load(f)
-        goals = goals[:5]
+        #goals = goals[:1]
         #convert malicious_goals to a list of prompts
         goals_list = [goal['Prompt'] for goal in goals]
         return goals_list
@@ -105,6 +105,7 @@ async def launch_attack(
     attacker_model_name = attacker_model_name if attacker_model_name is not None else DEFAULTS["attacker_model_name"]
     judge_model_name = judge_model_name if judge_model_name is not None else DEFAULTS["judge_model_name"]
     jury_models = jury_models if jury_models is not None else DEFAULTS["jury_models"]
+    role_play_option_name = role_play_option
     role_play_path = _get_role_play_path(role_play_option) if role_play_option else RolePlayPaths.MR_ROBOT.value
     
     attacks_dict = {
@@ -136,7 +137,8 @@ async def launch_attack(
             role_play_option=role_play_path,
             api_key=api_key,
             db=db,
-            scenario_id=scenario_id
+            scenario_id=scenario_id,
+            role_play_option_name=role_play_option_name,
         )
 
 
@@ -196,7 +198,6 @@ async def launch_over_refusal_test(
     target_provider: str = "OLLAMA",
     api_key:str = None,
     db = None,
-    scenario_id: int = None
 ):
     load_dotenv()
     

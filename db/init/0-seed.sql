@@ -19,6 +19,8 @@ CREATE TABLE runs_metrics (
 	target_model		 TEXT NOT NULL,
 	attack_model		 TEXT,
 	visibility		 TEXT NOT NULL,
+	role_play_option VARCHAR(255),
+	attack_type		 VARCHAR(255),
 	status			 CHAR(255) NOT NULL,
 	langfuse_trace_id	 TEXT,
 	started_at		 TIMESTAMP NOT NULL,

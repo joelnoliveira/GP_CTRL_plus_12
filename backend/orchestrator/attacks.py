@@ -19,7 +19,7 @@ from pyrit.score import SelfAskRefusalScorer
 from pyrit.models import SeedPromptDataset
 from pyrit.models.prompt_request_response import PromptRequestResponse
 from pyrit.memory.central_memory import CentralMemory
-from orchestrator.constants import DEFAULTS, Goals, TargetModel
+from orchestrator.constants import DEFAULTS, Goals, TargetModel, TypesOfAttacks
 
 from evaluation_service.run_metrics import get_run_metrics, get_run_metrics_crescendo
 from evaluation_service.vulnerability_analysis import vuln_analysis
@@ -134,7 +134,8 @@ async def over_refusal_test(
             started_at=started_at,
             ended_at=ended_at,
             langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
-            attacker_visibility="standard"
+            attacker_visibility="standard",
+            attack_type=TypesOfAttacks.OVER_REFUSAL_ATTACK.value
         )
         
         print(f"[DEBUG] metrics: {metrics}")
@@ -298,7 +299,8 @@ async def launch_attack_template(ollama_host, **kwargs):
             started_at=started_at,
             ended_at=ended_at,
             langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
-            attacker_visibility="standard"
+            attacker_visibility="standard",
+            attack_type=TypesOfAttacks.TEMPLATE_ATTACK.value
         )
     except Exception as e:
         import traceback
@@ -353,8 +355,8 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         orchestrator= CrescendoOrchestrator(
             objective_target=objective_target,
             adversarial_chat=attacker,
-            max_turns=10,
-            max_backtracks=5,
+            max_turns=2,
+            max_backtracks=2,
             scoring_target=judge,
             verbose=True
         )
@@ -391,7 +393,8 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
             started_at=started_at,
             ended_at=ended_at,
             langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
-            attacker_visibility="standard"
+            attacker_visibility="standard",
+            attack_type=TypesOfAttacks.CRESCENDO_ATTACK.value
         )
         ##save variable data to a json file
         with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
@@ -471,6 +474,7 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     db = args["db"]
     scenario_id = args["scenario_id"]
     attacker_model_name = args["attacker_model_name"]
+    role_play_option_name = args["role_play_option_name"]
 
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -555,7 +559,9 @@ async def launch_role_play_attack(ollama_host, **kwargs):
             started_at=started_at,
             ended_at=ended_at,
             langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
-            attacker_visibility="standard"
+            attacker_visibility="standard",
+            attack_type=TypesOfAttacks.ROLE_PLAY_ATTACK.value,
+            role_play_option=role_play_option_name
         )
     except Exception as e:
         raise Exception(f"Error in launch_mr_robot_attack: {e}") 

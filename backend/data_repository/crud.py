@@ -21,7 +21,9 @@ def create_run_metric(
     #attack_loads_id: int,
     scenarios_id: int,
     users_id: int,
-    metrics_asr: Optional[int] = None
+    metrics_asr: Optional[int] = None,
+    attack_type:str = None,
+	role_play_option:str = None,
 ) -> Dict[str, Any]:
     """
     Cria uma nova métrica de execução.
@@ -48,20 +50,22 @@ def create_run_metric(
     """
     query = text("""
         INSERT INTO runs_metrics 
-        (target_model, attack_model, visibility, status, langfuse_trace_id, 
+        (target_model, attack_model, visibility, role_play_option, attack_type, status, langfuse_trace_id, 
          started_at, ended_at, metrics_asr, metrics_orr, metrics_aor, metrics_veridict_majority, 
          template_datasets_id, scenarios_id, users_id)
         VALUES 
-        (:target_model, :attack_model, :visibility, :status, :langfuse_trace_id,
+        (:target_model, :attack_model, :visibility, :role_play_option, :attack_type, :status, :langfuse_trace_id,
          :started_at, :ended_at, :metrics_asr, :metrics_orr, :metrics_aor, :metrics_veridict_majority,
          :template_datasets_id, :scenarios_id, :users_id)
         RETURNING id, target_model, attack_model, status, started_at, ended_at
     """)
-    
+    print(attack_type)
     result = db.execute(query, {
         "target_model": target_model,
         "attack_model": attack_model,
         "visibility": visibility,
+	    "role_play_option": role_play_option,
+        "attack_type": attack_type,
         "status": status,
         "langfuse_trace_id": langfuse_trace_id,
         "started_at": started_at,
@@ -91,7 +95,10 @@ def store_run(
     started_at: datetime,
     ended_at: datetime,
     langfuse_trace_id: Optional[str] = None,
-    attacker_visibility: str = "standard"
+    attacker_visibility: str = "standard",
+    attack_type:str = None,
+	role_play_option:str = None,
+
 ) -> Dict[str, Any]:
     """
     Stores complete attack run information to the database atomically.
@@ -118,7 +125,6 @@ def store_run(
     Raises:
         Exception: If any database operation fails (all writes rolled back)
     """
-    print(attack_results)
     import json
     from pathlib import Path
     
@@ -161,7 +167,9 @@ def store_run(
             template_datasets_id=template_datasets_id,
             #attack_loads_id=attack_load_id,
             scenarios_id=scenario_id,
-            users_id=user_id
+            users_id=user_id,
+            attack_type=attack_type,
+            role_play_option=role_play_option
         )
         run_id = run_metric['id']
         

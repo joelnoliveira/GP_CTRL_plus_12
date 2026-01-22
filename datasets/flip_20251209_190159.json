@@ -1,0 +1,81 @@
+{
+  "conversations": [
+    {
+      "id": "conv_000",
+      "messages": [
+        {
+          "role": "user",
+          "content": "test prompt 0"
+        },
+        {
+          "role": "assistant",
+          "content": "test response 0"
+        }
+      ],
+      "score": 0.7
+    },
+    {
+      "id": "conv_001",
+      "messages": [
+        {
+          "role": "user",
+          "content": "test prompt 1"
+        },
+        {
+          "role": "assistant",
+          "content": "test response 1"
+        }
+      ],
+      "score": 0.75
+    },
+    {
+      "id": "conv_002",
+      "messages": [
+        {
+          "role": "user",
+          "content": "test prompt 2"
+        },
+        {
+          "role": "assistant",
+          "content": "test response 2"
+        }
+      ],
+      "score": 0.7999999999999999
+    },
+    {
+      "id": "conv_003",
+      "messages": [
+        {
+          "role": "user",
+          "content": "test prompt 3"
+        },
+        {
+          "role": "assistant",
+          "content": "test response 3"
+        }
+      ],
+      "score": 0.85
+    },
+    {
+      "id": "conv_004",
+      "messages": [
+        {
+          "role": "user",
+          "content": "test prompt 4"
+        },
+        {
+          "role": "assistant",
+          "content": "test response 4"
+        }
+      ],
+      "score": 0.8999999999999999
+    }
+  ],
+  "metrics": {
+    "asr": 0.75,
+    "orr": 0.45,
+    "aor": 0.3,
+    "useful_majority": 0.8,
+    "veridict_majority": 0.7
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "conversations": [
+    {
+      "id": "c_0",
+      "score": 0.5
+    }
+  ],
+  "metrics": {
+    "asr": 0.5
+  }
+}

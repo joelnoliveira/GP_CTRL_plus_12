@@ -6,6 +6,7 @@ import DropdownMenu from '../components/DropdownMenu'
 import ToggleSwitch from '../components/ToggleSwitch'
 import AddIcon from '../components/AddIcon'
 import Button from "../components/Button"
+import Toast from "../components/Toast"
 
 const RunExperiment = (
 ) => {
@@ -14,7 +15,11 @@ const RunExperiment = (
       setIsPublic(newValue);
   }
 
+  const [toastConfig, setToastConfig] = useState(null);
+
   const { isLoggedIn, login } = useAuth(); // From your AuthContext
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const attackTypeList = ['Attack','Attack Template'];
   const [attackType, setAttackType] = useState(attackTypeList[0]);
@@ -90,7 +95,6 @@ const RunExperiment = (
     { id: 'role_play_option', placeholder: 'Role Playing Type', options: rolePlayOptionList },
     { id: 'attack_model_name', placeholder: 'Attack Model', options: fetchedModels },
     { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
-    { id: 'template_path', placeholder: 'Template', options: templateList },
   ]; 
   const attackTemplateFormFields = [
     { id: 'scenario', placeholder: 'Scenario', options: scenarioList },
@@ -99,7 +103,7 @@ const RunExperiment = (
   ];
 
   const getFormFields = () => {
-    if (attackType == "Attack") { 
+    if (attackType === "Attack") { 
       return attackFormFields
     } else {
       return attackTemplateFormFields
@@ -107,20 +111,22 @@ const RunExperiment = (
   }
 
 const handleExecute = async () => {
-  // Validar que todos os campos obrigatórios foram preenchidos
+  // Validar que todos os campos foram preenchidos
   if (!selections.scenario || !selections.target_model_name) {
-    alert("Por favor preenche todos os campos obrigatórios");
+    const newError = {type: "error", message: "Please select an option for all fields."};
+    setToastConfig(newError);
     return;
   }
 
+  setIsLoading(true);
   try {
     let endpoint = "";
     let payload = {};
 
     if (attackType === "Attack") {
-      // Validação específica para Attack
-      if (!selections.template_path) {
-        alert("Por favor seleciona um template para o ataque");
+      if (!selections.attack_model_name && selections.attack_option && ((selections.attack_option==="ROLE_PLAY_ATTACK") === selections.role_play_option)) {
+        const newError = {type: "error", message: "Please select an option for all fields."};
+        setToastConfig(newError);
         return;
       }
 
@@ -133,9 +139,9 @@ const handleExecute = async () => {
         role_play_option: selections.role_play_option
       };
     } else if (attackType === "Attack Template") {
-      // Validação específica para Attack Template
       if (!selections.template_path) {
-        alert("Por favor seleciona um template");
+        const newError = {type: "error", message: "Please select an option for all fields."};
+        setToastConfig(newError);
         return;
       }
 
@@ -146,11 +152,12 @@ const handleExecute = async () => {
         template_path: selections.template_path
       };
     } else {
-      alert("Por favor seleciona um tipo de ataque válido");
+      const newError = {type: "error", message: "Please select a valid attack option."};
+      setToastConfig(newError);
       return;
     }
 
-    // Fazer a chamada ao backend
+    //Fazer a chamada ao backend
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -164,12 +171,18 @@ const handleExecute = async () => {
     }
 
     const data = await response.json();
-    console.log("Ataque executado com sucesso:", data);
-    alert("Ataque iniciado com sucesso!");
-
+    console.log("Attack successfully executed!", data);
+    /**
+     * Logica de mostrar o ataque no frontend (Usar um modal que tá no historico talvez)
+     */
+    const newSuccess = {type: "success", message: "Attack successfully executed!"};
+    setToastConfig(newSuccess);
   } catch (err) {
-    console.error("Erro ao executar ataque:", err);
-    alert(`Erro ao executar ataque: ${err.message}`);
+    console.error("Error executing attack:", err);
+    const newError = { type: "error", message: `Error executing attack: ${err.message}.`};
+    setToastConfig(newError);
+  } finally {
+    setIsLoading(false); // 3. Stop loading regardless of success/fail
   }
 };
 
@@ -206,6 +219,15 @@ const handleExecute = async () => {
       <Menu 
         currentPage={"Run Experiment"}
       />
+
+      {toastConfig && (
+				<Toast
+					icon_size="large"
+					type={toastConfig.type}
+					message={toastConfig.message}
+					onClose={() => setToastConfig(null)} 
+				/>
+			)}
 
       {/* Main Content Area */}
       <div className="run_experiment__main_area">
@@ -261,9 +283,9 @@ const handleExecute = async () => {
             type="submit"
             variant="default"
             size="large"
-            text="Execute Attack"
             styles="w-full mt-6"
-            disabled={!isLoggedIn}
+            text={isLoading ? "Processing..." : "Execute Attack"} // Change text
+            disabled={!isLoggedIn || isLoading}
           />
         </div>
       </div>

@@ -21,7 +21,7 @@ def load_labels(label: str):
 
         with open(file_path, "r") as f:
             goals = json.load(f)
-
+        goals = goals[:5]
         #convert malicious_goals to a list of prompts
         goals_list = [goal['Prompt'] for goal in goals]
         return goals_list
@@ -195,6 +195,8 @@ async def launch_over_refusal_test(
     jury_models: list[str] = None,
     target_provider: str = "OLLAMA",
     api_key:str = None,
+    db = None,
+    scenario_id: int = None
 ):
     load_dotenv()
     
@@ -216,4 +218,5 @@ async def launch_over_refusal_test(
         target_model_name=target_model_name,
         jury_models=jury_models,
         api_key=api_key,
+        db=db,
     )

@@ -40,8 +40,7 @@ async def over_refusal_test(
     target_provider = args["target_provider"]
     api_key = args["api_key"]
     db = args["db"]
-    scenario_id = args["scenario_id"]
-
+    
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
     started_at = datetime.fromtimestamp(begin_started_at)
@@ -104,7 +103,7 @@ async def over_refusal_test(
         requests = [NormalizerRequest(seed_prompt_group=p) for p in prompt_groups]
 
 
-        # requests = requests[750:]
+        requests = requests[:2]
 
         print(len(requests))
 
@@ -125,7 +124,7 @@ async def over_refusal_test(
         store_run(
             db=db,
             user_id=1,
-            scenario_id=scenario_id,
+            scenario_id=3,
             template_datasets_id=None,
             target_model=target_model_name,
             attack_model=None,
@@ -321,7 +320,8 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     api_key = args["api_key"]
     db = args["db"]
     scenario_id = args["scenario_id"]
-    
+    attacker_model_name = args["attacker_model_name"]
+
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
     started_at = datetime.fromtimestamp(begin_started_at)
@@ -384,7 +384,7 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
             scenario_id=scenario_id,
             template_datasets_id=None,
             target_model=target_model_name,
-            attack_model=None,
+            attack_model=attacker_model_name,
             attack_results={
                 "metrics": metrics,
             },
@@ -397,6 +397,8 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
             json.dump(data, f)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise Exception(f"Error in launch_crescendo_attack: {e}") 
 
 async def launch_flip_attack(ollama_host, **kwargs):
@@ -468,7 +470,8 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     api_key = args["api_key"]
     db = args["db"]
     scenario_id = args["scenario_id"]
-    
+    attacker_model_name = args["attacker_model_name"]
+
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
     started_at = datetime.fromtimestamp(begin_started_at)
@@ -495,6 +498,7 @@ async def launch_role_play_attack(ollama_host, **kwargs):
 
             )
 
+        
         #objective_target = OllamaChatTarget(model_name=target_model_name, endpoint=ollama_host + "/api/chat", timeout=1000, options={'seed': seed, 'temperature': temperature_target})
         attacker = OllamaChatTarget(model_name=attacker_model_name, endpoint=ollama_host + "/api/chat", timeout=2000, options={'seed': seed, 'temperature': temperature_attacker})
         jury_1 = OllamaChatTarget(model_name=jury_models[0], endpoint=ollama_host + "/api/chat", timeout=None, options={'num_predict': 1000, 'seed': seed, 'temperature': temperature_judges})
@@ -544,7 +548,7 @@ async def launch_role_play_attack(ollama_host, **kwargs):
             scenario_id=scenario_id,
             template_datasets_id=None,
             target_model=target_model_name,
-            attack_model=None,
+            attack_model=attacker_model_name,
             attack_results={
                 "metrics": metrics,
             },

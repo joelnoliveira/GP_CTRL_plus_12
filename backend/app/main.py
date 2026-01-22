@@ -227,7 +227,7 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
     try:
         Scenario = Base.classes.scenarios
         scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
-        goals_file_name = request.goals_file_name if request.goals_file_name is not None else f"{request.label.value}.json"
+        #goals_file_name = request.goals_file_name if request.goals_file_name is not None else f"{request.label.value}.json"
 
         if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
@@ -242,7 +242,7 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
             judge_model_name=request.judge_model_name,
             jury_models=request.jury_models,
             role_play_option=request.role_play_option.value if request.role_play_option else None,
-            goals_file_name=goals_file_name,
+            goals_file_name=request.goals_file_name,
             target_provider=request.target_provider,
             api_key=request.api_key,
             scenario_id=scenario_id,
@@ -306,7 +306,7 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/over-refusal-test")
-async def over_refusal_test(request: OverRefusalTestRequest):
+async def over_refusal_test(request: OverRefusalTestRequest, db: Session = Depends(get_db)):
     try:
         if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
@@ -319,7 +319,9 @@ async def over_refusal_test(request: OverRefusalTestRequest):
             target_model_name=request.target_model_name,
             jury_models=request.jury_models,
             target_provider=request.target_provider,
-            api_key=request.api_key
+            api_key=request.api_key,
+            db=db,
+
         )
         return {"status": "success", "message": "Over-refusal test completed"}
     except Exception as e:

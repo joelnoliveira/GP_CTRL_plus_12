@@ -14,7 +14,7 @@ permissions:
 jobs:
   deploy:
     env:
-      REPO_NAME: gp_ctrl_plus_12
+      REPO_NAME: joelnoliveira/gp_ctrl_plus_12
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
 

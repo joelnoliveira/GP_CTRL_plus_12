@@ -21,7 +21,7 @@ const RunExperiment = (
 
   const [toastConfig, setToastConfig] = useState(null);
 
-  const { isLoggedIn, login } = useAuth(); // From your AuthContext
+  const { isLoggedIn, token } = useAuth(); // From your AuthContext
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -280,7 +280,7 @@ const handleExecute = async () => {
     if (scenarioType.label === "Over Refusal Test") {
       endpoint = "http://localhost:8000/over-refusal-test"; 
       payload = {
-        target_model_name: selections.target_model_name      
+        target_model_name: selections.target_model_name    
       };
 
     } else {
@@ -310,7 +310,7 @@ const handleExecute = async () => {
         payload = {
           scenario_id: scenarioType.key,
           target_model_name: selections.target_model_name,
-          template_dataset_id: selections.template_path
+          template_dataset_id: selections.template_path 
         };
       } else {
         const newError = {type: "error", message: "Please select a valid attack option."};
@@ -323,7 +323,8 @@ const handleExecute = async () => {
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(payload)
     });

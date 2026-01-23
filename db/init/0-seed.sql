@@ -50,6 +50,8 @@ CREATE TABLE scenarios (
 	id		 BIGSERIAL,
 	name	 TEXT NOT NULL,
 	description TEXT NOT NULL,
+	is_builtin BOOL NOT NULL,
+	storage_path TEXT NOT NULL,
 	created_at	 TIMESTAMP NOT NULL,
 	PRIMARY KEY(id)
 );
@@ -59,8 +61,17 @@ CREATE TABLE template_datasets (
 	name	 TEXT NOT NULL,
 	description	 TEXT NOT NULL,
 	storage_path TEXT NOT NULL,
-	mime_path	 TEXT NOT NULL,
 	is_builtin	 BOOL NOT NULL,
+	created_at	 TIMESTAMP NOT NULL,
+	PRIMARY KEY(id)
+);
+
+CREATE TABLE role_play_options (
+	id		 BIGSERIAL,
+	name	 TEXT NOT NULL,
+	description TEXT NOT NULL,
+	is_builtin BOOL NOT NULL,
+	storage_path TEXT NOT NULL,
 	created_at	 TIMESTAMP NOT NULL,
 	PRIMARY KEY(id)
 );
@@ -117,15 +128,15 @@ ALTER TABLE scenarios_users ADD CONSTRAINT scenarios_users_fk2 FOREIGN KEY (user
 
 -- ==================== SEED DATA: Scenarios ====================
 -- Scenarios definem o TIPO de teste/ataque que pode ser feito
-INSERT INTO scenarios (name, description, created_at) VALUES
-    ('malicious_goals', 'Malicious Goals', NOW()),
-    ('vulnerable_goals', 'Vulnerable Goals', NOW()),
-    ('over_refusal_test', 'Over Refusal Test', NOW());
+INSERT INTO scenarios (name, description, is_builtin, created_at, storage_path) VALUES
+	('malicious_goals', 'Malicious Goals', TRUE, NOW(), '/backend/datasets/malicious_goals.json'),
+	('vulnerable_goals', 'Vulnerable Goals', TRUE, NOW(), '/backend/datasets/vulnerable_goals.json'),
+	('over_refusal_test', 'Over Refusal Test', TRUE, NOW(), '/backend/datasets/or-bench-hard-1k.yaml');
 
 
 -- ==================== SEED DATA: Default Datasets ====================
 -- Datasets são os ficheiros com prompts/objetivos usados nos testes
-INSERT INTO template_datasets (name, description, storage_path, mime_path, is_builtin, created_at) VALUES
+INSERT INTO template_datasets (name, description, storage_path, is_builtin, created_at) VALUES
     -- Datasets para Single Turn Attack (scenario_id = 1)
     -- ('Malicious Goals', 'Dataset com objetivos maliciosos para testes de segurança', '/backend/datasets/malicious_goals.json', 'application/json', TRUE, NOW(), 1),
     -- ('Malicious Goals (80 entries)', 'Versão reduzida do dataset de objetivos maliciosos com 80 entradas', '/backend/datasets/malicious_goals_80entries.json', 'application/json', TRUE, NOW(), 1),
@@ -134,10 +145,12 @@ INSERT INTO template_datasets (name, description, storage_path, mime_path, is_bu
     -- ('Cleaned LLM Security Eval', 'Versão limpa do dataset de avaliação de segurança de LLMs', '/backend/datasets/cleaned_llmseceval.json', 'application/json', TRUE, NOW(), 1),
     -- ('RMC Bench', 'RMC Benchmark dataset', '/backend/datasets/rmc_bench.json', 'application/json', TRUE, NOW(), 1),
     -- Datasets para Template Attack (scenario_id = 2)
-    ('JailBreak V 28K', 'Dataset com 28K templates de jailbreak', '/backend/datasets/JailBreakV_28K_clean.yaml', 'application/x-yaml', TRUE, NOW()),
-    ('Pliny Prompts', 'Templates do Pliny para testes com caracteres escapados', '/backend/datasets/pliny_prompts_escaped.yaml', 'application/x-yaml', TRUE, NOW());
-    -- Datasets para Over-Refusal Test (scenario_id = 3)
-    -- ('OR-Bench Hard 1k', 'OR-Bench dataset com 1000 prompts legítimos que modelos frequentemente recusam', '/backend/datasets/or-bench-hard-1k.yaml', 'application/x-yaml', TRUE, NOW(), 3);
+	('JailBreak V 28K', 'Dataset com 28K templates de jailbreak', '/backend/datasets/JailBreakV_28K_clean.yaml', TRUE, NOW()),
+	('Pliny Prompts', 'Templates do Pliny para testes com caracteres escapados', '/backend/datasets/pliny_prompts_escaped.yaml', TRUE, NOW());
 
+-- ==================== SEED DATA: Role Play Options ====================
+INSERT INTO role_play_options (name, description, is_builtin, created_at, storage_path) VALUES
+	('VIDEO_GAME', 'Role play como um personagem de videogame', TRUE, NOW(), '/backend/datasets/orchestrators/role_play/video_game.yaml'),
+	('MR_ROBOT', 'Role play como Mr. Robot', TRUE, NOW(), '/backend/datasets/orchestrators/role_play/mr_robot.yaml');
 INSERT INTO users (email, password, role, created_at) VALUES
     ('test@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V.qHfiJA.yLz2e', FALSE, NOW());

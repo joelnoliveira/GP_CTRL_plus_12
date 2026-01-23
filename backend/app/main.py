@@ -166,7 +166,6 @@ async def get_template_datasets(
                 "name": ds.name,
                 "description": ds.description,
                 "storage_path": ds.storage_path,
-                "mime_path": ds.mime_path,
                 "is_builtin": ds.is_builtin,
                 "created_at": ds.created_at.isoformat() if ds.created_at else None,
             })
@@ -194,7 +193,6 @@ async def get_template_dataset(dataset_id: int, db: Session = Depends(get_db)):
             "name": ds.name,
             "description": ds.description,
             "storage_path": ds.storage_path,
-            "mime_path": ds.mime_path,
             "is_builtin": ds.is_builtin,
             "created_at": ds.created_at.isoformat() if ds.created_at else None
         }
@@ -215,6 +213,8 @@ async def get_scenarios(db: Session = Depends(get_db)):
                 "id": s.id,
                 "name": s.name,
                 "description": s.description,
+                "is_builtin": s.is_builtin,
+                "storage_path": s.storage_path,
                 "created_at": s.created_at.isoformat() if s.created_at else None
             }
             for s in scenarios

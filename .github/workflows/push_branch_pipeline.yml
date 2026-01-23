@@ -1,10 +1,10 @@
 name: Feature Branches Pipeline
 
 on:
-  # push:
+  push:
   #   branches: [124-create-a-pipeline-and-deploy-on-server] # remove later
-    # branches-ignore:
-    #     - main
+    branches-ignore:
+        - main
   workflow_dispatch:
 
 permissions:

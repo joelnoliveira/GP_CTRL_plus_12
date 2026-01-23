@@ -56,7 +56,8 @@ async def launch_attack(
     target_provider: str = "OLLAMA",
     api_key:str = None,
     db = None,
-    scenario_id: int = None
+    scenario_id: int = None,
+    user_id: int = None
 ):
     load_dotenv()    
     # Load goals
@@ -139,6 +140,7 @@ async def launch_attack(
             db=db,
             scenario_id=scenario_id,
             role_play_option_name=role_play_option_name,
+            user_id=user_id,
         )
 
 
@@ -155,7 +157,8 @@ async def launch_attack_template(
     api_key:str = None,
     db = None,
     template_dataset_id: int = None,
-    scenario_id: int = None
+    scenario_id: int = None,
+    user_id: int = None
 ):
     load_dotenv()
     
@@ -184,7 +187,8 @@ async def launch_attack_template(
         api_key=api_key,
         db=db,
         template_dataset_id=template_dataset_id,
-        scenario_id=scenario_id
+        scenario_id=scenario_id,
+        user_id=user_id,
     )
 
 
@@ -198,6 +202,7 @@ async def launch_over_refusal_test(
     target_provider: str = "OLLAMA",
     api_key:str = None,
     db = None,
+    user_id: int = None,
 ):
     load_dotenv()
     
@@ -220,4 +225,5 @@ async def launch_over_refusal_test(
         jury_models=jury_models,
         api_key=api_key,
         db=db,
+        user_id=user_id,
     )

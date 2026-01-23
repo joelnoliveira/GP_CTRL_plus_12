@@ -24,6 +24,7 @@ def create_run_metric(
     metrics_asr: Optional[int] = None,
     attack_type:str = None,
 	role_play_option:str = None,
+    role_play_option_id:int = None
 ) -> Dict[str, Any]:
     """
     Cria uma nova métrica de execução.
@@ -50,13 +51,13 @@ def create_run_metric(
     """
     query = text("""
         INSERT INTO runs_metrics 
-        (target_model, attack_model, visibility, role_play_option, attack_type, status, langfuse_trace_id, 
+        (target_model, attack_model, visibility, attack_type, status, langfuse_trace_id, 
          started_at, ended_at, metrics_asr, metrics_orr, metrics_aor, metrics_veridict_majority, 
-         template_datasets_id, scenarios_id, users_id)
+         template_datasets_id, scenarios_id, users_id, role_play_option_id)
         VALUES 
-        (:target_model, :attack_model, :visibility, :role_play_option, :attack_type, :status, :langfuse_trace_id,
+        (:target_model, :attack_model, :visibility, :attack_type, :status, :langfuse_trace_id,
          :started_at, :ended_at, :metrics_asr, :metrics_orr, :metrics_aor, :metrics_veridict_majority,
-         :template_datasets_id, :scenarios_id, :users_id)
+         :template_datasets_id, :scenarios_id, :users_id, :role_play_option_id)
         RETURNING id, target_model, attack_model, status, started_at, ended_at
     """)
     print(attack_type)
@@ -64,7 +65,6 @@ def create_run_metric(
         "target_model": target_model,
         "attack_model": attack_model,
         "visibility": visibility,
-	    "role_play_option": role_play_option,
         "attack_type": attack_type,
         "status": status,
         "langfuse_trace_id": langfuse_trace_id,
@@ -76,7 +76,8 @@ def create_run_metric(
         "metrics_veridict_majority": metrics_veridict_majority,
         "template_datasets_id": template_datasets_id,
         "scenarios_id": scenarios_id,
-        "users_id": users_id
+        "users_id": users_id,
+        "role_play_option_id": role_play_option_id
     })
     db.commit()
     
@@ -98,7 +99,7 @@ def store_run(
     attacker_visibility: str = "standard",
     attack_type:str = None,
 	role_play_option:str = None,
-
+    role_play_option_id:int = None
 ) -> Dict[str, Any]:
     """
     Stores complete attack run information to the database atomically.
@@ -169,7 +170,8 @@ def store_run(
             scenarios_id=scenario_id,
             users_id=user_id,
             attack_type=attack_type,
-            role_play_option=role_play_option
+            role_play_option=role_play_option,
+            role_play_option_id=role_play_option_id
         )
         run_id = run_metric['id']
         

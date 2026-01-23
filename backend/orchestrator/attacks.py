@@ -391,7 +391,8 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
             ended_at=ended_at,
             langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
             attacker_visibility="standard",
-            attack_type=TypesOfAttacks.CRESCENDO_ATTACK.value
+            attack_type=TypesOfAttacks.CRESCENDO_ATTACK.value,
+            role_play_option_id=role_play_option_id
         )
         ##save variable data to a json file
         with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
@@ -472,6 +473,7 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     scenario_id = args["scenario_id"]
     attacker_model_name = args["attacker_model_name"]
     role_play_option_name = args["role_play_option_name"]
+    role_play_option_id = args["role_play_option_id"]
 
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -558,7 +560,8 @@ async def launch_role_play_attack(ollama_host, **kwargs):
             langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
             attacker_visibility="standard",
             attack_type=TypesOfAttacks.ROLE_PLAY_ATTACK.value,
-            role_play_option=role_play_option_name
+            role_play_option=role_play_option_name,
+            role_play_option_id=role_play_option_id
         )
     except Exception as e:
         raise Exception(f"Error in launch_mr_robot_attack: {e}") 

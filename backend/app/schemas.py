@@ -48,7 +48,7 @@ class AttackRequest(BaseModel):
                     "attacker_model_name": "qwen2.5:1.5b",
                     "judge_model_name": "qwen2.5:1.5b",
                     "jury_models": ["qwen2.5:1.5b", "qwen2.5:1.5b", "qwen2.5:1.5b"],
-                    "role_play_option": "MR_ROBOT",
+                    "role_play_option_id": 1,
                     "target_provider": "OLLAMA",
                     "api_key": "sk-xxxx"
                 }

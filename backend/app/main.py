@@ -14,6 +14,7 @@ from langfuse import get_client
 from urllib.parse import quote
 from .routers import auth, file_upload
 from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
+from sqlalchemy.orm import joinedload
 
 
 # Load .env from workspace root
@@ -228,10 +229,11 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
         Scenarios = Base.classes.scenarios
         scenario = db.query(Scenarios).filter(Scenarios.id == request.scenario_id).first()
 
-        if not request.role_play_option_id:
+        role_play_option = None
+        if request.role_play_option_id:
             RolePlayOptions = Base.classes.role_play_options
             role_play_option = db.query(RolePlayOptions).filter(RolePlayOptions.id == request.role_play_option_id).first()
-
+            
         if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
         
@@ -249,6 +251,7 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
             api_key=request.api_key,
             scenario_id=scenario.id,
             db=db,
+            role_play_option_id=request.role_play_option_id
         )
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:
@@ -540,8 +543,14 @@ async def get_runs_metrics(
 
     run_metrics = (
         db.query(RunsMetrics)
+        .options(
+            joinedload(RunsMetrics.scenarios),
+            joinedload(RunsMetrics.template_datasets),
+            joinedload(RunsMetrics.users),
+            joinedload(RunsMetrics.role_play_options)
+        )
         .filter(RunsMetrics.id == run_id)
-        .all()
+        .one_or_none()
     )
 
     return run_metrics
@@ -551,4 +560,16 @@ async def get_all_runs_metrics(
     db: Session = Depends(get_db)
 ):
     RunsMetrics = Base.classes.runs_metrics
-    return db.query(RunsMetrics).all()
+    return db.query(RunsMetrics).options(
+        joinedload(RunsMetrics.scenarios),
+        joinedload(RunsMetrics.template_datasets),
+        joinedload(RunsMetrics.users),
+        joinedload(RunsMetrics.role_play_options)
+    ).all()
+
+@app.get("/role-play-options")
+async def get_all_role_play_options(
+    db: Session = Depends(get_db)
+):
+    RolePlayOptions = Base.classes.role_play_options
+    return db.query(RolePlayOptions).all()

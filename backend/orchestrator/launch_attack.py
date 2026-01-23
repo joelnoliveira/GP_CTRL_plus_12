@@ -55,7 +55,8 @@ async def launch_attack(
     target_provider: str = "OLLAMA",
     api_key:str = None,
     db = None,
-    scenario_id: int = None
+    scenario_id: int = None,
+    role_play_option_id: int = None,
 ):
     load_dotenv()    
     # Load goals
@@ -104,6 +105,7 @@ async def launch_attack(
             db=db,
             scenario_id=scenario_id,
             role_play_option_name=role_play_option_name,
+            role_play_option_id=role_play_option_id
         )
 
 

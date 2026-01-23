@@ -24,6 +24,7 @@ def create_run_metric(
     metrics_asr: Optional[int] = None,
     attack_type:str = None,
 	role_play_option:str = None,
+    static_metric: float = None
 ) -> Dict[str, Any]:
     """
     Cria uma nova métrica de execução.
@@ -51,11 +52,11 @@ def create_run_metric(
     query = text("""
         INSERT INTO runs_metrics 
         (target_model, attack_model, visibility, role_play_option, attack_type, status, langfuse_trace_id, 
-         started_at, ended_at, metrics_asr, metrics_orr, metrics_aor, metrics_veridict_majority, 
+         started_at, ended_at, metrics_asr, metrics_orr, metrics_aor, static_metric ,metrics_veridict_majority, 
          template_datasets_id, scenarios_id, users_id)
         VALUES 
         (:target_model, :attack_model, :visibility, :role_play_option, :attack_type, :status, :langfuse_trace_id,
-         :started_at, :ended_at, :metrics_asr, :metrics_orr, :metrics_aor, :metrics_veridict_majority,
+         :started_at, :ended_at, :metrics_asr, :metrics_orr, :metrics_aor, :static_metric, :metrics_veridict_majority,
          :template_datasets_id, :scenarios_id, :users_id)
         RETURNING id, target_model, attack_model, status, started_at, ended_at
     """)
@@ -73,6 +74,7 @@ def create_run_metric(
         "metrics_asr": metrics_asr,
         "metrics_orr": metrics_orr,
         "metrics_aor": metrics_aor,
+        "static_metric": static_metric,
         "metrics_veridict_majority": metrics_veridict_majority,
         "template_datasets_id": template_datasets_id,
         "scenarios_id": scenarios_id,
@@ -98,6 +100,7 @@ def store_run(
     attacker_visibility: str = "standard",
     attack_type:str = None,
 	role_play_option:str = None,
+    static_metric: float = None
 
 ) -> Dict[str, Any]:
     """
@@ -169,7 +172,8 @@ def store_run(
             scenarios_id=scenario_id,
             users_id=user_id,
             attack_type=attack_type,
-            role_play_option=role_play_option
+            role_play_option=role_play_option,
+            static_metric=static_metric
         )
         run_id = run_metric['id']
         

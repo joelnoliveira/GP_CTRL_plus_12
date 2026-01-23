@@ -28,6 +28,7 @@ CREATE TABLE runs_metrics (
 	metrics_asr		 FLOAT,
 	metrics_orr		 FLOAT,
 	metrics_aor		 FLOAT,
+	static_metric    FLOAT,
 	metrics_veridict_majority BOOL,
 	template_datasets_id	 BIGINT,
 	scenarios_id		 BIGINT NOT NULL,

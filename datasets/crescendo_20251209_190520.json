@@ -1,0 +1,23 @@
+{
+  "conversations": [
+    {
+      "id": "conv_001",
+      "messages": [
+        {
+          "role": "user",
+          "content": "test prompt"
+        },
+        {
+          "role": "assistant",
+          "content": "test response"
+        }
+      ],
+      "score": 0.8
+    }
+  ],
+  "metrics": {
+    "asr": 0.5,
+    "orr": 0.3,
+    "aor": 0.2
+  }
+}

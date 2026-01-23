@@ -71,7 +71,7 @@ class AttackTemplateRequest(BaseModel):
                     "temperature_target": 0.1,
                     "target_model_name": "gemma3:27b",
                     "jury_models": ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
-                    "template_path": "datasets/uploads/example.yaml",
+                    "template_path": "/backend/datasets/JailBreakV_28K_clean.yaml",
                     "target_provider": "OLLAMA",
                     "api_key": "sk-xxxx"
                 }

@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from datetime import datetime
+from fastapi import FastAPI, Depends, HTTPException , Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -20,6 +21,9 @@ from .routers import auth, file_upload
 from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
 from sqlalchemy.orm import joinedload
 from .security import get_current_user
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 
 # Load .env from workspace root
@@ -28,6 +32,9 @@ load_dotenv(dotenv_path)
 
 AVAILABLE_EXTERNAL_TARGET_MODELS = ["gpt-3.5-turbo", "gpt-5.2-codex", "gpt-4o-mini-tts-2025-12-15", "gpt-realtime-mini-2025-12-15"]
 
+# Rate limiter: 900 requests per day per IP to prevent DoS
+limiter = Limiter(key_func=get_remote_address)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Reflect database tables when the app starts"""
@@ -35,6 +42,9 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -374,70 +384,88 @@ async def get_scenarios(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Erro ao listar scenarios: {str(e)}")
 
 @app.post("/attack")
+@limiter.limit("900/day")
 async def attack(
-    request: AttackRequest,
+    request: Request,
+    attack_request: AttackRequest,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user),
 ):
     try:
         Scenarios = Base.classes.scenarios
-        scenario = db.query(Scenarios).filter(Scenarios.id == request.scenario_id).first()
+        scenario = db.query(Scenarios).filter(Scenarios.id == attack_request.scenario_id).first()
         current_user_id = _get_current_user_id(db, current_user_email)
 
         role_play_option = None
-        if request.role_play_option_id:
+        if attack_request.role_play_option_id:
             RolePlayOptions = Base.classes.role_play_options
-            role_play_option = db.query(RolePlayOptions).filter(RolePlayOptions.id == request.role_play_option_id).first()
+            role_play_option = db.query(RolePlayOptions).filter(RolePlayOptions.id == attack_request.role_play_option_id).first()
             
-        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+        if attack_request.target_provider == "OPEN_AI" and attack_request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
         
         await launch_attack(
-            attack_option=request.attack_option.value,
+            attack_option=attack_request.attack_option.value,
             label=scenario.name,
-            seed=request.seed,
-            temperature_judges=request.temperature_judges,
-            target_model_name=request.target_model_name,
-            attacker_model_name=request.attacker_model_name,
-            judge_model_name=request.judge_model_name,
-            jury_models=request.jury_models,
+            seed=attack_request.seed,
+            temperature_judges=attack_request.temperature_judges,
+            target_model_name=attack_request.target_model_name,
+            attacker_model_name=attack_request.attacker_model_name,
+            judge_model_name=attack_request.judge_model_name,
+            jury_models=attack_request.jury_models,
             role_play_option=role_play_option if role_play_option.name else None,
-            target_provider=request.target_provider,
-            api_key=request.api_key,
+            target_provider=attack_request.target_provider,
+            api_key=attack_request.api_key,
             scenario_id=scenario.id,
             db=db,
-            role_play_option_id=request.role_play_option_id,
+            role_play_option_id=attack_request.role_play_option_id,
             user_id=current_user_id,
         )
+
+         # Audit log
+        AuditLog = Base.classes.audit_logs
+        request_data = attack_request.model_dump()
+        request_data.pop('api_key', None)  # Remove sensitive data
+        audit_entry = AuditLog(
+            user_id=current_user_id,
+            endpoint="/attack",
+            request_body=json.dumps(request_data, default=str),
+            created_at=datetime.now()
+        )
+        db.add(audit_entry)
+        db.commit()
+
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/attack-template")
+@limiter.limit("900/day")
 async def attack_template(
-    request: AttackTemplateRequest,
+    request: Request,
+    attack_template_request: AttackTemplateRequest,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user),
 ):
     try:
         current_user_id = _get_current_user_id(db, current_user_email)
         Scenarios = Base.classes.scenarios
-        scenario = db.query(Scenarios).filter(Scenarios.id == request.scenario_id).first()        
+        scenario = db.query(Scenarios).filter(Scenarios.id == attack_template_request.scenario_id).first()        
 
         TemplateDatasets = Base.classes.template_datasets
-        template_dataset = db.query(TemplateDatasets).filter(TemplateDatasets.id == request.template_dataset_id).first()
+        template_dataset = db.query(TemplateDatasets).filter(TemplateDatasets.id == attack_template_request.template_dataset_id).first()
 
         await launch_attack_template(
             label=scenario.name,
-            seed=request.seed,
-            temperature_judges=request.temperature_judges,
-            temperature_attacker=request.temperature_attacker,
-            temperature_target=request.temperature_target,
-            target_model_name=request.target_model_name,
-            jury_models=request.jury_models,
+            seed=attack_template_request.seed,
+            temperature_judges=attack_template_request.temperature_judges,
+            temperature_attacker=attack_template_request.temperature_attacker,
+            temperature_target=attack_template_request.temperature_target,
+            target_model_name=attack_template_request.target_model_name,
+            jury_models=attack_template_request.jury_models,
             template_path=template_dataset.storage_path,
-            target_provider=request.target_provider,
-            api_key=request.api_key,
+            target_provider=attack_template_request.target_provider,
+            api_key=attack_template_request.api_key,
             db=db,
             template_dataset_id=template_dataset.id,
             scenario_id=scenario.id,     
@@ -445,30 +473,46 @@ async def attack_template(
             #langfuse,
             #user
         )
+
+        # Audit log
+        AuditLog = Base.classes.audit_logs
+        request_data = attack_template_request.model_dump()
+        request_data.pop('api_key', None)  # Remove sensitive data
+        audit_entry = AuditLog(
+            user_id=current_user_id,
+            endpoint="/attack-template",
+            request_body=json.dumps(request_data, default=str),
+            created_at=datetime.now()
+        )
+        db.add(audit_entry)
+        db.commit()
+
         return {"status": "success", "message": "Attack template completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/over-refusal-test")
+@limiter.limit("900/day")
 async def over_refusal_test(
-    request: OverRefusalTestRequest,
+    request: Request,
+    over_refusal_request: OverRefusalTestRequest,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user),
 ):
     try:
         current_user_id = _get_current_user_id(db, current_user_email)
-        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+        if over_refusal_request.target_provider == "OPEN_AI" and over_refusal_request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
         
         await launch_over_refusal_test(
-            seed=request.seed,
-            temperature_judges=request.temperature_judges,
-            temperature_attacker=request.temperature_attacker,
-            temperature_target=request.temperature_target,
-            target_model_name=request.target_model_name,
-            jury_models=request.jury_models,
-            target_provider=request.target_provider,
-            api_key=request.api_key,
+            seed=over_refusal_request.seed,
+            temperature_judges=over_refusal_request.temperature_judges,
+            temperature_attacker=over_refusal_request.temperature_attacker,
+            temperature_target=over_refusal_request.temperature_target,
+            target_model_name=over_refusal_request.target_model_name,
+            jury_models=over_refusal_request.jury_models,
+            target_provider=over_refusal_request.target_provider,
+            api_key=over_refusal_request.api_key,
             db=db,
             user_id=current_user_id,
 

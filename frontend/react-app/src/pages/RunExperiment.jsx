@@ -90,26 +90,64 @@ const RunExperiment = (
       label: ''
     }
   ]);
-  const scenarioList = [
+  const [scenarioList, setScenariosList] = useState([
     {
-      key: 'malicious_goals',
-      label: 'External Attacker (Malicious)'
-    },
-    {
-      key: 'vulnerable_goals',
-      label: 'Internal Threat Actor (Vulnerable)'
+      key: '',
+      label: ''
     }
-  ];
-  const templateList = [
+  ]);
+
+  useEffect(() => {
+    const fetchScenarios = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/scenarios", {
+          method: "GET"
+        });
+        if (!response.ok) throw new Error("Failed to fetch scenarios");
+        const data = await response.json();
+        const scenarios = data.map(m => {
+          return {
+            key: m.id,
+            label: m.description
+          };
+        });
+        setScenariosList(scenarios);
+      } catch (err) {
+        console.error("Error fetching scenarios:", err);
+      }
+    };
+    fetchScenarios();
+  }, []);
+
+  const [templateList, setTemplateList] = useState([
     {
-      key: 'datasets/pliny_prompts_escaped.yaml',
-      label: 'L1B3RT4S'
-    },
-    {
-      key: 'datasets/JailBreakV_28K_clean.yaml',
-      label: 'JailBreakV-28K'
+      key: '',
+      label: ''
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/template-datasets", {
+          method: "GET"
+        });
+        if (!response.ok) throw new Error("Failed to fetch template");
+        const data = await response.json();
+        const template = data.datasets.map(m => {
+          return {
+            key: m.id,
+            label: m.description
+          };
+        });
+        setTemplateList(template);
+      } catch (err) {
+        console.error("Error fetching template:", err);
+      }
+    };
+    fetchTemplate();
+  }, []);
+
   const attackOptionList = [
     {
       key: 'CRESCENDO_ATTACK',
@@ -243,14 +281,11 @@ const handleExecute = async () => {
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        console.log("teste")
         const response = await fetch("http://10.3.1.241:8080/api/tags", {
           method: "GET"
         });
-        console.log(response)
         if (!response.ok) throw new Error("Failed to fetch models");
         const data = await response.json();
-        console.log(data)
         if (data.models && Array.isArray(data.models)) {
           const models = data.models.map(m => {
             return {
@@ -259,7 +294,6 @@ const handleExecute = async () => {
             };
           });
           setFetchedModels(models);
-          console.log(models)
         }
       } catch (err) {
         console.error("Error fetching models:", err);

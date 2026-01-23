@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -6,6 +7,9 @@ from contextlib import asynccontextmanager
 from .models import reflect_tables, Base
 from .database import get_db
 from .schemas import AttackRequest, AttackTemplateRequest, OverRefusalTestRequest
+from datetime import datetime
+import io
+import json
 import os
 import requests
 from requests.auth import HTTPBasicAuth
@@ -50,6 +54,17 @@ def _get_current_user_id(db: Session, current_user_email: str) -> int:
         raise HTTPException(status_code=401, detail="User not found")
     return user.id
 
+
+def _model_to_dict(obj) -> dict:
+    return {column.name: getattr(obj, column.name) for column in obj.__table__.columns}
+
+
+def _get_model_class(name: str):
+    try:
+        return getattr(Base.classes, name)
+    except Exception:
+        return None
+
 #Uses auth router
 app.include_router(auth.router)
 app.include_router(file_upload.router)
@@ -62,6 +77,131 @@ async def check_alive():
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+
+@app.get("/gdpr/export")
+async def export_personal_data(
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
+):
+    """Export personal data for the authenticated user (GDPR)."""
+    try:
+        user_id = _get_current_user_id(db, current_user_email)
+
+        Users = _get_model_class("users")
+        RunsMetrics = _get_model_class("runs_metrics")
+        JuryVotes = _get_model_class("jury_votes")
+        RunsMetricsModels = _get_model_class("runs_metrics_models")
+        UsersTemplateDatasets = _get_model_class("users_template_datasets")
+        ScenariosUsers = _get_model_class("scenarios_users")
+        ApiKeyConfigs = _get_model_class("api_key_configs")
+        AuditLogs = _get_model_class("audit_logs")
+
+        if not Users:
+            raise HTTPException(status_code=500, detail="Users table not available")
+
+        user = db.query(Users).filter(Users.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        runs = []
+        if RunsMetrics:
+            runs = db.query(RunsMetrics).filter(RunsMetrics.users_id == user_id).all()
+        run_ids = [run.id for run in runs]
+
+        jury_votes = []
+        runs_models = []
+        if run_ids and JuryVotes:
+            jury_votes = db.query(JuryVotes).filter(JuryVotes.runs_metrics_id.in_(run_ids)).all()
+        if run_ids and RunsMetricsModels:
+            runs_models = db.query(RunsMetricsModels).filter(RunsMetricsModels.runs_metrics_id.in_(run_ids)).all()
+
+        data = {
+            "runs_metrics": [_model_to_dict(run) for run in runs],
+            "jury_votes": [_model_to_dict(vote) for vote in jury_votes],
+            "runs_metrics_models": [_model_to_dict(item) for item in runs_models],
+            "users_template_datasets": [
+                _model_to_dict(row)
+                for row in db.query(UsersTemplateDatasets).filter(UsersTemplateDatasets.users_id == user_id).all()
+            ] if UsersTemplateDatasets else [],
+            "scenarios_users": [
+                _model_to_dict(row)
+                for row in db.query(ScenariosUsers).filter(ScenariosUsers.users_id == user_id).all()
+            ] if ScenariosUsers else [],
+            "api_key_configs": [
+                _model_to_dict(row)
+                for row in db.query(ApiKeyConfigs).filter(ApiKeyConfigs.user_id == user_id).all()
+            ] if ApiKeyConfigs else [],
+            "audit_logs": [
+                _model_to_dict(row)
+                for row in db.query(AuditLogs).filter(AuditLogs.user_id == user_id).all()
+            ] if AuditLogs else [],
+        }
+
+        payload = json.dumps(data, ensure_ascii=False, default=str, indent=2).encode("utf-8")
+        filename = f"gdpr_export_user_{user_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+        return StreamingResponse(
+            io.BytesIO(payload),
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename=\"{filename}\""},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao exportar dados: {str(e)}")
+
+
+@app.delete("/gdpr/delete")
+async def delete_personal_data(
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
+):
+    """Delete personal data for the authenticated user (GDPR)."""
+    try:
+        user_id = _get_current_user_id(db, current_user_email)
+
+        Users = _get_model_class("users")
+        RunsMetrics = _get_model_class("runs_metrics")
+        JuryVotes = _get_model_class("jury_votes")
+        RunsMetricsModels = _get_model_class("runs_metrics_models")
+        UsersTemplateDatasets = _get_model_class("users_template_datasets")
+        ScenariosUsers = _get_model_class("scenarios_users")
+        ApiKeyConfigs = _get_model_class("api_key_configs")
+        AuditLogs = _get_model_class("audit_logs")
+
+        if not Users:
+            raise HTTPException(status_code=500, detail="Users table not available")
+
+        runs = []
+        if RunsMetrics:
+            runs = db.query(RunsMetrics).filter(RunsMetrics.users_id == user_id).all()
+        run_ids = [run.id for run in runs]
+
+        if run_ids and JuryVotes:
+            db.query(JuryVotes).filter(JuryVotes.runs_metrics_id.in_(run_ids)).delete(synchronize_session=False)
+        if run_ids and RunsMetricsModels:
+            db.query(RunsMetricsModels).filter(RunsMetricsModels.runs_metrics_id.in_(run_ids)).delete(synchronize_session=False)
+        if run_ids and RunsMetrics:
+            db.query(RunsMetrics).filter(RunsMetrics.id.in_(run_ids)).delete(synchronize_session=False)
+
+        if UsersTemplateDatasets:
+            db.query(UsersTemplateDatasets).filter(UsersTemplateDatasets.users_id == user_id).delete(synchronize_session=False)
+        if ScenariosUsers:
+            db.query(ScenariosUsers).filter(ScenariosUsers.users_id == user_id).delete(synchronize_session=False)
+        if ApiKeyConfigs:
+            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.user_id == user_id).delete(synchronize_session=False)
+        if AuditLogs:
+            db.query(AuditLogs).filter(AuditLogs.user_id == user_id).delete(synchronize_session=False)
+        db.query(Users).filter(Users.id == user_id).delete(synchronize_session=False)
+
+        db.commit()
+
+        return {"status": "success", "message": "User data deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao apagar dados: {str(e)}")
 
 # Example endpoints using reflected ORM models
 

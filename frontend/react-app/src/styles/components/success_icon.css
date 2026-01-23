@@ -1,0 +1,11 @@
+.success_icon--small{
+    @apply w-3 h-3 hover:cursor-pointer;
+}
+
+.success_icon--medium{
+    @apply w-5 h-5 hover:cursor-pointer;
+}
+
+.success_icon--large{
+    @apply w-7 h-7 hover:cursor-pointer;
+}

@@ -21,7 +21,7 @@ def load_labels(label: str):
 
         with open(file_path, "r") as f:
             goals = json.load(f)
-        #goals = goals[:1]
+        # goals = goals[:1]
         #convert malicious_goals to a list of prompts
         goals_list = [goal['Prompt'] for goal in goals]
         return goals_list
@@ -52,50 +52,16 @@ async def launch_attack(
     judge_model_name: str = None,
     jury_models: list[str] = None,
     role_play_option: str = None,
-    goals_file_name: str = None,
     target_provider: str = "OLLAMA",
     api_key:str = None,
     db = None,
     scenario_id: int = None,
+    role_play_option_id: int = None,
     user_id: int = None
 ):
     load_dotenv()    
     # Load goals
-    final_goals_list = []
-    if goals_file_name:
-        # Se for um path absoluto, usar diretamente
-        if os.path.isabs(goals_file_name):
-            goals_path = goals_file_name
-        else:
-            # Path relativo - procurar em uploads primeiro, depois em datasets
-            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            goals_path = os.path.join(base_path, "datasets", "uploads", goals_file_name)
-            
-            if not os.path.exists(goals_path):
-                # Fallback para datasets (ficheiros builtin)
-                goals_path = os.path.join(base_path, "datasets", goals_file_name)
-        
-        if not os.path.exists(goals_path):
-            raise FileNotFoundError(f"Custom goals file not found: {goals_path}")
-        
-        try:
-            with open(goals_path, "r", encoding='utf-8') as f:
-                goals_data = json.load(f)
-                # Malicious goals format: [{"Id": 1, "Prompt": "..."}]
-                if isinstance(goals_data, list):
-                    for item in goals_data:
-                        if "Prompt" in item:
-                            final_goals_list.append(item["Prompt"])
-                        else:
-                             # Fallback if just a list of strings
-                             if isinstance(item, str):
-                                 final_goals_list.append(item)
-                else:
-                    raise ValueError("Invalid goals file format. Expected a JSON list.")
-        except Exception as e:
-             raise ValueError(f"Error loading custom goals file: {e}")
-    else:
-        final_goals_list = load_labels(label=label)
+    final_goals_list = load_labels(label=label)
     
     # Use defaults for any parameter not provided
     seed = seed if seed is not None else DEFAULTS["seed"]
@@ -140,6 +106,7 @@ async def launch_attack(
             db=db,
             scenario_id=scenario_id,
             role_play_option_name=role_play_option_name,
+            role_play_option_id=role_play_option_id,
             user_id=user_id,
         )
 

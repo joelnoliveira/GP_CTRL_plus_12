@@ -1,0 +1,23 @@
+.run_experiment{
+    @apply flex flex-row w-full h-full items-stretch;
+}
+
+.run_experiment__main_area {
+    @apply flex-1 h-full flex flex-col items-center justify-center relative z-10 px-4;
+}
+
+.run_experiment__row{
+    @apply flex items-center gap-3;
+}
+
+.run_experiment__card-wrapper {
+    @apply w-full max-w-md flex flex-col items-center;
+}
+
+.run_experiment__card {
+    @apply bg-[#444444] p-8 rounded-[32px] shadow-2xl w-full flex flex-col gap-4 mt-6;
+}
+
+.run_experiment__dropdown-list {
+    @apply flex flex-col gap-4;
+}

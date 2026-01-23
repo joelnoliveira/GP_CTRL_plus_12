@@ -6,17 +6,15 @@ from contextlib import asynccontextmanager
 from .models import reflect_tables, Base
 from .database import get_db
 from .schemas import AttackRequest, AttackTemplateRequest, OverRefusalTestRequest
-from .security import get_current_user
 import os
 import requests
-import json
-from datetime import datetime
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
 from .routers import auth, file_upload
 from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
+from sqlalchemy.orm import joinedload
 from .security import get_current_user
 
 
@@ -39,6 +37,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3001"
     ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -235,89 +234,46 @@ async def get_scenarios(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Erro ao listar scenarios: {str(e)}")
 
 @app.post("/attack")
-async def attack(request: AttackRequest, db: Session = Depends(get_db), current_user_email: str = Depends(get_current_user)):
-    try:
-        # Get user_id for audit
-        User = Base.classes.users
-        user = db.query(User).filter(User.email == current_user_email).first()
-        
-        # Se goals_file_name for fornecido, verificar se existe na BD
-        goals_path = None
-        if request.goals_file_name:
-            WorkloadDatasets = Base.classes.workload_datasets
-            # Tentar encontrar pelo storage_path (se o user passou o path completo)
-            record = db.query(WorkloadDatasets).filter(
-                WorkloadDatasets.storage_path == request.goals_file_name
-            ).first()
-            
-            if record:
-                goals_path = record.storage_path
-            else:
-                # Tentar encontrar pelo nome
-                record = db.query(WorkloadDatasets).filter(
-                    WorkloadDatasets.name == request.goals_file_name
-                ).first()
-                if record:
-                    goals_path = record.storage_path
-                else:
-                    # Fallback: usar como nome de ficheiro (compatibilidade)
-                    goals_path = request.goals_file_name
 async def attack(
     request: AttackRequest,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user),
 ):
     try:
+        Scenarios = Base.classes.scenarios
+        scenario = db.query(Scenarios).filter(Scenarios.id == request.scenario_id).first()
         current_user_id = _get_current_user_id(db, current_user_email)
-        Scenario = Base.classes.scenarios
-        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
-        #goals_file_name = request.goals_file_name if request.goals_file_name is not None else f"{request.label.value}.json"
 
+        role_play_option = None
+        if request.role_play_option_id:
+            RolePlayOptions = Base.classes.role_play_options
+            role_play_option = db.query(RolePlayOptions).filter(RolePlayOptions.id == request.role_play_option_id).first()
+            
         if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
         
         await launch_attack(
             attack_option=request.attack_option.value,
-            label=request.label.value,
+            label=scenario.name,
             seed=request.seed,
             temperature_judges=request.temperature_judges,
             target_model_name=request.target_model_name,
             attacker_model_name=request.attacker_model_name,
             judge_model_name=request.judge_model_name,
             jury_models=request.jury_models,
-            role_play_option=request.role_play_option.value if request.role_play_option else None,
-            goals_file_name=request.goals_file_name,
+            role_play_option=role_play_option if role_play_option.name else None,
             target_provider=request.target_provider,
             api_key=request.api_key,
-            scenario_id=scenario_id,
+            scenario_id=scenario.id,
             db=db,
+            role_play_option_id=request.role_play_option_id,
             user_id=current_user_id,
         )
-        
-        # Audit log
-        AuditLog = Base.classes.audit_logs
-        request_data = request.model_dump()
-        request_data.pop('api_key', None)  # Remove sensitive data
-        audit_entry = AuditLog(
-            user_id=user.id,
-            endpoint="/attack",
-            request_body=json.dumps(request_data, default=str),
-            created_at=datetime.now()
-        )
-        db.add(audit_entry)
-        db.commit()
-        
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/attack-template")
-async def attack_template(request: AttackTemplateRequest, db: Session = Depends(get_db), current_user_email: str = Depends(get_current_user)):
-    try:
-        # Get user_id for audit
-        User = Base.classes.users
-        user = db.query(User).filter(User.email == current_user_email).first()
-        
 async def attack_template(
     request: AttackTemplateRequest,
     db: Session = Depends(get_db),
@@ -325,67 +281,30 @@ async def attack_template(
 ):
     try:
         current_user_id = _get_current_user_id(db, current_user_email)
-        template_path = None
-        if request.template_path:
-            # Procurar o dataset na tabela template_datasets
-            if not hasattr(Base.classes, 'template_datasets'):
-                reflect_tables()
-            
-            TemplateDatasets = Base.classes.template_datasets
-            # Procura na BD pelo storage_path
-            record = db.query(TemplateDatasets).filter(
-                TemplateDatasets.storage_path == request.template_path
-            ).first()
-            
-            if record:
-                template_path = record.storage_path
-            else:
-                # Se não encontrar na BD, usa o path enviado diretamente
-                template_path = request.template_path
-        
-        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
-            raise Exception("The target model is not supported by the external API")
-        
-        Scenario = Base.classes.scenarios
-        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
+        Scenarios = Base.classes.scenarios
+        scenario = db.query(Scenarios).filter(Scenarios.id == request.scenario_id).first()        
 
         TemplateDatasets = Base.classes.template_datasets
-        template_dataset_id = (db.query(TemplateDatasets).filter(TemplateDatasets.storage_path == template_path).first()).id
-        
+        template_dataset = db.query(TemplateDatasets).filter(TemplateDatasets.id == request.template_dataset_id).first()
 
-        print("Template Dataset ID:", template_dataset_id)
         await launch_attack_template(
-            label=request.label.value,
+            label=scenario.name,
             seed=request.seed,
             temperature_judges=request.temperature_judges,
             temperature_attacker=request.temperature_attacker,
             temperature_target=request.temperature_target,
             target_model_name=request.target_model_name,
             jury_models=request.jury_models,
-            template_path=template_path,
+            template_path=template_dataset.storage_path,
             target_provider=request.target_provider,
             api_key=request.api_key,
             db=db,
-            template_dataset_id=template_dataset_id,
-            scenario_id=scenario_id,            
-            user_id=current_user_id,
+            template_dataset_id=template_dataset.id,
+            scenario_id=scenario.id,     
+            user_id=current_user_id,       
             #langfuse,
             #user
         )
-        
-        # Audit log
-        AuditLog = Base.classes.audit_logs
-        request_data = request.model_dump()
-        request_data.pop('api_key', None)  # Remove sensitive data
-        audit_entry = AuditLog(
-            user_id=user.id,
-            endpoint="/attack-template",
-            request_body=json.dumps(request_data, default=str),
-            created_at=datetime.now()
-        )
-        db.add(audit_entry)
-        db.commit()
-        
         return {"status": "success", "message": "Attack template completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -652,8 +571,14 @@ async def get_runs_metrics(
 
     run_metrics = (
         db.query(RunsMetrics)
+        .options(
+            joinedload(RunsMetrics.scenarios),
+            joinedload(RunsMetrics.template_datasets),
+            joinedload(RunsMetrics.users),
+            joinedload(RunsMetrics.role_play_options)
+        )
         .filter(RunsMetrics.id == run_id)
-        .all()
+        .one_or_none()
     )
 
     return run_metrics
@@ -663,4 +588,16 @@ async def get_all_runs_metrics(
     db: Session = Depends(get_db)
 ):
     RunsMetrics = Base.classes.runs_metrics
-    return db.query(RunsMetrics).all()
+    return db.query(RunsMetrics).options(
+        joinedload(RunsMetrics.scenarios),
+        joinedload(RunsMetrics.template_datasets),
+        joinedload(RunsMetrics.users),
+        joinedload(RunsMetrics.role_play_options)
+    ).all()
+
+@app.get("/role-play-options")
+async def get_all_role_play_options(
+    db: Session = Depends(get_db)
+):
+    RolePlayOptions = Base.classes.role_play_options
+    return db.query(RolePlayOptions).all()

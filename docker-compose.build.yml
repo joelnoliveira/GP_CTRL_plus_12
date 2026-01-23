@@ -1,0 +1,12 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    image: ghcr.io/${REPO_NAME}/backend:latest
+    # image: localhost/red_teaming_llms_frontend:latest
+
+  frontend:
+    build:
+      context: ./frontend
+    image: ghcr.io/${REPO_NAME}/frontend:latest
+    # image: localhost/red_teaming_llms_frontend:latest

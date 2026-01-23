@@ -21,7 +21,7 @@ def load_labels(label: str):
 
         with open(file_path, "r") as f:
             goals = json.load(f)
-        goals = goals[:1]
+        # goals = goals[:1]
         #convert malicious_goals to a list of prompts
         goals_list = [goal['Prompt'] for goal in goals]
         return goals_list

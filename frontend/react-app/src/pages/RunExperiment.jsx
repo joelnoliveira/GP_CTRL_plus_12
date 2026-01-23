@@ -81,6 +81,15 @@ const RunExperiment = (
     }
   ];
 
+  const role_play_expected_format = [
+    {
+
+    },
+    {
+
+    }
+  ]
+
   /*
   Adicioanr logica para ir buscar isto ao backend
   */
@@ -121,6 +130,7 @@ const RunExperiment = (
       label: ''
     }
   ]);
+  const [scenarioType, setScenarioType] = useState(scenarioList[0]);
 
   useEffect(() => {
     const fetchScenarios = async () => {
@@ -184,16 +194,11 @@ const RunExperiment = (
     }
   ]
 
-  /** Ir buscar dinamicamente */
   const [rolePlayOptionList, setRolePlayOptionList] = useState([
     {
-      key: 'VIDEO_GAME',
-      label: 'Video-game'
-    },
-    {
-      key: 'MR_ROBOT',
-      label: 'Mr. Robot'
-    } 
+      key: '',
+      label: ''
+    }
   ]);
 
   useEffect(() => {
@@ -221,25 +226,31 @@ const RunExperiment = (
   }, []);
 
   const attackFormFields = [
-    { id: 'scenario', placeholder: 'Scenario', options: scenarioList },
     { id: 'attack_option', placeholder: 'Attack LLM Type', options: attackOptionList },
     { id: 'role_play_option', placeholder: 'Role Playing Type', options: rolePlayOptionList },
     { id: 'attack_model_name', placeholder: 'Attack Model', options: fetchedModels },
     { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
   ]; 
   const attackTemplateFormFields = [
-    { id: 'scenario', placeholder: 'Scenario', options: scenarioList },
     { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
     { id: 'template_path', placeholder: 'Template', options: templateList },
   ];
+  const attackOverRefusalFields = [
+    { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
+  ];
 
   const getFormFields = () => {
-    if (attackType === "Attack") { 
-      return attackFormFields
+    if (scenarioType.label === "Over Refusal Test"){
+      return attackOverRefusalFields;
     } else {
-      return attackTemplateFormFields
+      if (attackType === "Attack") { 
+        return attackFormFields
+      } else {
+        return attackTemplateFormFields
+      }
     }
   }
+  
 
 const handleUpload = (id) => () => {
     setUploadTarget(id);
@@ -255,7 +266,7 @@ const onUploadSuccess = (newData) => {
 
 const handleExecute = async () => {
   // Validar que todos os campos foram preenchidos
-  if (!selections.scenario || !selections.target_model_name) {
+  if (!selections.target_model_name) {
     const newError = {type: "error", message: "Please select an option for all fields."};
     setToastConfig(newError);
     return;
@@ -266,38 +277,46 @@ const handleExecute = async () => {
     let endpoint = "";
     let payload = {};
 
-    if (attackType === "Attack") {
-      if (!selections.attack_model_name && selections.attack_option && ((selections.attack_option==="ROLE_PLAY_ATTACK") === selections.role_play_option)) {
-        const newError = {type: "error", message: "Please select an option for all fields."};
-        setToastConfig(newError);
-        return;
-      }
-
-      endpoint = "http://localhost:8000/attack"; 
+    if (scenarioType.label === "Over Refusal Test") {
+      endpoint = "http://localhost:8000/over-refusal-test"; 
       payload = {
-        attack_option: selections.attack_option,
-        scenario_id: selections.scenario,
-        target_model_name: selections.target_model_name,
-        attacker_model_name: selections.attack_model_name,        
-        role_play_option: selections.role_play_option
+        attacker_model_name: selections.attack_model_name      
       };
-    } else if (attackType === "Attack Template") {
-      if (!selections.template_path) {
-        const newError = {type: "error", message: "Please select an option for all fields."};
-        setToastConfig(newError);
-        return;
-      }
 
-      endpoint = "http://localhost:8000/attack-template";
-      payload = {
-        scenario_id: selections.scenario,
-        target_model_name: selections.target_model_name,
-        template_dataset_id: selections.template_path
-      };
     } else {
-      const newError = {type: "error", message: "Please select a valid attack option."};
-      setToastConfig(newError);
-      return;
+      if (attackType === "Attack") {
+        if (!selections.attack_model_name && selections.attack_option && ((selections.attack_option==="ROLE_PLAY_ATTACK") === selections.role_play_option)) {
+          const newError = {type: "error", message: "Please select an option for all fields."};
+          setToastConfig(newError);
+          return;
+        }
+
+        endpoint = "http://localhost:8000/attack"; 
+        payload = {
+          attack_option: selections.attack_option,
+          scenario_id: scenarioType.key,
+          target_model_name: selections.target_model_name,
+          attacker_model_name: selections.attack_model_name,        
+          role_play_option: selections.role_play_option
+        };
+      } else if (attackType === "Attack Template") {
+        if (!selections.template_path) {
+          const newError = {type: "error", message: "Please select an option for all fields."};
+          setToastConfig(newError);
+          return;
+        }
+
+        endpoint = "http://localhost:8000/attack-template";
+        payload = {
+          scenario_id: scenarioType.key,
+          target_model_name: selections.target_model_name,
+          template_dataset_id: selections.template_path
+        };
+      } else {
+        const newError = {type: "error", message: "Please select a valid attack option."};
+        setToastConfig(newError);
+        return;
+      }
     }
 
     //Fazer a chamada ao backend
@@ -363,6 +382,16 @@ const handleExecute = async () => {
         />)
       }
 
+      {/* {uploadTarget === "role_play_option" && (
+        <UploadModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={onUploadSuccess}
+          targetType={uploadTarget}
+          expectedFormats={role_play_expected_format}
+        />)
+      } */}
+
       {/* Main Content Area */}
       <div className="run_experiment__main_area">
         <div className="run_experiment__card-wrapper">
@@ -372,17 +401,34 @@ const handleExecute = async () => {
             <div className="run_experiment__dropdown-list">
               <div className="run_experiment__row">
                 <DropdownMenu
-                  placeholder='Attack type'
-                  items={attackTypeList}
-                  value={attackType}
-                  onSelect={(val) => setAttackType(val)}
+                  placeholder='Scenario'
+                  items={scenarioList.map(opt => opt.label)}
+                  value={scenarioType.label}
+                  onSelect={(val) => setScenarioType(val)}
                 />
+
+                <AddIcon
+                  size='large'
+                  disabled={!isLoggedIn}
+                  onClick={handleUpload("scenario")}
+                />
+
                 <ToggleSwitch
                   checked={isPublic}
                   onChange={handleIsPublic}
                 />
               </div>
             </div>
+            {scenarioType !== "Over Refusal Test" && <div className="run_experiment__dropdown-list">
+              <div className="run_experiment__row">
+                <DropdownMenu
+                  placeholder='Attack type'
+                  items={attackTypeList}
+                  value={attackType}
+                  onSelect={(val) => setAttackType(val)}
+                />
+              </div>
+            </div>}
             
             {getFormFields().map((field) => {
               if (field.id === "role_play_option" && selections.attack_option !== "ROLE_PLAY_ATTACK") {
@@ -402,7 +448,7 @@ const handleExecute = async () => {
                       )
                     }
                   />
-                  {(field.id === "scenario" || field.id === "template_path") && (
+                  {(field.id === "template_path" || field.id === "role_play_option") && (
                   <AddIcon
                     size='large'
                     disabled={!isLoggedIn}

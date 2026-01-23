@@ -27,7 +27,7 @@ class AttackRequest(BaseModel):
         default=2,
         description="Role play option identifier (only for ROLE_PLAY_ATTACK)"
     )
-    target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
+    target_provider: Optional[str] = Field(default="OLLAMA", description="Model provider for the target model (if required)")
     api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
 
     model_config = {
@@ -71,7 +71,7 @@ class AttackTemplateRequest(BaseModel):
         description="List of 3 jury models"
     )
     template_dataset_id: Optional[int] = Field(default=None, description="Template dataset identifier (optional)")
-    target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
+    target_provider: Optional[str] = Field(default="OLLAMA", description="Model provider for the target model (if required)")
     api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
 
     model_config = {
@@ -104,9 +104,7 @@ class OverRefusalTestRequest(BaseModel):
     temperature_target: float = Field(default=0.1, ge=0.0, le=2.0, description="Temperature for target model")
     target_model_name: str = Field(default="gemma3:27b", description="Target model to test")
     jury_models: list[str] = Field(default=["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"], description="List of 3 jury models")
-    target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
-    api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
-    target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
+    target_provider: Optional[str] = Field(default="OLLAMA", description="Model provider for the target model (if required)")
     api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
    
     model_config = {

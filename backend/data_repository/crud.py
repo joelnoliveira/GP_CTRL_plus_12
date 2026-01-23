@@ -24,7 +24,8 @@ def create_run_metric(
     metrics_asr: Optional[int] = None,
     attack_type:str = None,
 	role_play_option:str = None,
-    role_play_option_id:int = None
+    role_play_option_id:int = None,
+    static_metric: float = None
 ) -> Dict[str, Any]:
     """
     Cria uma nova métrica de execução.
@@ -73,6 +74,7 @@ def create_run_metric(
         "metrics_asr": metrics_asr,
         "metrics_orr": metrics_orr,
         "metrics_aor": metrics_aor,
+        "static_metric": static_metric,
         "metrics_veridict_majority": metrics_veridict_majority,
         "template_datasets_id": template_datasets_id,
         "scenarios_id": scenarios_id,
@@ -99,7 +101,9 @@ def store_run(
     attacker_visibility: str = "standard",
     attack_type:str = None,
 	role_play_option:str = None,
-    role_play_option_id:int = None
+    role_play_option_id:int = None,
+    static_metric: float = None
+
 ) -> Dict[str, Any]:
     """
     Stores complete attack run information to the database atomically.
@@ -171,7 +175,8 @@ def store_run(
             users_id=user_id,
             attack_type=attack_type,
             role_play_option=role_play_option,
-            role_play_option_id=role_play_option_id
+            role_play_option_id=role_play_option_id,
+            static_metric=static_metric
         )
         run_id = run_metric['id']
         

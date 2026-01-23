@@ -40,6 +40,7 @@ async def over_refusal_test(
     target_provider = args["target_provider"]
     api_key = args["api_key"]
     db = args["db"]
+    user_id = args.get("user_id")
     
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -103,7 +104,7 @@ async def over_refusal_test(
         requests = [NormalizerRequest(seed_prompt_group=p) for p in prompt_groups]
 
 
-        #requests = requests[:2]
+        # requests = requests[:2]
 
         print(len(requests))
 
@@ -121,9 +122,12 @@ async def over_refusal_test(
         ended_at = time.localtime(begin_started_at)
         ended_at = datetime.fromtimestamp(time.time())
         
+        if not user_id:
+            raise Exception("user_id not provided")
+
         store_run(
             db=db,
-            user_id=1,
+            user_id=user_id,
             scenario_id=3,
             template_datasets_id=None,
             target_model=target_model_name,
@@ -159,6 +163,7 @@ async def launch_attack_template(ollama_host, **kwargs):
     db = args["db"]
     scenario_id = args["scenario_id"]
     template_datasets_id = args["template_dataset_id"]
+    user_id = args.get("user_id")
     
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -279,16 +284,19 @@ async def launch_attack_template(ollama_host, **kwargs):
 
         print(f"[DEBUG] metrics: {metrics}")
 
-        if label == Goals.VULNERABLE_GOALS.value:
-            vuln_analysis(result_json)
+        static_metric = vuln_analysis(result_json) if label == Goals.VULNERABLE_GOALS.value else None
+
         
         ended_at = time.time()
         ended_at = time.localtime(begin_started_at)
         ended_at = datetime.fromtimestamp(time.time())
         
+        if not user_id:
+            raise Exception("user_id not provided")
+
         store_run(
             db=db,
-            user_id=1,
+            user_id=user_id,
             scenario_id=scenario_id,
             template_datasets_id=template_datasets_id,
             target_model=target_model_name,
@@ -300,7 +308,8 @@ async def launch_attack_template(ollama_host, **kwargs):
             ended_at=ended_at,
             langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
             attacker_visibility="standard",
-            attack_type=TypesOfAttacks.TEMPLATE_ATTACK.value
+            attack_type=TypesOfAttacks.TEMPLATE_ATTACK.value,
+            static_metric=static_metric
         )
     except Exception as e:
         import traceback
@@ -323,6 +332,8 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     db = args["db"]
     scenario_id = args["scenario_id"]
     attacker_model_name = args["attacker_model_name"]
+    user_id = args.get("user_id")
+    role_play_option_id = args["role_play_option_id"]
 
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -370,16 +381,19 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         metrics = get_run_metrics_crescendo(data)
         print(f"[DEBUG] metrics: {metrics}")
 
-        if label == Goals.VULNERABLE_GOALS.value:
-            vulnerabilities = vuln_analysis(data)
+        static_metric = vuln_analysis(data) if label == Goals.VULNERABLE_GOALS.value else None
+
 
         ended_at = time.time()
         ended_at = time.localtime(begin_started_at)
         ended_at = datetime.fromtimestamp(time.time())
         
+        if not user_id:
+            raise Exception("user_id not provided")
+
         store_run(
             db=db,
-            user_id=1,
+            user_id=user_id,
             scenario_id=scenario_id,
             template_datasets_id=None,
             target_model=target_model_name,
@@ -392,7 +406,8 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
             langfuse_trace_id=None or f"trace_{started_at.isoformat()}",
             attacker_visibility="standard",
             attack_type=TypesOfAttacks.CRESCENDO_ATTACK.value,
-            role_play_option_id=role_play_option_id
+            role_play_option_id=role_play_option_id,
+            static_metric=static_metric
         )
         ##save variable data to a json file
         with open("debug_results/crescendo_atk_test_clean.json", "w") as f:
@@ -474,6 +489,7 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     attacker_model_name = args["attacker_model_name"]
     role_play_option_name = args["role_play_option_name"]
     role_play_option_id = args["role_play_option_id"]
+    user_id = args.get("user_id")
 
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -538,16 +554,18 @@ async def launch_role_play_attack(ollama_host, **kwargs):
         metrics = get_run_metrics(result_json, atk_type='llm')
         print(f"[DEBUG] metrics: {metrics}")
 
-        if label == Goals.VULNERABLE_GOALS.value:
-            vulnerabilities = vuln_analysis(result_json)
+        static_metric = vuln_analysis(result_json) if label == Goals.VULNERABLE_GOALS.value else None
 
         ended_at = time.time()
         ended_at = time.localtime(begin_started_at)
         ended_at = datetime.fromtimestamp(time.time())
         
+        if not user_id:
+            raise Exception("user_id not provided")
+
         store_run(
             db=db,
-            user_id=1,
+            user_id=user_id,
             scenario_id=scenario_id,
             template_datasets_id=None,
             target_model=target_model_name,
@@ -561,7 +579,10 @@ async def launch_role_play_attack(ollama_host, **kwargs):
             attacker_visibility="standard",
             attack_type=TypesOfAttacks.ROLE_PLAY_ATTACK.value,
             role_play_option=role_play_option_name,
-            role_play_option_id=role_play_option_id
+            role_play_option_id=role_play_option_id,
+            static_metric=static_metric
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise Exception(f"Error in launch_mr_robot_attack: {e}") 

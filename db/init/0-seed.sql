@@ -28,6 +28,7 @@ CREATE TABLE runs_metrics (
 	metrics_asr		 FLOAT,
 	metrics_orr		 FLOAT,
 	metrics_aor		 FLOAT,
+	static_metric    FLOAT,
 	metrics_veridict_majority BOOL,
 	template_datasets_id	 BIGINT,
 	scenarios_id		 BIGINT NOT NULL,
@@ -107,6 +108,16 @@ CREATE TABLE api_key_configs (
     api_key VARCHAR(500),
     user_id BIGINT NOT NULL
 );
+
+CREATE TABLE audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    endpoint VARCHAR(255) NOT NULL,
+    request_body JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE audit_logs ADD CONSTRAINT audit_logs_fk1 FOREIGN KEY (user_id) REFERENCES users(id);
 
 ALTER TABLE api_key_configs ADD CONSTRAINT api_key_configs_fk1 
     FOREIGN KEY (user_id) REFERENCES users(id);

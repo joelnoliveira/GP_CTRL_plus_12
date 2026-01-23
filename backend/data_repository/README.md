@@ -168,7 +168,7 @@ scenario = crud.create_scenario(
 
 ### Datasets de Workload
 
-#### `create_workload_dataset(db, name, description, storage_path, mime_path, scenarios_id, is_builtin=False, created_at=None)`
+#### `create_workload_dataset(db, name, description, storage_path, scenarios_id, is_builtin=False, created_at=None)`
 Cria um novo dataset de workload.
 
 ```python
@@ -177,7 +177,6 @@ dataset = crud.create_workload_dataset(
     name="Meu Dataset",
     description="Dataset personalizado",
     storage_path="/data/my_dataset.json",
-    mime_path="application/json",
     scenarios_id=1,
     is_builtin=False
 )

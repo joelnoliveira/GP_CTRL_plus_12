@@ -19,7 +19,7 @@ CREATE TABLE runs_metrics (
 	target_model		 TEXT NOT NULL,
 	attack_model		 TEXT,
 	visibility		 TEXT NOT NULL,
-	role_play_option VARCHAR(255),
+	role_play_option_id BIGINT,
 	attack_type		 VARCHAR(255),
 	status			 CHAR(255) NOT NULL,
 	langfuse_trace_id	 TEXT,
@@ -114,6 +114,7 @@ ALTER TABLE api_key_configs ADD CONSTRAINT api_key_configs_fk1
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk1 FOREIGN KEY (template_datasets_id) REFERENCES template_datasets(id);
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk2 FOREIGN KEY (scenarios_id) REFERENCES scenarios(id);
 ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk3 FOREIGN KEY (users_id) REFERENCES users(id);
+ALTER TABLE runs_metrics ADD CONSTRAINT runs_metrics_fk4 FOREIGN KEY (role_play_option_id) REFERENCES role_play_options(id);
 ALTER TABLE jury_votes ADD UNIQUE (jury_index);
 ALTER TABLE jury_votes ADD CONSTRAINT jury_votes_fk1 FOREIGN KEY (runs_metrics_id) REFERENCES runs_metrics(id);
 ALTER TABLE runs_metrics_models ADD CONSTRAINT runs_metrics_models_fk1 FOREIGN KEY (runs_metrics_id) REFERENCES runs_metrics(id);
@@ -152,7 +153,7 @@ INSERT INTO template_datasets (name, description, storage_path, is_builtin, crea
 
 -- ==================== SEED DATA: Role Play Options ====================
 INSERT INTO role_play_options (name, description, is_builtin, created_at, storage_path) VALUES
-	('VIDEO_GAME', 'Role play como um personagem de videogame', TRUE, NOW(), '/backend/datasets/orchestrators/role_play/video_game.yaml'),
-	('MR_ROBOT', 'Role play como Mr. Robot', TRUE, NOW(), '/backend/datasets/orchestrators/role_play/mr_robot.yaml');
+	('VIDEO_GAME', 'Video-game', TRUE, NOW(), '/backend/datasets/orchestrators/role_play/video_game.yaml'),
+	('MR_ROBOT', 'Mr. Robot', TRUE, NOW(), '/backend/datasets/orchestrators/role_play/mr_robot.yaml');
 INSERT INTO users (email, password, role, created_at) VALUES
     ('test@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V.qHfiJA.yLz2e', FALSE, NOW());

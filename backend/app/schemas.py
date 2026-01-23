@@ -23,9 +23,9 @@ class AttackRequest(BaseModel):
         default=["qwen2.5:1.5b", "qwen2.5:1.5b", "qwen2.5:1.5b"],
         description="List of 3 jury models"
     )
-    role_play_option: Optional[RolePlayOption] = Field(
-        default=RolePlayOption.MR_ROBOT,
-        description="Role play scenario (only for ROLE_PLAY_ATTACK)"
+    role_play_option_id: Optional[int] = Field(
+        default=2,
+        description="Role play option identifier (only for ROLE_PLAY_ATTACK)"
     )
     target_provider: Optional[str] = Field(default=None, description="Model provider for the target model (if required)")
     api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")

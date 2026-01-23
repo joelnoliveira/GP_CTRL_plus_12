@@ -227,6 +227,10 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
         Scenarios = Base.classes.scenarios
         scenario = db.query(Scenarios).filter(Scenarios.id == request.scenario_id).first()
 
+        if not request.role_play_option_id:
+            RolePlayOptions = Base.classes.role_play_options
+            role_play_option = db.query(RolePlayOptions).filter(RolePlayOptions.id == request.role_play_option_id).first()
+
         if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
         
@@ -239,7 +243,7 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
             attacker_model_name=request.attacker_model_name,
             judge_model_name=request.judge_model_name,
             jury_models=request.jury_models,
-            role_play_option=request.role_play_option.value if request.role_play_option else None,
+            role_play_option=role_play_option if role_play_option.name else None,
             target_provider=request.target_provider,
             api_key=request.api_key,
             scenario_id=scenario.id,

@@ -240,7 +240,6 @@ const RunExperiment = (
   ];
 
   const getFormFields = () => {
-    console.log(scenarioType.label);
     if (scenarioType.label === "Over Refusal Test"){
       return attackOverRefusalFields;
     } else {
@@ -281,7 +280,7 @@ const handleExecute = async () => {
     if (scenarioType.label === "Over Refusal Test") {
       endpoint = "http://localhost:8000/over-refusal-test"; 
       payload = {
-        attacker_model_name: selections.attack_model_name      
+        target_model_name: selections.target_model_name      
       };
 
     } else {

@@ -102,8 +102,8 @@ class OverRefusalTestRequest(BaseModel):
     temperature_judges: float = Field(default=0.1, ge=0.0, le=2.0, description="Temperature for judge models")
     temperature_attacker: float = Field(default=0.1, ge=0.0, le=2.0, description="Temperature for attacker models")
     temperature_target: float = Field(default=0.1, ge=0.0, le=2.0, description="Temperature for target model")
-    target_model_name: str = Field(default="gemma3:27b", description="Target model to test")
-    jury_models: list[str] = Field(default=["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"], description="List of 3 jury models")
+    target_model_name: str = Field(default="qwen2.5:1.5b", description="Target model to test")
+    jury_models: list[str] = Field(default=["qwen2.5:1.5b", "qwen2.5:1.5b", "qwen2.5:1.5b"], description="List of 3 jury models")
     target_provider: Optional[str] = Field(default="OLLAMA", description="Model provider for the target model (if required)")
     api_key: Optional[str] = Field(default=None, description="API key for the target model provider (if required)")
    
@@ -115,8 +115,8 @@ class OverRefusalTestRequest(BaseModel):
                     "temperature_judges": 0.1,
                     "temperature_attacker": 0.1,
                     "temperature_target": 0.1,
-                    "target_model_name": "gemma3:27b",
-                    "jury_models": ["deepseek-r1:70b", "qwen2.5:latest", "dolphin3:8b"],
+                    "target_model_name": "qwen2.5:1.5b",
+                    "jury_models": ["qwen2.5:1.5b", "qwen2.5:1.5b", "qwen2.5:1.5b"],
                     "target_provider": "OLLAMA",
                     "api_key": "sk-xxxx"
                 }

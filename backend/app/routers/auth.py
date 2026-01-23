@@ -49,7 +49,7 @@ def verify_recaptcha(token: str):
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    verify_recaptcha(user_data.captcha_token)
+    # verify_recaptcha(user_data.captcha_token)
 
     if not hasattr(Base.classes, 'users'):
          raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database tables not reflected yet")
@@ -81,7 +81,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
-    verify_recaptcha(user_credentials.captcha_token)
+    # verify_recaptcha(user_credentials.captcha_token)
 
     if not hasattr(Base.classes, 'users'):
          raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database tables not reflected yet")

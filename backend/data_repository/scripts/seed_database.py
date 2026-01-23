@@ -92,7 +92,6 @@ def seed_manually():
             name="Malicious Goals Dataset",
             description="Dataset com objetivos maliciosos",
             storage_path="/workspace/backend/datasets/malicious_goals.json",
-            mime_path="application/json",
             scenarios_id=scenario1['id'],
             is_builtin=True
         )
@@ -103,7 +102,6 @@ def seed_manually():
             name="Vulnerable Goals Dataset",
             description="Dataset com objetivos vulneráveis",
             storage_path="/workspace/backend/datasets/vulnerable_goals.json",
-            mime_path="application/json",
             scenarios_id=scenario1['id'],
             is_builtin=True
         )

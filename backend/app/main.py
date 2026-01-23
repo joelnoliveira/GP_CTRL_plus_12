@@ -14,6 +14,7 @@ from langfuse import get_client
 from urllib.parse import quote
 from .routers import auth, file_upload
 from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
+from .security import get_current_user
 
 
 # Load .env from workspace root
@@ -38,6 +39,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _get_current_user_id(db: Session, current_user_email: str) -> int:
+    User = Base.classes.users
+    user = db.query(User).filter(User.email == current_user_email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user.id
 
 #Uses auth router
 app.include_router(auth.router)
@@ -166,7 +175,6 @@ async def get_template_datasets(
                 "name": ds.name,
                 "description": ds.description,
                 "storage_path": ds.storage_path,
-                "mime_path": ds.mime_path,
                 "is_builtin": ds.is_builtin,
                 "created_at": ds.created_at.isoformat() if ds.created_at else None,
             })
@@ -194,7 +202,6 @@ async def get_template_dataset(dataset_id: int, db: Session = Depends(get_db)):
             "name": ds.name,
             "description": ds.description,
             "storage_path": ds.storage_path,
-            "mime_path": ds.mime_path,
             "is_builtin": ds.is_builtin,
             "created_at": ds.created_at.isoformat() if ds.created_at else None
         }
@@ -215,6 +222,8 @@ async def get_scenarios(db: Session = Depends(get_db)):
                 "id": s.id,
                 "name": s.name,
                 "description": s.description,
+                "is_builtin": s.is_builtin,
+                "storage_path": s.storage_path,
                 "created_at": s.created_at.isoformat() if s.created_at else None
             }
             for s in scenarios
@@ -223,8 +232,13 @@ async def get_scenarios(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Erro ao listar scenarios: {str(e)}")
 
 @app.post("/attack")
-async def attack(request: AttackRequest, db: Session = Depends(get_db)):
+async def attack(
+    request: AttackRequest,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
+):
     try:
+        current_user_id = _get_current_user_id(db, current_user_email)
         Scenario = Base.classes.scenarios
         scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
         #goals_file_name = request.goals_file_name if request.goals_file_name is not None else f"{request.label.value}.json"
@@ -247,14 +261,20 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
             api_key=request.api_key,
             scenario_id=scenario_id,
             db=db,
+            user_id=current_user_id,
         )
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/attack-template")
-async def attack_template(request: AttackTemplateRequest, db: Session = Depends(get_db)):
+async def attack_template(
+    request: AttackTemplateRequest,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
+):
     try:
+        current_user_id = _get_current_user_id(db, current_user_email)
         template_path = None
         if request.template_path:
             # Procurar o dataset na tabela template_datasets
@@ -298,6 +318,7 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
             db=db,
             template_dataset_id=template_dataset_id,
             scenario_id=scenario_id,            
+            user_id=current_user_id,
             #langfuse,
             #user
         )
@@ -306,8 +327,13 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/over-refusal-test")
-async def over_refusal_test(request: OverRefusalTestRequest, db: Session = Depends(get_db)):
+async def over_refusal_test(
+    request: OverRefusalTestRequest,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
+):
     try:
+        current_user_id = _get_current_user_id(db, current_user_email)
         if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
         
@@ -321,6 +347,7 @@ async def over_refusal_test(request: OverRefusalTestRequest, db: Session = Depen
             target_provider=request.target_provider,
             api_key=request.api_key,
             db=db,
+            user_id=current_user_id,
 
         )
         return {"status": "success", "message": "Over-refusal test completed"}

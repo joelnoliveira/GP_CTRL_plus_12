@@ -40,6 +40,7 @@ async def over_refusal_test(
     target_provider = args["target_provider"]
     api_key = args["api_key"]
     db = args["db"]
+    user_id = args.get("user_id")
     
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -121,9 +122,12 @@ async def over_refusal_test(
         ended_at = time.localtime(begin_started_at)
         ended_at = datetime.fromtimestamp(time.time())
         
+        if not user_id:
+            raise Exception("user_id not provided")
+
         store_run(
             db=db,
-            user_id=1,
+            user_id=user_id,
             scenario_id=3,
             template_datasets_id=None,
             target_model=target_model_name,
@@ -159,6 +163,7 @@ async def launch_attack_template(ollama_host, **kwargs):
     db = args["db"]
     scenario_id = args["scenario_id"]
     template_datasets_id = args["template_dataset_id"]
+    user_id = args.get("user_id")
     
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -286,9 +291,12 @@ async def launch_attack_template(ollama_host, **kwargs):
         ended_at = time.localtime(begin_started_at)
         ended_at = datetime.fromtimestamp(time.time())
         
+        if not user_id:
+            raise Exception("user_id not provided")
+
         store_run(
             db=db,
-            user_id=1,
+            user_id=user_id,
             scenario_id=scenario_id,
             template_datasets_id=template_datasets_id,
             target_model=target_model_name,
@@ -324,6 +332,7 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
     db = args["db"]
     scenario_id = args["scenario_id"]
     attacker_model_name = args["attacker_model_name"]
+    user_id = args.get("user_id")
 
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -378,9 +387,12 @@ async def launch_crescendo_attack(ollama_host, **kwargs):
         ended_at = time.localtime(begin_started_at)
         ended_at = datetime.fromtimestamp(time.time())
         
+        if not user_id:
+            raise Exception("user_id not provided")
+
         store_run(
             db=db,
-            user_id=1,
+            user_id=user_id,
             scenario_id=scenario_id,
             template_datasets_id=None,
             target_model=target_model_name,
@@ -474,6 +486,7 @@ async def launch_role_play_attack(ollama_host, **kwargs):
     scenario_id = args["scenario_id"]
     attacker_model_name = args["attacker_model_name"]
     role_play_option_name = args["role_play_option_name"]
+    user_id = args.get("user_id")
 
     begin_started_at = time.time()
     started_at = time.localtime(begin_started_at)
@@ -544,9 +557,12 @@ async def launch_role_play_attack(ollama_host, **kwargs):
         ended_at = time.localtime(begin_started_at)
         ended_at = datetime.fromtimestamp(time.time())
         
+        if not user_id:
+            raise Exception("user_id not provided")
+
         store_run(
             db=db,
-            user_id=1,
+            user_id=user_id,
             scenario_id=scenario_id,
             template_datasets_id=None,
             target_model=target_model_name,

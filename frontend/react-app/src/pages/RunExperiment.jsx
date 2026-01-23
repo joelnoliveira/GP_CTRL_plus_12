@@ -418,10 +418,10 @@ const handleExecute = async () => {
                   onClick={handleUpload("scenario")}
                 />
 
-                <ToggleSwitch
+                {/* <ToggleSwitch
                   checked={isPublic}
                   onChange={handleIsPublic}
-                />
+                /> */}
               </div>
             </div>
             {scenarioType.label !== "Over Refusal Test" && <div className="run_experiment__dropdown-list">

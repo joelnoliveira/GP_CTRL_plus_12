@@ -7,6 +7,7 @@ from ..security import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE
 from datetime import timedelta, datetime
 import os
 import requests
+import json
 
 router = APIRouter(
     prefix="/auth",
@@ -49,7 +50,7 @@ def verify_recaptcha(token: str):
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    verify_recaptcha(user_data.captcha_token)
+    # verify_recaptcha(user_data.captcha_token)
 
     if not hasattr(Base.classes, 'users'):
          raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database tables not reflected yet")
@@ -81,7 +82,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
-    verify_recaptcha(user_credentials.captcha_token)
+    # verify_recaptcha(user_credentials.captcha_token)
 
     if not hasattr(Base.classes, 'users'):
          raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database tables not reflected yet")
@@ -107,6 +108,18 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(
         data={"sub": user.email, "user_id": user.id}, expires_delta=access_token_expires
     )
+    
+    # Audit log
+    AuditLog = Base.classes.audit_logs
+    audit_entry = AuditLog(
+        user_id=user.id,
+        endpoint="/auth/login",
+        request_body=json.dumps({"email": user_credentials.email}),
+        created_at=datetime.now()
+    )
+    db.add(audit_entry)
+    db.commit()
+    
     return {"access_token": access_token, "token_type": "bearer"}
 
 

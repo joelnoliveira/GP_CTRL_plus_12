@@ -90,6 +90,31 @@ const RunExperiment = (
       label: ''
     }
   ]);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch("http://10.3.1.241:8080/api/tags", {
+          method: "GET"
+        });
+        if (!response.ok) throw new Error("Failed to fetch models");
+        const data = await response.json();
+        if (data.models && Array.isArray(data.models)) {
+          const models = data.models.map(m => {
+            return {
+              key: m.name,
+              label: m.name
+            };
+          });
+          setFetchedModels(models);
+        }
+      } catch (err) {
+        console.error("Error fetching models:", err);
+      }
+    };
+    fetchModels();
+  }, []);
+
   const [scenarioList, setScenariosList] = useState([
     {
       key: '',
@@ -158,7 +183,9 @@ const RunExperiment = (
       label: 'Role Playing'
     }
   ]
-  const rolePlayOptionList = [
+
+  /** Ir buscar dinamicamente */
+  const [rolePlayOptionList, setRolePlayOptionList] = useState([
     {
       key: 'VIDEO_GAME',
       label: 'Video-game'
@@ -167,7 +194,31 @@ const RunExperiment = (
       key: 'MR_ROBOT',
       label: 'Mr. Robot'
     } 
-  ]
+  ]);
+
+  useEffect(() => {
+    const fetchRolePlayOption = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/role-play-options", {
+          method: "GET"
+        });
+        if (!response.ok) throw new Error("Failed to fetch roleplay option");
+        const data = await response.json();
+        console.log(data);
+        const roleplayoption = data.map(m => {
+          return {
+            key: m.id,
+            label: m.description
+          };
+        });
+        setRolePlayOptionList(roleplayoption);
+
+      } catch (err) {
+        console.error("Error fetching roleplay option:", err);
+      }
+    };
+    fetchRolePlayOption();
+  }, []);
 
   const attackFormFields = [
     { id: 'scenario', placeholder: 'Scenario', options: scenarioList },
@@ -225,7 +276,7 @@ const handleExecute = async () => {
       endpoint = "http://localhost:8000/attack"; 
       payload = {
         attack_option: selections.attack_option,
-        label: selections.scenario,
+        scenario_id: selections.scenario,
         target_model_name: selections.target_model_name,
         attacker_model_name: selections.attack_model_name,        
         role_play_option: selections.role_play_option
@@ -239,9 +290,9 @@ const handleExecute = async () => {
 
       endpoint = "http://localhost:8000/attack-template";
       payload = {
-        label: selections.scenario,
+        scenario_id: selections.scenario,
         target_model_name: selections.target_model_name,
-        template_path: selections.template_path
+        template_dataset_id: selections.template_path
       };
     } else {
       const newError = {type: "error", message: "Please select a valid attack option."};
@@ -277,30 +328,6 @@ const handleExecute = async () => {
     setIsLoading(false); // 3. Stop loading regardless of success/fail
   }
 };
-
-  useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        const response = await fetch("http://10.3.1.241:8080/api/tags", {
-          method: "GET"
-        });
-        if (!response.ok) throw new Error("Failed to fetch models");
-        const data = await response.json();
-        if (data.models && Array.isArray(data.models)) {
-          const models = data.models.map(m => {
-            return {
-              key: m.name,
-              label: m.name
-            };
-          });
-          setFetchedModels(models);
-        }
-      } catch (err) {
-        console.error("Error fetching models:", err);
-      }
-    };
-    fetchModels();
-  }, []);
 
   return (
     <div className="run_experiment"> 

@@ -166,7 +166,6 @@ async def get_template_datasets(
                 "name": ds.name,
                 "description": ds.description,
                 "storage_path": ds.storage_path,
-                "mime_path": ds.mime_path,
                 "is_builtin": ds.is_builtin,
                 "created_at": ds.created_at.isoformat() if ds.created_at else None,
             })
@@ -194,7 +193,6 @@ async def get_template_dataset(dataset_id: int, db: Session = Depends(get_db)):
             "name": ds.name,
             "description": ds.description,
             "storage_path": ds.storage_path,
-            "mime_path": ds.mime_path,
             "is_builtin": ds.is_builtin,
             "created_at": ds.created_at.isoformat() if ds.created_at else None
         }
@@ -215,6 +213,7 @@ async def get_scenarios(db: Session = Depends(get_db)):
                 "id": s.id,
                 "name": s.name,
                 "description": s.description,
+                "storage_path": s.storage_path,
                 "created_at": s.created_at.isoformat() if s.created_at else None
             }
             for s in scenarios
@@ -225,16 +224,15 @@ async def get_scenarios(db: Session = Depends(get_db)):
 @app.post("/attack")
 async def attack(request: AttackRequest, db: Session = Depends(get_db)):
     try:
-        Scenario = Base.classes.scenarios
-        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
-        #goals_file_name = request.goals_file_name if request.goals_file_name is not None else f"{request.label.value}.json"
+        Scenarios = Base.classes.scenarios
+        scenario = db.query(Scenarios).filter(Scenarios.id == request.scenario_id).first()
 
         if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
             raise Exception("The target model is not supported by the external API")
         
         await launch_attack(
             attack_option=request.attack_option.value,
-            label=request.label.value,
+            label=scenario.name,
             seed=request.seed,
             temperature_judges=request.temperature_judges,
             target_model_name=request.target_model_name,
@@ -242,10 +240,9 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
             judge_model_name=request.judge_model_name,
             jury_models=request.jury_models,
             role_play_option=request.role_play_option.value if request.role_play_option else None,
-            goals_file_name=request.goals_file_name,
             target_provider=request.target_provider,
             api_key=request.api_key,
-            scenario_id=scenario_id,
+            scenario_id=scenario.id,
             db=db,
         )
         return {"status": "success", "message": "Attack completed"}
@@ -254,50 +251,27 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
 
 @app.post("/attack-template")
 async def attack_template(request: AttackTemplateRequest, db: Session = Depends(get_db)):
-    try:
-        template_path = None
-        if request.template_path:
-            # Procurar o dataset na tabela template_datasets
-            if not hasattr(Base.classes, 'template_datasets'):
-                reflect_tables()
-            
-            TemplateDatasets = Base.classes.template_datasets
-            # Procura na BD pelo storage_path
-            record = db.query(TemplateDatasets).filter(
-                TemplateDatasets.storage_path == request.template_path
-            ).first()
-            
-            if record:
-                template_path = record.storage_path
-            else:
-                # Se não encontrar na BD, usa o path enviado diretamente
-                template_path = request.template_path
-        
-        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
-            raise Exception("The target model is not supported by the external API")
-        
-        Scenario = Base.classes.scenarios
-        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
+    try:        
+        Scenarios = Base.classes.scenarios
+        scenario = db.query(Scenarios).filter(Scenarios.id == request.scenario_id).first()
 
         TemplateDatasets = Base.classes.template_datasets
-        template_dataset_id = (db.query(TemplateDatasets).filter(TemplateDatasets.storage_path == template_path).first()).id
-        
+        template_dataset = db.query(TemplateDatasets).filter(TemplateDatasets.id == request.template_dataset_id).first()
 
-        print("Template Dataset ID:", template_dataset_id)
         await launch_attack_template(
-            label=request.label.value,
+            label=scenario.name,
             seed=request.seed,
             temperature_judges=request.temperature_judges,
             temperature_attacker=request.temperature_attacker,
             temperature_target=request.temperature_target,
             target_model_name=request.target_model_name,
             jury_models=request.jury_models,
-            template_path=template_path,
+            template_path=template_dataset.storage_path,
             target_provider=request.target_provider,
             api_key=request.api_key,
             db=db,
-            template_dataset_id=template_dataset_id,
-            scenario_id=scenario_id,            
+            template_dataset_id=template_dataset.id,
+            scenario_id=scenario.id,            
             #langfuse,
             #user
         )

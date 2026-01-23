@@ -21,7 +21,7 @@ def load_labels(label: str):
 
         with open(file_path, "r") as f:
             goals = json.load(f)
-
+        #goals = goals[:1]
         #convert malicious_goals to a list of prompts
         goals_list = [goal['Prompt'] for goal in goals]
         return goals_list
@@ -52,37 +52,13 @@ async def launch_attack(
     judge_model_name: str = None,
     jury_models: list[str] = None,
     role_play_option: str = None,
-    config_file_name: str = None,
     goals_file_name: str = None,
+    target_provider: str = "OLLAMA",
+    api_key:str = None,
+    db = None,
+    scenario_id: int = None
 ):
-    load_dotenv()
-
-    if config_file_name:
-        config_path = os.path.join("custom_configs", config_file_name)
-        if not os.path.exists(config_path):
-            raise FileNotFoundError(f"Custom config file not found: {config_file_name}")
-            
-        try:
-            with open(config_path, "r") as f:
-                if config_file_name.endswith('.json'):
-                    config = json.load(f)
-                else:
-                    config = yaml.safe_load(f)
-            
-            if config.get("seed") is not None: seed = config.get("seed")
-            if config.get("temperature_judges") is not None: temperature_judges = config.get("temperature_judges")
-            if config.get("temperature_attacker") is not None: temperature_attacker = config.get("temperature_attacker")
-            if config.get("temperature_target") is not None: temperature_target = config.get("temperature_target")
-            if config.get("target_model_name") is not None: target_model_name = config.get("target_model_name")
-            if config.get("attacker_model_name") is not None: attacker_model_name = config.get("attacker_model_name")
-            if config.get("judge_model_name") is not None: judge_model_name = config.get("judge_model_name")
-            if config.get("jury_models") is not None: jury_models = config.get("jury_models")
-            if config.get("label") is not None: label = config.get("label")
-            if config.get("role_play_option") is not None: role_play_option = config.get("role_play_option")
-            if config.get("goals_file_name") is not None: goals_file_name = config.get("goals_file_name")
-        except Exception as e:
-            raise ValueError(f"Error loading custom config: {e}")
-    
+    load_dotenv()    
     # Load goals
     final_goals_list = []
     if goals_file_name:
@@ -129,6 +105,7 @@ async def launch_attack(
     attacker_model_name = attacker_model_name if attacker_model_name is not None else DEFAULTS["attacker_model_name"]
     judge_model_name = judge_model_name if judge_model_name is not None else DEFAULTS["judge_model_name"]
     jury_models = jury_models if jury_models is not None else DEFAULTS["jury_models"]
+    role_play_option_name = role_play_option
     role_play_path = _get_role_play_path(role_play_option) if role_play_option else RolePlayPaths.MR_ROBOT.value
     
     attacks_dict = {
@@ -143,10 +120,12 @@ async def launch_attack(
     targets = attacks_dict.keys() if attack_option == TypesOfAttacks.ALL_ATTACKS.value else [attack_option] 
     for attack in targets:
         print(f"Executing attack: {attack}")
+
         await attacks_dict[attack](
             ollama_host=os.getenv("OLLAMA_BASE_URL"),
             seed=seed,
             label=label,
+            target_provider=target_provider,
             temperature_judges=temperature_judges,
             temperature_attacker= temperature_attacker,
             temperature_target = temperature_target,
@@ -156,6 +135,10 @@ async def launch_attack(
             target_model_name=target_model_name,
             goals_list=final_goals_list,
             role_play_option=role_play_path,
+            api_key=api_key,
+            db=db,
+            scenario_id=scenario_id,
+            role_play_option_name=role_play_option_name,
         )
 
 
@@ -168,6 +151,11 @@ async def launch_attack_template(
     target_model_name: str = None,
     jury_models: list[str] = None,
     template_path: str = None,
+    target_provider: str = "OLLAMA",
+    api_key:str = None,
+    db = None,
+    template_dataset_id: int = None,
+    scenario_id: int = None
 ):
     load_dotenv()
     
@@ -182,6 +170,7 @@ async def launch_attack_template(
     await attacks.launch_attack_template(
         ollama_host=os.getenv("OLLAMA_BASE_URL"),
         seed=seed,
+        target_provider=target_provider,
         temperature_judges=temperature_judges,
         temperature_attacker=temperature_attacker,
         temperature_target=temperature_target,
@@ -192,6 +181,10 @@ async def launch_attack_template(
         goals_list=load_labels(label=label),
         label=label,
         template_path=template_path,
+        api_key=api_key,
+        db=db,
+        template_dataset_id=template_dataset_id,
+        scenario_id=scenario_id
     )
 
 
@@ -202,6 +195,9 @@ async def launch_over_refusal_test(
     temperature_target: float = None,
     target_model_name: str = None,
     jury_models: list[str] = None,
+    target_provider: str = "OLLAMA",
+    api_key:str = None,
+    db = None,
 ):
     load_dotenv()
     
@@ -216,9 +212,12 @@ async def launch_over_refusal_test(
     await attacks.over_refusal_test(
         ollama_host=os.getenv("OLLAMA_BASE_URL"),
         seed=seed,
+        target_provider=target_provider,
         temperature_judges=temperature_judges,
         temperature_attacker=temperature_attacker,
         temperature_target=temperature_target,
         target_model_name=target_model_name,
         jury_models=jury_models,
+        api_key=api_key,
+        db=db,
     )

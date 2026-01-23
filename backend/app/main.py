@@ -20,6 +20,8 @@ from orchestrator import launch_attack, constants, launch_attack_template, launc
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
 load_dotenv(dotenv_path)
 
+AVAILABLE_EXTERNAL_TARGET_MODELS = ["gpt-3.5-turbo", "gpt-5.2-codex", "gpt-4o-mini-tts-2025-12-15", "gpt-realtime-mini-2025-12-15"]
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Reflect database tables when the app starts"""
@@ -89,11 +91,27 @@ async def root():
 #     comments = db.query(Comment).all()
 #     return [{"id": c.id, "post_id": c.post_id, "user_id": c.user_id, "comment_text": c.comment_text} for c in comments]
 
+
+# ==================== API Key Configs ====================
+class ApiKeyConfigRequest(BaseModel):
+    name: str
+    provider: str = "OPEN_AI"
+    model_name: str = None
+    api_key: str
+
+class ApiKeyConfigResponse(BaseModel):
+    id: int
+    name: str
+    provider: str
+    model_name: str = None
+    api_key: str = None
+
 class CreateDatasetRequest(BaseModel):
     name: str
     description: str = None
     metadata: dict = None
 
+# ==================== Endpoints ==================== 
 @app.post("/datasets")
 async def create_dataset(request: CreateDatasetRequest):
     langfuse = get_client()
@@ -116,41 +134,33 @@ async def get_dataset(dataset_name: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-# ==================== Endpoints Workload Datasets (BD local) ====================
-@app.get("/workload-datasets")
-async def get_workload_datasets(
+# ==================== Endpoints Template Datasets (BD local) ====================
+@app.get("/template-datasets")
+async def get_template_datasets(
     db: Session = Depends(get_db),
     is_builtin: bool = None,
-    scenario: str = None
 ):
     """
-    Lista todos os workload datasets da base de dados.
+    Lista todos os template datasets da base de dados.
     
     Filtros opcionais:
     - is_builtin: True (só default), False (só uploaded), None (todos)
-    - scenario: Nome do scenario para filtrar
     """
     try:
-        WorkloadDatasets = Base.classes.workload_datasets
-        Scenarios = Base.classes.scenarios
+        TemplateDatasets = Base.classes.template_datasets
         
-        query = db.query(WorkloadDatasets)
+        query = db.query(TemplateDatasets)
         
         # Filtrar por is_builtin se especificado
         if is_builtin is not None:
-            query = query.filter(WorkloadDatasets.is_builtin == is_builtin)
+            query = query.filter(TemplateDatasets.is_builtin == is_builtin)
         
         # Filtrar por scenario se especificado
-        if scenario:
-            scenario_obj = db.query(Scenarios).filter(Scenarios.name == scenario).first()
-            if scenario_obj:
-                query = query.filter(WorkloadDatasets.scenarios_id == scenario_obj.id)
-        
         datasets = query.all()
         
         result = []
         for ds in datasets:
-            scenario_obj = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
+            #scenario_obj = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
             result.append({
                 "id": ds.id,
                 "name": ds.name,
@@ -159,7 +169,6 @@ async def get_workload_datasets(
                 "mime_path": ds.mime_path,
                 "is_builtin": ds.is_builtin,
                 "created_at": ds.created_at.isoformat() if ds.created_at else None,
-                "scenario": scenario_obj.name if scenario_obj else None
             })
         
         return {
@@ -169,19 +178,16 @@ async def get_workload_datasets(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar datasets: {str(e)}")
 
-@app.get("/workload-datasets/{dataset_id}")
-async def get_workload_dataset(dataset_id: int, db: Session = Depends(get_db)):
-    """Obtém um workload dataset específico por ID."""
+@app.get("/template-datasets/{dataset_id}")
+async def get_template_dataset(dataset_id: int, db: Session = Depends(get_db)):
+    """Obtém um template dataset específico por ID."""
     try:
-        WorkloadDatasets = Base.classes.workload_datasets
-        Scenarios = Base.classes.scenarios
+        TemplateDatasets = Base.classes.template_datasets
         
-        ds = db.query(WorkloadDatasets).filter(WorkloadDatasets.id == dataset_id).first()
+        ds = db.query(TemplateDatasets).filter(TemplateDatasets.id == dataset_id).first()
         
         if not ds:
             raise HTTPException(status_code=404, detail="Dataset não encontrado")
-        
-        scenario = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
         
         return {
             "id": ds.id,
@@ -190,8 +196,7 @@ async def get_workload_dataset(dataset_id: int, db: Session = Depends(get_db)):
             "storage_path": ds.storage_path,
             "mime_path": ds.mime_path,
             "is_builtin": ds.is_builtin,
-            "created_at": ds.created_at.isoformat() if ds.created_at else None,
-            "scenario": scenario.name if scenario else None
+            "created_at": ds.created_at.isoformat() if ds.created_at else None
         }
     except HTTPException:
         raise
@@ -220,27 +225,12 @@ async def get_scenarios(db: Session = Depends(get_db)):
 @app.post("/attack")
 async def attack(request: AttackRequest, db: Session = Depends(get_db)):
     try:
-        # Se goals_file_name for fornecido, verificar se existe na BD
-        goals_path = None
-        if request.goals_file_name:
-            WorkloadDatasets = Base.classes.workload_datasets
-            # Tentar encontrar pelo storage_path (se o user passou o path completo)
-            record = db.query(WorkloadDatasets).filter(
-                WorkloadDatasets.storage_path == request.goals_file_name
-            ).first()
-            
-            if record:
-                goals_path = record.storage_path
-            else:
-                # Tentar encontrar pelo nome
-                record = db.query(WorkloadDatasets).filter(
-                    WorkloadDatasets.name == request.goals_file_name
-                ).first()
-                if record:
-                    goals_path = record.storage_path
-                else:
-                    # Fallback: usar como nome de ficheiro (compatibilidade)
-                    goals_path = request.goals_file_name
+        Scenario = Base.classes.scenarios
+        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
+        #goals_file_name = request.goals_file_name if request.goals_file_name is not None else f"{request.label.value}.json"
+
+        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+            raise Exception("The target model is not supported by the external API")
         
         await launch_attack(
             attack_option=request.attack_option.value,
@@ -252,7 +242,11 @@ async def attack(request: AttackRequest, db: Session = Depends(get_db)):
             judge_model_name=request.judge_model_name,
             jury_models=request.jury_models,
             role_play_option=request.role_play_option.value if request.role_play_option else None,
-            goals_file_name=goals_path,
+            goals_file_name=request.goals_file_name,
+            target_provider=request.target_provider,
+            api_key=request.api_key,
+            scenario_id=scenario_id,
+            db=db,
         )
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:
@@ -263,14 +257,14 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
     try:
         template_path = None
         if request.template_path:
-            # Procurar o dataset na tabela workload_datasets
-            if not hasattr(Base.classes, 'workload_datasets'):
+            # Procurar o dataset na tabela template_datasets
+            if not hasattr(Base.classes, 'template_datasets'):
                 reflect_tables()
             
-            WorkloadDatasets = Base.classes.workload_datasets
+            TemplateDatasets = Base.classes.template_datasets
             # Procura na BD pelo storage_path
-            record = db.query(WorkloadDatasets).filter(
-                WorkloadDatasets.storage_path == request.template_path
+            record = db.query(TemplateDatasets).filter(
+                TemplateDatasets.storage_path == request.template_path
             ).first()
             
             if record:
@@ -278,7 +272,18 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
             else:
                 # Se não encontrar na BD, usa o path enviado diretamente
                 template_path = request.template_path
+        
+        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+            raise Exception("The target model is not supported by the external API")
+        
+        Scenario = Base.classes.scenarios
+        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
 
+        TemplateDatasets = Base.classes.template_datasets
+        template_dataset_id = (db.query(TemplateDatasets).filter(TemplateDatasets.storage_path == template_path).first()).id
+        
+
+        print("Template Dataset ID:", template_dataset_id)
         await launch_attack_template(
             label=request.label.value,
             seed=request.seed,
@@ -287,15 +292,25 @@ async def attack_template(request: AttackTemplateRequest, db: Session = Depends(
             temperature_target=request.temperature_target,
             target_model_name=request.target_model_name,
             jury_models=request.jury_models,
-            template_path=template_path
+            template_path=template_path,
+            target_provider=request.target_provider,
+            api_key=request.api_key,
+            db=db,
+            template_dataset_id=template_dataset_id,
+            scenario_id=scenario_id,            
+            #langfuse,
+            #user
         )
         return {"status": "success", "message": "Attack template completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/over-refusal-test")
-async def over_refusal_test(request: OverRefusalTestRequest):
+async def over_refusal_test(request: OverRefusalTestRequest, db: Session = Depends(get_db)):
     try:
+        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+            raise Exception("The target model is not supported by the external API")
+        
         await launch_over_refusal_test(
             seed=request.seed,
             temperature_judges=request.temperature_judges,
@@ -303,7 +318,258 @@ async def over_refusal_test(request: OverRefusalTestRequest):
             temperature_target=request.temperature_target,
             target_model_name=request.target_model_name,
             jury_models=request.jury_models,
+            target_provider=request.target_provider,
+            api_key=request.api_key,
+            db=db,
+
         )
         return {"status": "success", "message": "Over-refusal test completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api-key-configs")
+async def create_api_key_config(
+    request: ApiKeyConfigRequest,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
+    """Create a new API key configuration for the current user."""
+    try:
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user:
+        #     raise HTTPException(status_code=401, detail="User not found")
+        # current_user_id = user.id
+
+        current_user_id = 1  # Hardcoded for testing - remove when enabling JWT auth
+
+        ApiKeyConfigs = Base.classes.api_key_configs
+
+        # Create the API key config with user_id directly
+        api_config = ApiKeyConfigs(
+            name=request.name,
+            provider=request.provider,
+            model_name=request.model_name,
+            api_key=request.api_key,
+            user_id=current_user_id,
+        )
+        db.add(api_config)
+        db.commit()
+
+        return {
+            "id": api_config.id,
+            "name": api_config.name,
+            "provider": api_config.provider,
+            "model_name": api_config.model_name,
+            "message": "API key config created successfully",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao criar config: {str(e)}")
+
+
+@app.get("/api-key-configs/{user_id}")
+async def get_user_api_key_configs(
+    user_id: int,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
+    """Get all API key configurations for a specific user."""
+    try:
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user or user.id != user_id:
+        #     raise HTTPException(status_code=403, detail="Access denied")
+
+        ApiKeyConfigs = Base.classes.api_key_configs
+
+        # Query all api_key_configs for this user directly
+        api_configs = (
+            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.user_id == user_id).all()
+        )
+
+        configs = [
+            {
+                "id": config.id,
+                "name": config.name,
+                "provider": config.provider,
+                "model_name": config.model_name,
+                "api_key_masked": f"***{config.api_key[-4:]}"
+                if config.api_key
+                else None,
+            }
+            for config in api_configs
+        ]
+
+        return {"user_id": user_id, "total": len(configs), "configs": configs}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao listar configs: {str(e)}")
+
+
+@app.get("/api-key-configs/{user_id}/{config_id}")
+async def get_api_key_config_by_id(
+    user_id: int,
+    config_id: int,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
+    """Get a specific API key configuration by ID (must belong to user)."""
+    try:
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user or user.id != user_id:
+        #     raise HTTPException(status_code=403, detail="Access denied")
+
+        ApiKeyConfigs = Base.classes.api_key_configs
+
+        # Query config directly with user_id filter
+        api_config = (
+            db.query(ApiKeyConfigs)
+            .filter(ApiKeyConfigs.id == config_id, ApiKeyConfigs.user_id == user_id)
+            .first()
+        )
+
+        if not api_config:
+            raise HTTPException(
+                status_code=404, detail="API key config not found for this user"
+            )
+
+        return {
+            "id": api_config.id,
+            "name": api_config.name,
+            "provider": api_config.provider,
+            "model_name": api_config.model_name,
+            "api_key_masked": f"***{api_config.api_key[-4:]}"
+            if api_config.api_key
+            else None,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao obter config: {str(e)}")
+
+
+@app.put("/api-key-configs/{user_id}/{config_id}")
+async def update_api_key_config(
+    user_id: int,
+    config_id: int,
+    request: ApiKeyConfigRequest,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
+    """Update an API key configuration (must belong to user)."""
+    try:
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user or user.id != user_id:
+        #     raise HTTPException(status_code=403, detail="Access denied")
+
+        ApiKeyConfigs = Base.classes.api_key_configs
+
+        # Query config directly with user_id filter
+        api_config = (
+            db.query(ApiKeyConfigs)
+            .filter(ApiKeyConfigs.id == config_id, ApiKeyConfigs.user_id == user_id)
+            .first()
+        )
+
+        if not api_config:
+            raise HTTPException(
+                status_code=404, detail="API key config not found for this user"
+            )
+
+        # Update fields
+        api_config.name = request.name
+        api_config.provider = request.provider
+        api_config.model_name = request.model_name
+        api_config.api_key = request.api_key
+
+        db.commit()
+
+        return {
+            "id": api_config.id,
+            "name": api_config.name,
+            "provider": api_config.provider,
+            "model_name": api_config.model_name,
+            "message": "API key config updated successfully",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao atualizar config: {str(e)}"
+        )
+
+
+@app.delete("/api-key-configs/{user_id}/{config_id}")
+async def delete_api_key_config(
+    user_id: int,
+    config_id: int,
+    db: Session = Depends(get_db),
+    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+):
+    """Delete an API key configuration (must belong to user)."""
+    try:
+        # TODO: Uncomment for JWT auth
+        # User = Base.classes.users
+        # user = db.query(User).filter(User.email == current_user_email).first()
+        # if not user or user.id != user_id:
+        #     raise HTTPException(status_code=403, detail="Access denied")
+
+        ApiKeyConfigs = Base.classes.api_key_configs
+
+        # Query config directly with user_id filter
+        api_config = (
+            db.query(ApiKeyConfigs)
+            .filter(ApiKeyConfigs.id == config_id, ApiKeyConfigs.user_id == user_id)
+            .first()
+        )
+
+        if not api_config:
+            raise HTTPException(
+                status_code=404, detail="API key config not found for this user"
+            )
+
+        db.delete(api_config)
+        db.commit()
+
+        return {
+            "message": "API key config deleted successfully",
+            "deleted_id": config_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao deletar config: {str(e)}")
+
+@app.get("/runs-metrics/{run_id}")
+async def get_runs_metrics(
+    run_id: int,
+    db: Session = Depends(get_db)
+):
+    RunsMetrics = Base.classes.runs_metrics
+
+    run_metrics = (
+        db.query(RunsMetrics)
+        .filter(RunsMetrics.id == run_id)
+        .all()
+    )
+
+    return run_metrics
+
+@app.get("/runs-metrics")
+async def get_all_runs_metrics(
+    db: Session = Depends(get_db)
+):
+    RunsMetrics = Base.classes.runs_metrics
+    return db.query(RunsMetrics).all()

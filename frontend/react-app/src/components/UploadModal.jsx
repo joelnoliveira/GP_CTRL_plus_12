@@ -17,7 +17,7 @@ const UploadModal = ({
 }) => {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState('idle'); // idle | loading | error
-  const isScenario = targetType === 'scenario';
+  const isScenario = targetType === 'scenarios';
 
   // If modal is closed, don't render anything
   if (!isOpen) return null;
@@ -42,7 +42,7 @@ const UploadModal = ({
 
       console.log(formData);
 
-      const res = await fetch('http://localhost:8000/files/upload', {
+      const res = await fetch(`http://localhost:8000/files/upload/${targetType}`, {
         method: 'POST',
         body: formData,
       });
@@ -67,7 +67,7 @@ const UploadModal = ({
     <div className="modal-backdrop">
       <div className="modal-container">
         <div className="modal-header">
-          <div className="modal-title">Upload {targetType === 'scenario' ? 'Scenario' : 'Template'}</div>
+          <div className="modal-title">Upload {targetType === 'scenarios' ? 'Scenario' : (targetType === 'template_datasets' ? 'Template': 'Role Playing Type')}</div>
           <button className="close-btn" onClick={onClose} aria-label="close">×</button>
         </div>
 

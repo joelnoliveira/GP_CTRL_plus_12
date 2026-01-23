@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:17
+    image: docker.io/library/postgres:17
     container_name: postgres__db
     restart: always
     environment:
@@ -22,8 +22,9 @@ services:
 
   backend:
     restart: unless-stopped
-    build: backend
-    container_name: fast_api
+    # build: backend
+    # container_name: fast_api
+    image: ghcr.io/joelnoliveira/gp_ctrl_plus_12/backend:latest
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     user: root
     env_file:
@@ -132,7 +133,7 @@ services:
       - default
 
   langfuse-clickhouse:
-    image: clickhouse/clickhouse-server
+    image: docker.io/clickhouse/clickhouse-server
     container_name: langfuse_clickhouse_v3
     restart: always
     user: "101:101"
@@ -155,7 +156,7 @@ services:
       - default
 
   langfuse-minio:
-    image: minio/minio
+    image: docker.io/minio/minio
     container_name: langfuse_minio_v3
     restart: always
     entrypoint: sh
@@ -177,7 +178,7 @@ services:
       - default
 
   langfuse-redis:
-    image: redis:7
+    image: docker.io/library/redis:7
     container_name: langfuse_redis_v3
     restart: always
     command: >
@@ -193,8 +194,9 @@ services:
       - default
 
   frontend:
-    build: frontend
-    container_name: react__ui
+    # build: frontend
+    # container_name: react__ui
+    image: ghcr.io/joelnoliveira/gp_ctrl_plus_12/frontend:latest
     # command: tail -f /dev/null
     environment:
       - CHOKIDAR_USEPOLLING=true

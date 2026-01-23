@@ -1,0 +1,11 @@
+[Unit]
+Description=Update images via podman compose
+
+[Service]
+Type=oneshot
+ExecStart=/home/gp2526/gp_red_teaming_llms/GP_CTRL_plus_12/service/update_images.sh
+
+
+# Do not kill the containers after script exits
+KillMode=process
+TimeoutStartSec=0

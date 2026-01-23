@@ -240,6 +240,7 @@ const RunExperiment = (
   ];
 
   const getFormFields = () => {
+    console.log(scenarioType.label);
     if (scenarioType.label === "Over Refusal Test"){
       return attackOverRefusalFields;
     } else {
@@ -404,7 +405,11 @@ const handleExecute = async () => {
                   placeholder='Scenario'
                   items={scenarioList.map(opt => opt.label)}
                   value={scenarioType.label}
-                  onSelect={(val) => setScenarioType(val)}
+                  onSelect={(val) => 
+                    setScenarioType(
+                      scenarioList.find(opt => opt.label === val)
+                    )
+                  }
                 />
 
                 <AddIcon
@@ -419,7 +424,7 @@ const handleExecute = async () => {
                 />
               </div>
             </div>
-            {scenarioType !== "Over Refusal Test" && <div className="run_experiment__dropdown-list">
+            {scenarioType.label !== "Over Refusal Test" && <div className="run_experiment__dropdown-list">
               <div className="run_experiment__row">
                 <DropdownMenu
                   placeholder='Attack type'

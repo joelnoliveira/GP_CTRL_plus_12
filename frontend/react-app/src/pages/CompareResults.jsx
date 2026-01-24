@@ -32,6 +32,7 @@ const CompareResults = (
   const [isOnORR, setIsOnORR] = useState(true);
   const [isOnASR, setIsOnASR] = useState(true);
   const [isOnAOR, setIsOnAOR] = useState(true);
+  const [isOnSM, setIsOnSM] = useState(true);
 
   /* =======================
      Mock Experiments data - Replace With Backend Connection
@@ -42,8 +43,8 @@ const CompareResults = (
   const get_results = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch("http://localhost:8000/get_experiment_results", {
-          method: "POST",
+        const response = await fetch("http://localhost:8000/runs-metrics", {
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -51,16 +52,30 @@ const CompareResults = (
         });
         const data = await response.json();
 
-        const colors = ["#2563eb", "#16a34a", "#dc2626", "#9333ea","#c5ea33","#33ccea","#e133ea","#000000"];
+        console.log(data);
+
+        const experiments = Object.fromEntries(
+        data.map((item) => [
+            item.id,
+            {
+              ORR: item.metrics_orr,
+              ASR: item.metrics_asr,
+              AOR: item.metrics_aor,
+              SM: item.static_metric,
+            },
+          ])
+        );
+
+        const colors = ["#2563eb", "#16a34a", "#dc2626", "#9333ea", "#c5ea33", "#33ccea", "#e133ea", "#000000"];
 
         const withColors = Object.fromEntries(
-          Object.entries(data).map(([name, values], i) => [
-            name,
+          Object.entries(experiments).map(([id, values], i) => [
+            id,
             { ...values, color: colors[i % colors.length] },
           ])
         );
 
-        setExperimentsMap(withColors); // ✅ triggers re-render
+        setExperimentsMap(withColors);
       } catch (err) {
         console.error(err);
       }
@@ -74,10 +89,7 @@ const CompareResults = (
   /* =======================
      Selected experiments
   ======================= */
-  const [selectedExperiments, setSelectedExperiments] = useState([
-    "Experiment 1",
-    "Experiment 2",
-  ]);
+  const [selectedExperiments, setSelectedExperiments] = useState([]);
 
   const allExperimentNames = Object.keys(experimentsMap);
 
@@ -187,7 +199,13 @@ const CompareResults = (
             </div>
             )}
 
-            {!isOnORR && !isOnASR && !isOnAOR && selectedExperiments.length !== 0 && (
+            {isOnSM && selectedExperiments.length !== 0 && (<div className="chart_card chart_card--wide">
+              <h3>Static Metric</h3>
+              <ExperimentBarChart data={getChartData("SM")} />
+            </div>
+            )}
+
+            {!isOnORR && !isOnASR && !isOnAOR && !isOnSM && selectedExperiments.length !== 0 && (
               <div className="warning_message">
                 <h1 className="warning_message__text">Please select a metric</h1>
               </div>
@@ -276,6 +294,15 @@ const CompareResults = (
                   checked={isOnAOR}
                   onChange={setIsOnAOR}
                   options={["AOR", "AOR"]}
+                  styles="toggle_switch_text"
+                />
+              </label>
+
+              <label className="filter_item">
+                <ToggleSwitch
+                  checked={isOnSM}
+                  onChange={setIsOnSM}
+                  options={["SM", "SM"]}
                   styles="toggle_switch_text"
                 />
               </label>

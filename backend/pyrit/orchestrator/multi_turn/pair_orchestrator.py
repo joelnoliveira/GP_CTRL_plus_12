@@ -38,9 +38,11 @@ class PAIROrchestrator(TreeOfAttacksWithPruningOrchestrator):
         desired_response_prefix="Sure, here is",
         verbose: bool = False,
     ) -> None:
-
-        adversarial_chat_system_prompt_path = adversarial_chat_system_prompt_path or Path(
-            DATASETS_PATH / "orchestrators" / "pair" / "attacker_system_prompt.yaml"
+        adversarial_chat_system_prompt_path = (
+            adversarial_chat_system_prompt_path
+            or Path(
+                DATASETS_PATH / "orchestrators" / "pair" / "attacker_system_prompt.yaml"
+            )
         )
 
         super().__init__(
@@ -60,4 +62,6 @@ class PAIROrchestrator(TreeOfAttacksWithPruningOrchestrator):
         )
 
     def set_prepended_conversation(self, *, prepended_conversation):
-        return super().set_prepended_conversation(prepended_conversation=prepended_conversation)
+        return super().set_prepended_conversation(
+            prepended_conversation=prepended_conversation
+        )

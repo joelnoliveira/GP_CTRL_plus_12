@@ -36,7 +36,9 @@ class CrucibleTarget(PromptTarget):
         )
 
     @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         self._validate_request(prompt_request=prompt_request)
         request = prompt_request.request_pieces[0]
 
@@ -44,11 +46,15 @@ class CrucibleTarget(PromptTarget):
 
         try:
             response = await self._complete_text_async(request.converted_value)
-            response_entry = construct_response_from_request(request=request, response_text_pieces=[response])
+            response_entry = construct_response_from_request(
+                request=request, response_text_pieces=[response]
+            )
         except HTTPStatusError as bre:
             if bre.response.status_code == 400:
                 response_entry = handle_bad_request_exception(
-                    response_text=bre.response.text, request=request, is_content_filter=True
+                    response_text=bre.response.text,
+                    request=request,
+                    is_content_filter=True,
                 )
             else:
                 raise
@@ -78,5 +84,7 @@ class CrucibleTarget(PromptTarget):
         if not resp.text:
             raise EmptyResponseException()
 
-        logger.info(f'Received the following response from the prompt target "{resp.text}"')
+        logger.info(
+            f'Received the following response from the prompt target "{resp.text}"'
+        )
         return resp.text

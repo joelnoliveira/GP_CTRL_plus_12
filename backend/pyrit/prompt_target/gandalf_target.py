@@ -27,7 +27,6 @@ class GandalfLevel(enum.Enum):
 
 
 class GandalfTarget(PromptTarget):
-
     def __init__(
         self,
         *,
@@ -40,7 +39,9 @@ class GandalfTarget(PromptTarget):
         self._defender = level.value
 
     @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         self._validate_request(prompt_request=prompt_request)
         request = prompt_request.request_pieces[0]
 
@@ -48,7 +49,9 @@ class GandalfTarget(PromptTarget):
 
         response = await self._complete_text_async(request.converted_value)
 
-        response_entry = construct_response_from_request(request=request, response_text_pieces=[response])
+        response_entry = construct_response_from_request(
+            request=request, response_text_pieces=[response]
+        )
 
         return response_entry
 
@@ -71,7 +74,10 @@ class GandalfTarget(PromptTarget):
         }
 
         resp = await net_utility.make_request_and_raise_if_error_async(
-            endpoint_uri=self._endpoint, method="POST", request_body=payload, post_type="data"
+            endpoint_uri=self._endpoint,
+            method="POST",
+            request_body=payload,
+            post_type="data",
         )
 
         if not resp.text:
@@ -87,7 +93,10 @@ class GandalfTarget(PromptTarget):
         }
 
         resp = await net_utility.make_request_and_raise_if_error_async(
-            endpoint_uri=self._endpoint, method="POST", request_body=payload, post_type="data"
+            endpoint_uri=self._endpoint,
+            method="POST",
+            request_body=payload,
+            post_type="data",
         )
 
         if not resp.text:
@@ -95,5 +104,7 @@ class GandalfTarget(PromptTarget):
 
         answer = json.loads(resp.text)["answer"]
 
-        logger.info(f'Received the following response from the prompt target "{answer}"')
+        logger.info(
+            f'Received the following response from the prompt target "{answer}"'
+        )
         return answer

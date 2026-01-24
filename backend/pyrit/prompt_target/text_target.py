@@ -28,8 +28,9 @@ class TextTarget(PromptTarget):
         super().__init__()
         self._text_stream = text_stream
 
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
-
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         self._validate_request(prompt_request=prompt_request)
 
         self._text_stream.write(f"{str(prompt_request)}\n")
@@ -38,7 +39,6 @@ class TextTarget(PromptTarget):
         return None
 
     def import_scores_from_csv(self, csv_file_path: Path) -> list[PromptRequestPiece]:
-
         request_responses = []
 
         with open(csv_file_path, newline="") as csvfile:

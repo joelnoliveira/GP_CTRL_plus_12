@@ -37,7 +37,11 @@ class NoiseConverter(LLMGenericTextConverter):
         prompt_template = (
             prompt_template
             if prompt_template
-            else SeedPrompt.from_yaml_file(pathlib.Path(DATASETS_PATH) / "prompt_converters" / "noise_converter.yaml")
+            else SeedPrompt.from_yaml_file(
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "noise_converter.yaml"
+            )
         )
 
         if not noise:

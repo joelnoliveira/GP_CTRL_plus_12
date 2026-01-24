@@ -89,13 +89,26 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
         desired_response_prefix="Sure, here is",
         verbose: bool = False,
     ) -> None:
-
-        adversarial_chat_seed_prompt = adversarial_chat_seed_prompt or SeedPrompt.from_yaml_file(
-            Path(DATASETS_PATH / "orchestrators" / "tree_of_attacks" / "adversarial_seed_prompt.yaml")
+        adversarial_chat_seed_prompt = (
+            adversarial_chat_seed_prompt
+            or SeedPrompt.from_yaml_file(
+                Path(
+                    DATASETS_PATH
+                    / "orchestrators"
+                    / "tree_of_attacks"
+                    / "adversarial_seed_prompt.yaml"
+                )
+            )
         )
 
-        adversarial_chat_system_prompt_path = adversarial_chat_system_prompt_path or Path(
-            DATASETS_PATH / "orchestrators" / "tree_of_attacks" / "adversarial_system_prompt.yaml"
+        adversarial_chat_system_prompt_path = (
+            adversarial_chat_system_prompt_path
+            or Path(
+                DATASETS_PATH
+                / "orchestrators"
+                / "tree_of_attacks"
+                / "adversarial_system_prompt.yaml"
+            )
         )
 
         objective_scorer = SelfAskScaleScorer(
@@ -119,7 +132,12 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
             )
 
         self._adversarial_chat_prompt_template = SeedPrompt.from_yaml_file(
-            Path(DATASETS_PATH / "orchestrators" / "tree_of_attacks" / "adversarial_prompt_template.yaml")
+            Path(
+                DATASETS_PATH
+                / "orchestrators"
+                / "tree_of_attacks"
+                / "adversarial_prompt_template.yaml"
+            )
         )
 
         if width < 1:
@@ -129,8 +147,13 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
         if branching_factor < 1:
             raise ValueError("The branching factor of the tree must be at least 1.")
 
-        if objective_achieved_score_threshold < 0 or objective_achieved_score_threshold > 1:
-            raise ValueError("The objective achieved score threshold must be between 0 and 1.")
+        if (
+            objective_achieved_score_threshold < 0
+            or objective_achieved_score_threshold > 1
+        ):
+            raise ValueError(
+                "The objective achieved score threshold must be between 0 and 1."
+            )
 
         self._attack_width = width
         self._attack_depth = depth
@@ -142,7 +165,9 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
         self._desired_response_prefix = desired_response_prefix
 
     def set_prepended_conversation(self, *, prepended_conversation):
-        raise NotImplementedError("Prepending conversations is not supported in this orchestrator.")
+        raise NotImplementedError(
+            "Prepending conversations is not supported in this orchestrator."
+        )
 
     async def run_attack_async(
         self, *, objective: str, memory_labels: Optional[dict[str, str]] = None
@@ -171,7 +196,9 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
 
         best_conversation_id = None
 
-        updated_memory_labels = combine_dict(existing_dict=self._global_memory_labels, new_dict=memory_labels)
+        updated_memory_labels = combine_dict(
+            existing_dict=self._global_memory_labels, new_dict=memory_labels
+        )
 
         for iteration in range(1, self._attack_depth + 1):
             logger.info(f"Starting iteration number: {iteration}")
@@ -202,7 +229,9 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
                     for _ in range(self._attack_branching_factor - 1):
                         cloned_node = node.duplicate()
                         tree_visualization.create_node(
-                            f"{iteration}: ", cloned_node.node_id, parent=cloned_node.parent_id
+                            f"{iteration}: ",
+                            cloned_node.node_id,
+                            parent=cloned_node.parent_id,
                         )
                         cloned_nodes.append(cloned_node)
 
@@ -218,7 +247,9 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
                 best_conversation_id = nodes[0].objective_target_conversation_id
 
                 if nodes[0].score >= self._objective_achieved_score_threshhold:
-                    logger.info("The conversation has been stopped because the response is jailbroken.")
+                    logger.info(
+                        "The conversation has been stopped because the response is jailbroken."
+                    )
                     return TAPAttackResult(
                         conversation_id=best_conversation_id,
                         achieved_objective=True,
@@ -242,7 +273,6 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
     async def _send_prompt_to_nodes_async(
         self, objective: str, nodes: list[TreeOfAttacksNode], tree_visualization: Tree
     ):
-
         for node_index, node in enumerate(nodes, start=1):
             logger.info(f"Sending prompt for node {node_index}/{len(nodes)}")
             await node.send_prompt_async(objective=objective)
@@ -251,7 +281,12 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
 
     def _get_completed_on_topic_results_in_order(self, nodes: list[TreeOfAttacksNode]):
         completed_nodes = [
-            node for node in nodes if node and node.completed and (not node.off_topic) and isinstance(node.score, float)
+            node
+            for node in nodes
+            if node
+            and node.completed
+            and (not node.off_topic)
+            and isinstance(node.score, float)
         ]
         completed_nodes.sort(key=lambda x: (x.score, random.random()), reverse=True)
         return completed_nodes
@@ -261,7 +296,6 @@ class TreeOfAttacksWithPruningOrchestrator(MultiTurnOrchestrator):
         nodes: list[TreeOfAttacksNode],
         tree_visualization: Tree,
     ) -> list[TreeOfAttacksNode]:
-
         # This may be redundant but it makes it so you don't need to call in order
         nodes = self._get_completed_on_topic_results_in_order(nodes)
 

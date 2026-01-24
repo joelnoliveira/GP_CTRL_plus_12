@@ -55,13 +55,17 @@ class PromptSendingOrchestrator(Orchestrator):
         self._batch_size = batch_size
         self._prepended_conversation: list[PromptRequestResponse] = None
 
-    def set_prepended_conversation(self, *, prepended_conversation: list[PromptRequestResponse]):
+    def set_prepended_conversation(
+        self, *, prepended_conversation: list[PromptRequestResponse]
+    ):
         """
         Prepends a conversation to the prompt target.
 
         This is sent along with each prompt request and can be the first part of aa conversation.
         """
-        if prepended_conversation and not isinstance(self._objective_target, PromptChatTarget):
+        if prepended_conversation and not isinstance(
+            self._objective_target, PromptChatTarget
+        ):
             raise TypeError(
                 f"Only PromptChatTargets are able to modify conversation history. Instead objective_target is: "
                 f"{type(self._objective_target)}."
@@ -70,14 +74,19 @@ class PromptSendingOrchestrator(Orchestrator):
         self._prepended_conversation = prepended_conversation
 
     def set_skip_criteria(
-        self, *, skip_criteria: PromptFilterCriteria, skip_value_type: PromptConverterState = "original"
+        self,
+        *,
+        skip_criteria: PromptFilterCriteria,
+        skip_value_type: PromptConverterState = "original",
     ):
         """
         Sets the skip criteria for the orchestrator.
 
         If prompts match this in memory, then they won't be sent to a target.
         """
-        self._prompt_normalizer.set_skip_criteria(skip_criteria=skip_criteria, skip_value_type=skip_value_type)
+        self._prompt_normalizer.set_skip_criteria(
+            skip_criteria=skip_criteria, skip_value_type=skip_value_type
+        )
 
     async def send_normalizer_requests_async(
         self,
@@ -94,16 +103,22 @@ class PromptSendingOrchestrator(Orchestrator):
 
         # Normalizer is responsible for storing the requests in memory
         # The labels parameter may allow me to stash class information for each kind of prompt.
-        responses: list[PromptRequestResponse] = await self._prompt_normalizer.send_prompt_batch_to_target_async(
+        responses: list[
+            PromptRequestResponse
+        ] = await self._prompt_normalizer.send_prompt_batch_to_target_async(
             requests=prompt_request_list,
             target=self._objective_target,
-            labels=combine_dict(existing_dict=self._global_memory_labels, new_dict=memory_labels),
+            labels=combine_dict(
+                existing_dict=self._global_memory_labels, new_dict=memory_labels
+            ),
             orchestrator_identifier=self.get_identifier(),
             batch_size=self._batch_size,
         )
 
         if self._scorers and responses:
-            response_pieces = PromptRequestResponse.flatten_to_prompt_request_pieces(responses)
+            response_pieces = PromptRequestResponse.flatten_to_prompt_request_pieces(
+                responses
+            )
 
             for scorer in self._scorers:
                 await scorer.score_responses_inferring_tasks_batch_async(
@@ -142,7 +157,6 @@ class PromptSendingOrchestrator(Orchestrator):
 
         requests: list[NormalizerRequest] = []
         for prompt in prompt_list:
-
             requests.append(
                 self._create_normalizer_request(
                     prompt_text=prompt,
@@ -155,7 +169,9 @@ class PromptSendingOrchestrator(Orchestrator):
 
         return await self.send_normalizer_requests_async(
             prompt_request_list=requests,
-            memory_labels=combine_dict(existing_dict=self._global_memory_labels, new_dict=memory_labels),
+            memory_labels=combine_dict(
+                existing_dict=self._global_memory_labels, new_dict=memory_labels
+            ),
         )
 
     async def print_conversations_async(self):
@@ -166,13 +182,19 @@ class PromptSendingOrchestrator(Orchestrator):
 
         for message in messages:
             if message.conversation_id != last_conversation_id:
-                print(f"{Style.NORMAL}{Fore.RESET}Conversation ID: {message.conversation_id}")
+                print(
+                    f"{Style.NORMAL}{Fore.RESET}Conversation ID: {message.conversation_id}"
+                )
                 last_conversation_id = message.conversation_id
 
             if message.role == "user" or message.role == "system":
-                print(f"{Style.BRIGHT}{Fore.BLUE}{message.role}: {message.converted_value}")
+                print(
+                    f"{Style.BRIGHT}{Fore.BLUE}{message.role}: {message.converted_value}"
+                )
             else:
-                print(f"{Style.NORMAL}{Fore.YELLOW}{message.role}: {message.converted_value}")
+                print(
+                    f"{Style.NORMAL}{Fore.YELLOW}{message.role}: {message.converted_value}"
+                )
                 await display_image_response(message)
 
             for score in message.scores:
@@ -184,10 +206,9 @@ class PromptSendingOrchestrator(Orchestrator):
         last_conversation_id = None
 
         with open(file_path, "w") as f:
-
             for message in messages:
                 if message.conversation_id != last_conversation_id:
-                    f.write(f"\n\n")
+                    f.write("\n\n")
                     f.write(f"\nConversation ID: {message.conversation_id}\n")
                     last_conversation_id = message.conversation_id
 
@@ -201,10 +222,11 @@ class PromptSendingOrchestrator(Orchestrator):
 
     def output_conversations_to_json(self, file_path: str = "conversations.json"):
         import json
+
         """Outputs the conversation to a json file."""
         messages = self.get_memory()
         conversations_json = {}
-        #conversation_json is a dictionary of dictionaries, each main dictionary contains the conversation id and a dictionary of messages
+        # conversation_json is a dictionary of dictionaries, each main dictionary contains the conversation id and a dictionary of messages
         for message in messages:
             if message.conversation_id not in conversations_json:
                 conversations_json[message.conversation_id] = {}
@@ -215,7 +237,7 @@ class PromptSendingOrchestrator(Orchestrator):
             }
         with open(file_path, "w") as f:
             json.dump(conversations_json, f)
-        
+
         return conversations_json
 
     def _prepare_conversation(self):

@@ -19,7 +19,9 @@ class SearchReplaceConverter(PromptConverter):
         self.old_value = old_value
         self.new_value = new_value
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Simple converter that just replaces character in string with a chosen new character
 
@@ -31,7 +33,10 @@ class SearchReplaceConverter(PromptConverter):
         """
         if not self.input_supported(input_type):
             raise ValueError("Input type not supported")
-        return ConverterResult(output_text=re.sub(self.old_value, self.new_value, prompt), output_type="text")
+        return ConverterResult(
+            output_text=re.sub(self.old_value, self.new_value, prompt),
+            output_type="text",
+        )
 
     def input_supported(self, input_type: PromptDataType) -> bool:
         return input_type == "text"

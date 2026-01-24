@@ -44,7 +44,9 @@ def parse_args(args=None) -> Namespace:
     parsed_args = parser.parse_args(args)
     config_file = Path(parsed_args.config_file)
     if not config_file.exists():
-        raise FileNotFoundError(f"Configuration file {config_file.absolute()} does not exist.")
+        raise FileNotFoundError(
+            f"Configuration file {config_file.absolute()} does not exist."
+        )
     return parsed_args
 
 
@@ -62,7 +64,9 @@ def load_config(config_file: Path) -> Dict[str, Any]:
     return config
 
 
-async def validate_config_and_run_async(config: Dict[str, Any], memory_labels: Optional[Dict[str, str]] = None) -> None:
+async def validate_config_and_run_async(
+    config: Dict[str, Any], memory_labels: Optional[Dict[str, str]] = None
+) -> None:
     if "scenarios" not in config:
         raise KeyError("Configuration file must contain a 'scenarios' key.")
 
@@ -99,10 +103,14 @@ async def validate_config_and_run_async(config: Dict[str, Any], memory_labels: O
     for orchestrator in orchestrators:
         if hasattr(orchestrator, "run_attack_async"):
             for seed_prompt in seed_prompts:
-                await orchestrator.run_attack_async(objective=seed_prompt.value, memory_labels=memory_labels)
+                await orchestrator.run_attack_async(
+                    objective=seed_prompt.value, memory_labels=memory_labels
+                )
         elif hasattr(orchestrator, "send_normalizer_requests_async"):
             converter_configurations = [
-                PromptConverterConfiguration(converters=prompt_converters if prompt_converters else [])
+                PromptConverterConfiguration(
+                    converters=prompt_converters if prompt_converters else []
+                )
             ]
 
             normalizer_requests = [
@@ -143,14 +151,26 @@ def validate_scenario(
         orchestrator_module = import_module("pyrit.orchestrator")
         orchestrator_class = getattr(orchestrator_module, scenario_type)
     except Exception as ex:
-        raise RuntimeError(f"Failed to import orchestrator {scenario_type} from pyrit.orchestrator") from ex
+        raise RuntimeError(
+            f"Failed to import orchestrator {scenario_type} from pyrit.orchestrator"
+        ) from ex
 
     try:
-        constructor_arg_names = [arg.name for arg in inspect.signature(orchestrator_class.__init__).parameters.values()]
+        constructor_arg_names = [
+            arg.name
+            for arg in inspect.signature(
+                orchestrator_class.__init__
+            ).parameters.values()
+        ]
 
         # Some orchestrator arguments have their own configuration since they
         # are more complex. They are passed in as args to this function.
-        complex_arg_names = ["objective_target", "adversarial_chat", "prompt_converters", "scorer"]
+        complex_arg_names = [
+            "objective_target",
+            "adversarial_chat",
+            "prompt_converters",
+            "scorer",
+        ]
         for complex_arg_name in complex_arg_names:
             if complex_arg_name in scenario_args:
                 raise ValueError(
@@ -199,7 +219,9 @@ def validate_target(config: Dict[str, Any], target_key: str) -> PromptTarget:
         target_module = import_module("pyrit.prompt_target")
         target_class = getattr(target_module, target_type)
     except Exception as ex:
-        raise RuntimeError(f"Failed to import target {target_type} from pyrit.prompt_target") from ex
+        raise RuntimeError(
+            f"Failed to import target {target_type} from pyrit.prompt_target"
+        ) from ex
 
     # type is not an actual arg so remove it
     del target_config["type"]

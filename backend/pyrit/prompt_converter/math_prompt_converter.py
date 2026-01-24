@@ -18,7 +18,9 @@ class MathPromptConverter(LLMGenericTextConverter):
     using an LLM via an existing PromptTarget (like Azure OpenAI or other supported backends).
     """
 
-    def __init__(self, *, converter_target: PromptChatTarget, prompt_template: SeedPrompt = None):
+    def __init__(
+        self, *, converter_target: PromptChatTarget, prompt_template: SeedPrompt = None
+    ):
         """
         Initializes the converter with a specific target and template.
 
@@ -32,13 +34,19 @@ class MathPromptConverter(LLMGenericTextConverter):
             prompt_template
             if prompt_template
             else SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "math_prompt_converter.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "math_prompt_converter.yaml"
             )
         )
 
-        super().__init__(converter_target=converter_target, prompt_template=prompt_template)
+        super().__init__(
+            converter_target=converter_target, prompt_template=prompt_template
+        )
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Convert a prompt into a mathematical problem format.
 
@@ -54,7 +62,9 @@ class MathPromptConverter(LLMGenericTextConverter):
         self._prompt_kwargs["prompt"] = prompt
 
         # Get the base conversion from the parent class
-        base_conversion_result = await super().convert_async(prompt=prompt, input_type=input_type)
+        base_conversion_result = await super().convert_async(
+            prompt=prompt, input_type=input_type
+        )
 
         # Get the converted value from the base result
         converted_text = base_conversion_result.output_text

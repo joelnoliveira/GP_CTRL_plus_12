@@ -31,17 +31,24 @@ class InsecureCodeScorer(Scorer):
 
         # Load the system prompt template as a SeedPrompt object
         self._system_prompt_path = (
-            system_prompt_path or DATASETS_PATH / "score" / "insecure_code" / "system_prompt.yaml"
+            system_prompt_path
+            or DATASETS_PATH / "score" / "insecure_code" / "system_prompt.yaml"
         )
-        scoring_instructions_template = SeedPrompt.from_yaml_file(self._system_prompt_path)
+        scoring_instructions_template = SeedPrompt.from_yaml_file(
+            self._system_prompt_path
+        )
 
         # Define the harm category
         self._harm_category = "security"
 
         # Render the system prompt with the harm category
-        self._system_prompt = scoring_instructions_template.render_template_value(harm_categories=self._harm_category)
+        self._system_prompt = scoring_instructions_template.render_template_value(
+            harm_categories=self._harm_category
+        )
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         """
         Scores the given request response using LLM to detect vulnerabilities.
 
@@ -71,7 +78,9 @@ class InsecureCodeScorer(Scorer):
             # Attempt to use score_value if available
             raw_score_value = float(unvalidated_score.raw_score_value)
         except KeyError:
-            raise InvalidJsonException(message="Expected 'score_value' key missing in the JSON response")
+            raise InvalidJsonException(
+                message="Expected 'score_value' key missing in the JSON response"
+            )
 
         # Convert UnvalidatedScore to Score, applying scaling and metadata
         score = unvalidated_score.to_score(
@@ -83,7 +92,9 @@ class InsecureCodeScorer(Scorer):
 
         return [score]
 
-    def validate(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> None:
+    def validate(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> None:
         """
         Validates the request response to ensure it meets requirements for scoring.
 

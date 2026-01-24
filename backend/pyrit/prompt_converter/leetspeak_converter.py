@@ -10,7 +10,9 @@ from pyrit.prompt_converter import ConverterResult, PromptConverter
 class LeetspeakConverter(PromptConverter):
     """Converts a string to a leetspeak version"""
 
-    def __init__(self, deterministic: bool = False, custom_substitutions: dict = None) -> None:
+    def __init__(
+        self, deterministic: bool = False, custom_substitutions: dict = None
+    ) -> None:
         """
         Initialize the converter with optional deterministic mode and custom substitutions.
 
@@ -34,10 +36,14 @@ class LeetspeakConverter(PromptConverter):
         }
 
         # Use custom substitutions if provided, otherwise default to the standard ones
-        self._leet_substitutions = custom_substitutions if custom_substitutions else default_substitutions
+        self._leet_substitutions = (
+            custom_substitutions if custom_substitutions else default_substitutions
+        )
         self._deterministic = deterministic
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Convert the given prompt to leetspeak.
 
@@ -60,12 +66,16 @@ class LeetspeakConverter(PromptConverter):
                     converted_prompt.append(self._leet_substitutions[lower_char][0])
                 else:
                     # Randomly select a substitution for each character
-                    converted_prompt.append(random.choice(self._leet_substitutions[lower_char]))
+                    converted_prompt.append(
+                        random.choice(self._leet_substitutions[lower_char])
+                    )
             else:
                 # If character not in substitutions, keep it as is
                 converted_prompt.append(char)
 
-        return ConverterResult(output_text="".join(converted_prompt), output_type="text")
+        return ConverterResult(
+            output_text="".join(converted_prompt), output_type="text"
+        )
 
     def input_supported(self, input_type: PromptDataType) -> bool:
         return input_type == "text"

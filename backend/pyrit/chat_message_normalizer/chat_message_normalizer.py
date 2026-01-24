@@ -17,7 +17,9 @@ class ChatMessageNormalizer(abc.ABC, Generic[T]):
         """
 
     @staticmethod
-    def squash_system_message(messages: list[ChatMessage], squash_function) -> list[ChatMessage]:
+    def squash_system_message(
+        messages: list[ChatMessage], squash_function
+    ) -> list[ChatMessage]:
         """
         Combines the system message into the first user request.
 

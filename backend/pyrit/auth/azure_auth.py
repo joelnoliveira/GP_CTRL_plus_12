@@ -48,11 +48,15 @@ class AzureAuth(Authenticator):
 
         """
         curr_epoch_time_in_ms = int(time.time()) * 1_000
-        access_token_epoch_expiration_time_in_ms = int(self._access_token.expires_on) * 1_000
+        access_token_epoch_expiration_time_in_ms = (
+            int(self._access_token.expires_on) * 1_000
+        )
         # Adjust the expiration time to be before the actual expiration time so that user can use the token
         # for a while before it expires. This improves user experience. The token is refreshed REFRESH_TOKEN_BEFORE_MSEC
         # before it expires.
-        token_expires_on_in_ms = access_token_epoch_expiration_time_in_ms - REFRESH_TOKEN_BEFORE_MSEC
+        token_expires_on_in_ms = (
+            access_token_epoch_expiration_time_in_ms - REFRESH_TOKEN_BEFORE_MSEC
+        )
         if token_expires_on_in_ms <= curr_epoch_time_in_ms:
             # Token is expired, generate a new one
             azure_creds = AzureCliCredential(tenant_id=self._tenant_id)
@@ -70,7 +74,9 @@ class AzureAuth(Authenticator):
         return self.token
 
 
-def get_access_token_from_azure_msi(*, client_id: str, scope: str = AZURE_COGNITIVE_SERVICES_DEFAULT_SCOPE):
+def get_access_token_from_azure_msi(
+    *, client_id: str, scope: str = AZURE_COGNITIVE_SERVICES_DEFAULT_SCOPE
+):
     """Connect to an AOAI endpoint via managed identity credential attached to an Azure resource.
     For proper setup and configuration of MSI
     https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview.
@@ -86,11 +92,15 @@ def get_access_token_from_azure_msi(*, client_id: str, scope: str = AZURE_COGNIT
         token = credential.get_token(scope)
         return token.token
     except Exception as e:
-        logger.error(f"Failed to obtain token for '{scope}' with client ID '{client_id}': {e}")
+        logger.error(
+            f"Failed to obtain token for '{scope}' with client ID '{client_id}': {e}"
+        )
         raise
 
 
-def get_access_token_from_msa_public_client(*, client_id: str, scope: str = AZURE_COGNITIVE_SERVICES_DEFAULT_SCOPE):
+def get_access_token_from_msa_public_client(
+    *, client_id: str, scope: str = AZURE_COGNITIVE_SERVICES_DEFAULT_SCOPE
+):
     """Uses MSA account to connect to an AOAI endpoint via interactive login. A browser window
     will open and ask for login credentials.
 
@@ -105,11 +115,15 @@ def get_access_token_from_msa_public_client(*, client_id: str, scope: str = AZUR
         result = app.acquire_token_interactive(scopes=[scope])
         return result["access_token"]
     except Exception as e:
-        logger.error(f"Failed to obtain token for '{scope}' with client ID '{client_id}': {e}")
+        logger.error(
+            f"Failed to obtain token for '{scope}' with client ID '{client_id}': {e}"
+        )
         raise
 
 
-def get_access_token_from_interactive_login(scope: str = AZURE_COGNITIVE_SERVICES_DEFAULT_SCOPE):
+def get_access_token_from_interactive_login(
+    scope: str = AZURE_COGNITIVE_SERVICES_DEFAULT_SCOPE,
+):
     """Connects to an OpenAI endpoint with an interactive login from Azure. A browser window will
     open and ask for login credentials.  The token will be scoped for Azure Cognitive services.
 
@@ -117,14 +131,18 @@ def get_access_token_from_interactive_login(scope: str = AZURE_COGNITIVE_SERVICE
         Authentication token
     """
     try:
-        token_provider = get_bearer_token_provider(InteractiveBrowserCredential(), scope)
+        token_provider = get_bearer_token_provider(
+            InteractiveBrowserCredential(), scope
+        )
         return token_provider()
     except Exception as e:
         logger.error(f"Failed to obtain token for '{scope}': {e}")
         raise
 
 
-def get_token_provider_from_default_azure_credential(scope: str = AZURE_COGNITIVE_SERVICES_DEFAULT_SCOPE):
+def get_token_provider_from_default_azure_credential(
+    scope: str = AZURE_COGNITIVE_SERVICES_DEFAULT_SCOPE,
+):
     """Connect to an AOAI endpoint via default Azure credential.
 
     Returns:

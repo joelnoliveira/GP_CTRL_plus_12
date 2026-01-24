@@ -42,7 +42,9 @@ class AzureBlobStorageTarget(PromptTarget):
             will be capped at the value provided.
     """
 
-    AZURE_STORAGE_CONTAINER_ENVIRONMENT_VARIABLE: str = "AZURE_STORAGE_ACCOUNT_CONTAINER_URL"
+    AZURE_STORAGE_CONTAINER_ENVIRONMENT_VARIABLE: str = (
+        "AZURE_STORAGE_ACCOUNT_CONTAINER_URL"
+    )
     SAS_TOKEN_ENVIRONMENT_VARIABLE: str = "AZURE_STORAGE_ACCOUNT_SAS_TOKEN"
 
     def __init__(
@@ -53,11 +55,11 @@ class AzureBlobStorageTarget(PromptTarget):
         blob_content_type: SupportedContentType = SupportedContentType.PLAIN_TEXT,
         max_requests_per_minute: Optional[int] = None,
     ) -> None:
-
         self._blob_content_type: str = blob_content_type.value
 
         self._container_url: str = default_values.get_required_value(
-            env_var_name=self.AZURE_STORAGE_CONTAINER_ENVIRONMENT_VARIABLE, passed_value=container_url
+            env_var_name=self.AZURE_STORAGE_CONTAINER_ENVIRONMENT_VARIABLE,
+            passed_value=container_url,
         )
 
         self._sas_token = sas_token
@@ -71,11 +73,16 @@ class AzureBlobStorageTarget(PromptTarget):
         for authentication. Otherwise, a delegation SAS token will be created using Entra ID authentication."""
         try:
             sas_token: str = default_values.get_required_value(
-                env_var_name=self.SAS_TOKEN_ENVIRONMENT_VARIABLE, passed_value=self._sas_token
+                env_var_name=self.SAS_TOKEN_ENVIRONMENT_VARIABLE,
+                passed_value=self._sas_token,
             )
-            logger.info("Using SAS token from environment variable or passed parameter.")
+            logger.info(
+                "Using SAS token from environment variable or passed parameter."
+            )
         except ValueError:
-            logger.info("SAS token not provided. Creating a delegation SAS token using Entra ID authentication.")
+            logger.info(
+                "SAS token not provided. Creating a delegation SAS token using Entra ID authentication."
+            )
             sas_token = await AzureStorageAuth.get_sas_token(self._container_url)
 
         self._client_async = AsyncContainerClient.from_container_url(
@@ -83,7 +90,9 @@ class AzureBlobStorageTarget(PromptTarget):
             credential=sas_token,
         )
 
-    async def _upload_blob_async(self, file_name: str, data: bytes, content_type: str) -> None:
+    async def _upload_blob_async(
+        self, file_name: str, data: bytes, content_type: str
+    ) -> None:
         """
         (Async) Handles uploading blob to given storage container.
 
@@ -120,7 +129,9 @@ class AzureBlobStorageTarget(PromptTarget):
                 raise
 
     @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         """
         (Async) Sends prompt to target, which creates a file and uploads it as a blob
         to the provided storage container.
@@ -140,7 +151,9 @@ class AzureBlobStorageTarget(PromptTarget):
         data = str.encode(request.converted_value)
         blob_url = self._container_url + "/" + file_name
 
-        await self._upload_blob_async(file_name=file_name, data=data, content_type=self._blob_content_type)
+        await self._upload_blob_async(
+            file_name=file_name, data=data, content_type=self._blob_content_type
+        )
 
         response = construct_response_from_request(
             request=request, response_text_pieces=[blob_url], response_type="url"
@@ -152,11 +165,16 @@ class AzureBlobStorageTarget(PromptTarget):
         if len(prompt_request.request_pieces) != 1:
             raise ValueError("This target only supports a single prompt request piece.")
 
-        if prompt_request.request_pieces[0].converted_value_data_type not in ["text", "url"]:
+        if prompt_request.request_pieces[0].converted_value_data_type not in [
+            "text",
+            "url",
+        ]:
             raise ValueError("This target only supports text and url prompt input.")
 
         request = prompt_request.request_pieces[0]
-        messages = self._memory.get_chat_messages_with_conversation_id(conversation_id=request.conversation_id)
+        messages = self._memory.get_chat_messages_with_conversation_id(
+            conversation_id=request.conversation_id
+        )
 
         if len(messages) > 0:
             raise ValueError("This target only supports a single turn conversation.")

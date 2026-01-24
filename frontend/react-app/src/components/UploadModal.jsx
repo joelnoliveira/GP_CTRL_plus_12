@@ -42,7 +42,7 @@ const UploadModal = ({
 
       console.log(formData);
 
-      const res = await fetch('http://10.17.0.162:8000/files/upload', {
+      const res = await fetch('http://localhost:8000/files/upload', {
         method: 'POST',
         body: formData,
       });

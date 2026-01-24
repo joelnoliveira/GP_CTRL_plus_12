@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 class PyritException(Exception, ABC):
-
     def __init__(self, status_code=500, *, message: str = "An error occurred"):
         self.status_code = status_code
         self.message = message
@@ -56,7 +55,9 @@ class BadRequestException(PyritException):
 class RateLimitException(PyritException):
     """Exception class for authentication errors."""
 
-    def __init__(self, status_code: int = 429, *, message: str = "Rate Limit Exception"):
+    def __init__(
+        self, status_code: int = 429, *, message: str = "Rate Limit Exception"
+    ):
         super().__init__(status_code, message=message)
 
 
@@ -99,8 +100,11 @@ def pyrit_target_retry(func: Callable) -> Callable:
 
     return retry(
         reraise=True,
-        retry=retry_if_exception_type(RateLimitError) | retry_if_exception_type(EmptyResponseException),
-        wait=wait_random_exponential(min=RETRY_WAIT_MIN_SECONDS, max=RETRY_WAIT_MAX_SECONDS),
+        retry=retry_if_exception_type(RateLimitError)
+        | retry_if_exception_type(EmptyResponseException),
+        wait=wait_random_exponential(
+            min=RETRY_WAIT_MIN_SECONDS, max=RETRY_WAIT_MAX_SECONDS
+        ),
         after=log_exception,
         stop=stop_after_attempt(RETRY_MAX_NUM_ATTEMPTS),
     )(func)
@@ -113,11 +117,12 @@ def pyrit_json_retry(func: Callable) -> Callable:
     """
     global RETRY_MAX_NUM_ATTEMPTS, RETRY_WAIT_MIN_SECONDS, RETRY_WAIT_MAX_SECONDS
 
-
     return retry(
         reraise=True,
         retry=retry_if_exception_type(InvalidJsonException),
-        wait=wait_random_exponential(min=RETRY_WAIT_MIN_SECONDS, max=RETRY_WAIT_MAX_SECONDS),
+        wait=wait_random_exponential(
+            min=RETRY_WAIT_MIN_SECONDS, max=RETRY_WAIT_MAX_SECONDS
+        ),
         after=log_exception,
         stop=stop_after_attempt(RETRY_MAX_NUM_ATTEMPTS),
     )(func)
@@ -152,17 +157,20 @@ def handle_bad_request_exception(
     request: PromptRequestPiece,
     is_content_filter=False,
 ) -> PromptRequestResponse:
-
     if (
         "content_filter" in response_text
-        or "Invalid prompt: your prompt was flagged as potentially violating our usage policy." in response_text
+        or "Invalid prompt: your prompt was flagged as potentially violating our usage policy."
+        in response_text
         or is_content_filter
     ):
         # Handle bad request error when content filter system detects harmful content
         bad_request_exception = BadRequestException(400, message=response_text)
         resp_text = bad_request_exception.process_exception()
         response_entry = construct_response_from_request(
-            request=request, response_text_pieces=[resp_text], response_type="error", error="blocked"
+            request=request,
+            response_text_pieces=[resp_text],
+            response_type="error",
+            error="blocked",
         )
     else:
         raise

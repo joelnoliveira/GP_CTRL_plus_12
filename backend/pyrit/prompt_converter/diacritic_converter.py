@@ -65,7 +65,9 @@ class DiacriticConverter(PromptConverter):
         }
 
         if self._accent not in diacritics:
-            raise ValueError(f"Accent '{self._accent}' not recognized. Choose from {list(diacritics.keys())}.")
+            raise ValueError(
+                f"Accent '{self._accent}' not recognized. Choose from {list(diacritics.keys())}."
+            )
 
         return diacritics[self._accent]
 
@@ -83,10 +85,15 @@ class DiacriticConverter(PromptConverter):
 
         # Apply accent to each target character in the string
         return "".join(
-            unicodedata.normalize("NFC", char + accent_mark) if char in self._target_chars else char for char in text
+            unicodedata.normalize("NFC", char + accent_mark)
+            if char in self._target_chars
+            else char
+            for char in text
         )
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converts the given prompt by applying diacritics to target characters.
 

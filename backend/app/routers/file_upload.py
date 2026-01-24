@@ -105,7 +105,7 @@ def _format_validation_errors(errors: list) -> str:
 def _format_json_decode_error(e: json.JSONDecodeError) -> str:
     return (
         f"JSON inválido na linha {e.lineno}, coluna {e.colno}: {e.msg}. "
-        "Verifique vírgulas, aspas e chaves." 
+        "Verifique vírgulas, aspas e chaves."
     )
 
 
@@ -122,10 +122,14 @@ def _format_yaml_error(e: yaml.YAMLError) -> str:
 def validate_malicious_goals_format(data: list) -> tuple[bool, str, int]:
     """Valida se os dados estão no formato scenarios."""
     if not isinstance(data, list):
-        return False, "Formato inválido: esperado um array JSON. Exemplo: [{""Id"": 1, ""Prompt"": ""...""}]", 0
+        return (
+            False,
+            "Formato inválido: esperado um array JSON. Exemplo: [{Id: 1, Prompt: ...}]",
+            0,
+        )
 
     if len(data) == 0:
-        return False, "O array não pode estar vazio. Exemplo: [{""Id"": 1, ""Prompt"": ""...""}]", 0
+        return False, "O array não pode estar vazio. Exemplo: [{Id: 1, Prompt: ...}]", 0
 
     try:
         for i, item in enumerate(data):
@@ -133,7 +137,11 @@ def validate_malicious_goals_format(data: list) -> tuple[bool, str, int]:
         return True, "Formato válido", len(data)
     except ValidationError as e:
         details = _format_validation_errors(e.errors())
-        return False, f"Erro no item {i}: {details}. Campos obrigatórios: Id (int), Prompt (string).", 0
+        return (
+            False,
+            f"Erro no item {i}: {details}. Campos obrigatórios: Id (int), Prompt (string).",
+            0,
+        )
     except Exception as e:
         return False, f"Erro de validação: {str(e)}", 0
 
@@ -141,7 +149,11 @@ def validate_malicious_goals_format(data: list) -> tuple[bool, str, int]:
 def validate_template_dataset_format(data: dict) -> tuple[bool, str, int]:
     """Valida se os dados estão no formato template_datasets (YAML)."""
     if not isinstance(data, dict):
-        return False, "Formato inválido: esperado um objeto YAML com a chave 'prompts'.", 0
+        return (
+            False,
+            "Formato inválido: esperado um objeto YAML com a chave 'prompts'.",
+            0,
+        )
 
     if "prompts" not in data:
         return False, "Falta a chave obrigatória 'prompts'.", 0
@@ -168,14 +180,22 @@ def validate_template_dataset_format(data: dict) -> tuple[bool, str, int]:
 def validate_role_play_format(data: dict) -> tuple[bool, str, int]:
     """Valida se os dados estão no formato role_play_options (YAML)."""
     if not isinstance(data, dict):
-        return False, "Formato inválido: esperado um objeto YAML com dataset_name e prompts.", 0
+        return (
+            False,
+            "Formato inválido: esperado um objeto YAML com dataset_name e prompts.",
+            0,
+        )
 
     try:
         role_play = RolePlayFile(**data)
         return True, "Formato válido", len(role_play.prompts)
     except ValidationError as e:
         details = _format_validation_errors(e.errors())
-        return False, f"Erro no ficheiro: {details}. Campos obrigatórios: dataset_name e prompts[].", 0
+        return (
+            False,
+            f"Erro no ficheiro: {details}. Campos obrigatórios: dataset_name e prompts[].",
+            0,
+        )
     except Exception as e:
         return False, f"Erro de validação: {str(e)}", 0
 
@@ -186,7 +206,12 @@ def detect_and_validate_json_format(data) -> tuple[bool, str, str, int]:
     Retorna: (sucesso, mensagem, formato_detectado, contagem_items)
     """
     if not isinstance(data, list) or len(data) == 0:
-        return False, "JSON inválido: esperado um array não vazio com objetos {Id, Prompt}.", "", 0
+        return (
+            False,
+            "JSON inválido: esperado um array não vazio com objetos {Id, Prompt}.",
+            "",
+            0,
+        )
 
     # Tenta detectar pelo primeiro item
     first_item = data[0]
@@ -210,7 +235,12 @@ def detect_and_validate_yaml_format(data) -> tuple[bool, str, str, int]:
     Retorna: (sucesso, mensagem, formato_detectado, contagem_items)
     """
     if not isinstance(data, dict):
-        return False, "YAML inválido: esperado um objeto com 'prompts' ou 'dataset_name'.", "", 0
+        return (
+            False,
+            "YAML inválido: esperado um objeto com 'prompts' ou 'dataset_name'.",
+            "",
+            0,
+        )
 
     if "dataset_name" in data:
         is_valid, msg, count = validate_role_play_format(data)
@@ -220,7 +250,12 @@ def detect_and_validate_yaml_format(data) -> tuple[bool, str, str, int]:
         is_valid, msg, count = validate_template_dataset_format(data)
         return is_valid, msg, FileFormat.TEMPLATE_DATASETS.value, count
 
-    return False, "Formato YAML não reconhecido. Esperado: template_datasets (prompts) ou role_play_options (dataset_name).", "", 0
+    return (
+        False,
+        "Formato YAML não reconhecido. Esperado: template_datasets (prompts) ou role_play_options (dataset_name).",
+        "",
+        0,
+    )
 
 
 def _get_target_dir(format_type: str) -> str:
@@ -265,7 +300,10 @@ async def upload_file_with_format(
             detail=f"O formato '{format_type.value}' requer um ficheiro .json",
         )
 
-    if format_type in [FileFormat.TEMPLATE_DATASETS, FileFormat.ROLE_PLAY_OPTIONS] and not is_yaml:
+    if (
+        format_type in [FileFormat.TEMPLATE_DATASETS, FileFormat.ROLE_PLAY_OPTIONS]
+        and not is_yaml
+    ):
         raise HTTPException(
             status_code=400,
             detail=f"O formato '{format_type.value}' requer um ficheiro .yaml ou .yml",
@@ -318,15 +356,21 @@ async def upload_file_with_format(
         # Atualizar Base de Dados - guardar no destino correto
         try:
             # Garantir que as tabelas estão refletidas
-            if not hasattr(Base.classes, 'template_datasets') or not hasattr(Base.classes, 'scenarios') or not hasattr(Base.classes, 'role_play_options'):
+            if (
+                not hasattr(Base.classes, "template_datasets")
+                or not hasattr(Base.classes, "scenarios")
+                or not hasattr(Base.classes, "role_play_options")
+            ):
                 from ..models import reflect_tables
+
                 reflect_tables()
 
             if format_type == FileFormat.SCENARIOS:
                 Scenarios = Base.classes.scenarios
                 new_dataset = Scenarios(
                     name=base_name,
-                    description=description_value or f"Scenario uploaded: {file.filename}",
+                    description=description_value
+                    or f"Scenario uploaded: {file.filename}",
                     storage_path=storage_path,
                     is_builtin=False,
                     created_at=datetime.now(),
@@ -335,7 +379,8 @@ async def upload_file_with_format(
                 TemplateDatasets = Base.classes.template_datasets
                 new_dataset = TemplateDatasets(
                     name=base_name,
-                    description=description_value or f"Template dataset uploaded: {file.filename}",
+                    description=description_value
+                    or f"Template dataset uploaded: {file.filename}",
                     storage_path=storage_path,
                     is_builtin=False,
                     created_at=datetime.now(),
@@ -344,7 +389,8 @@ async def upload_file_with_format(
                 RolePlayOptions = Base.classes.role_play_options
                 new_dataset = RolePlayOptions(
                     name=base_name,
-                    description=description_value or f"Role play option uploaded: {file.filename}",
+                    description=description_value
+                    or f"Role play option uploaded: {file.filename}",
                     storage_path=storage_path,
                     is_builtin=False,
                     created_at=datetime.now(),
@@ -420,25 +466,53 @@ async def delete_uploaded_file(filename: str, db: Session = Depends(get_db)):
     try:
         # Remover da base de dados primeiro
         try:
-            if not hasattr(Base.classes, 'template_datasets') or not hasattr(Base.classes, 'scenarios') or not hasattr(Base.classes, 'role_play_options'):
+            if (
+                not hasattr(Base.classes, "template_datasets")
+                or not hasattr(Base.classes, "scenarios")
+                or not hasattr(Base.classes, "role_play_options")
+            ):
                 from ..models import reflect_tables
+
                 reflect_tables()
-            
+
             TemplateDatasets = Base.classes.template_datasets
             Scenarios = Base.classes.scenarios
             RolePlayOptions = Base.classes.role_play_options
 
-            record = db.query(TemplateDatasets).filter(TemplateDatasets.storage_path == _get_storage_path(FileFormat.TEMPLATE_DATASETS.value, filename)).first()
+            record = (
+                db.query(TemplateDatasets)
+                .filter(
+                    TemplateDatasets.storage_path
+                    == _get_storage_path(FileFormat.TEMPLATE_DATASETS.value, filename)
+                )
+                .first()
+            )
             if record:
                 db.delete(record)
                 db.commit()
             else:
-                record = db.query(Scenarios).filter(Scenarios.storage_path == _get_storage_path(FileFormat.SCENARIOS.value, filename)).first()
+                record = (
+                    db.query(Scenarios)
+                    .filter(
+                        Scenarios.storage_path
+                        == _get_storage_path(FileFormat.SCENARIOS.value, filename)
+                    )
+                    .first()
+                )
                 if record:
                     db.delete(record)
                     db.commit()
                 else:
-                    record = db.query(RolePlayOptions).filter(RolePlayOptions.storage_path == _get_storage_path(FileFormat.ROLE_PLAY_OPTIONS.value, filename)).first()
+                    record = (
+                        db.query(RolePlayOptions)
+                        .filter(
+                            RolePlayOptions.storage_path
+                            == _get_storage_path(
+                                FileFormat.ROLE_PLAY_OPTIONS.value, filename
+                            )
+                        )
+                        .first()
+                    )
                     if record:
                         db.delete(record)
                         db.commit()
@@ -446,10 +520,13 @@ async def delete_uploaded_file(filename: str, db: Session = Depends(get_db)):
             db.rollback()
             # Log do erro mas continua a apagar o ficheiro
             print(f"Aviso: Erro ao remover da BD: {db_error}")
-        
+
         # Remover o ficheiro físico
         os.remove(file_path)
-        return {"success": True, "message": f"Ficheiro '{filename}' removido com sucesso"}
+        return {
+            "success": True,
+            "message": f"Ficheiro '{filename}' removido com sucesso",
+        }
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Erro ao remover ficheiro: {str(e)}"

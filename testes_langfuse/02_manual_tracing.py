@@ -2,6 +2,7 @@
 Test 2: Manual Tracing
 Create traces manually with custom spans and metadata
 """
+
 import os
 from dotenv import load_dotenv
 from langfuse import Langfuse
@@ -15,7 +16,7 @@ langfuse = Langfuse()
 
 client = OpenAI(
     base_url=os.getenv("OLLAMA_BASE_URL"),
-    api_key='ollama',
+    api_key="ollama",
 )
 
 print("🔧 Testing manual tracing...")
@@ -31,7 +32,7 @@ retrieval_span = langfuse.start_span(
     trace_context=trace_context,
     name="document-retrieval",
     input={"query": "autoencoder"},
-    metadata={"num_docs": 3}
+    metadata={"num_docs": 3},
 )
 retrieval_span.update(output={"docs": ["doc1", "doc2", "doc3"]})
 retrieval_span.end()
@@ -39,8 +40,7 @@ retrieval_span.end()
 # Step 2: LLM generation
 prompt = "What is an autoencoder?"
 response = client.chat.completions.create(
-    model=OLLAMA_MODEL,
-    messages=[{"role": "user", "content": prompt}]
+    model=OLLAMA_MODEL, messages=[{"role": "user", "content": prompt}]
 )
 
 generation = langfuse.start_observation(
@@ -54,8 +54,8 @@ generation.update(
     output=response.choices[0].message.content,
     usage={
         "input": response.usage.prompt_tokens,
-        "output": response.usage.completion_tokens
-    }
+        "output": response.usage.completion_tokens,
+    },
 )
 generation.end()
 

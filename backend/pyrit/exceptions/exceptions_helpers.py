@@ -35,7 +35,9 @@ def remove_start_md_json(response_msg: str) -> str:
         str: The response message without the start marker (if one was present).
     """
 
-    start_pattern = re.compile(r"^(```json\n|`json\n|```\n|`\n|```json|`json|```|`|json|json\n)")
+    start_pattern = re.compile(
+        r"^(```json\n|`json\n|```\n|`\n|```json|`json|```|`|json|json\n)"
+    )
     match = start_pattern.match(response_msg)
     if match:
         response_msg = response_msg[match.end() :]
@@ -106,7 +108,8 @@ def remove_markdown_json(response_msg: str) -> str:
             return response_msg
         except json.JSONDecodeError:
             return "Invalid JSON response: {}".format(response_msg)
-        
+
+
 def extract_json_from_response(response_msg: str) -> str:
     """
     Checks if the response message contains JSON and extracts it.

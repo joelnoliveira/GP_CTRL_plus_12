@@ -53,7 +53,9 @@ class FlipAttackOrchestrator(PromptSendingOrchestrator):
         )
 
         # This is sent to the target
-        system_prompt_path = pathlib.Path(DATASETS_PATH) / "orchestrators" / "flip_attack.yaml"
+        system_prompt_path = (
+            pathlib.Path(DATASETS_PATH) / "orchestrators" / "flip_attack.yaml"
+        )
         self.system_prompt = SeedPrompt.from_yaml_file(system_prompt_path).value
 
         system_prompt = PromptRequestResponse(
@@ -95,5 +97,8 @@ class FlipAttackOrchestrator(PromptSendingOrchestrator):
             prompt_list[i] = "TASK is '⟪" + prompt_list[i].replace("'", "") + "⟫'"
 
         return await super().send_prompts_async(
-            prompt_list=prompt_list, prompt_type="text", memory_labels=memory_labels, metadata=metadata
+            prompt_list=prompt_list,
+            prompt_type="text",
+            memory_labels=memory_labels,
+            metadata=metadata,
         )

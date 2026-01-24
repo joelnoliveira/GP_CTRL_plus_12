@@ -23,7 +23,6 @@ RealTimeVoice = Literal["alloy", "echo", "shimmer"]
 
 
 class RealtimeTarget(OpenAITarget):
-
     def __init__(
         self,
         api_version: str = "2024-10-01-preview",
@@ -47,8 +46,12 @@ class RealtimeTarget(OpenAITarget):
             **kwargs: Additional keyword arguments to be passed.
         """
 
-        if (kwargs.get("use_aad_auth") is not None) and (kwargs.get("use_aad_auth") is True):
-            raise NotImplementedError("AAD authentication not implemented for Realtime yet.")
+        if (kwargs.get("use_aad_auth") is not None) and (
+            kwargs.get("use_aad_auth") is True
+        ):
+            raise NotImplementedError(
+                "AAD authentication not implemented for Realtime yet."
+            )
 
         super().__init__(api_version=api_version, *args, **kwargs)
 
@@ -58,7 +61,9 @@ class RealtimeTarget(OpenAITarget):
 
     def _set_azure_openai_env_configuration_vars(self):
         self.deployment_environment_variable = "AZURE_OPENAI_REALTIME_DEPLOYMENT"
-        self.endpoint_uri_environment_variable = "AZURE_OPENAI_REALTIME_API_WEBSOCKET_URL"
+        self.endpoint_uri_environment_variable = (
+            "AZURE_OPENAI_REALTIME_API_WEBSOCKET_URL"
+        )
         self.api_key_environment_variable = "AZURE_OPENAI_REALTIME_API_KEY"
 
     async def connect(self):
@@ -124,12 +129,15 @@ class RealtimeTarget(OpenAITarget):
         config_variables = self._set_system_prompt_and_config_vars()
 
         await self.send_event(
-            event={"type": "session.update", "session": config_variables}, conversation_id=conversation_id
+            event={"type": "session.update", "session": config_variables},
+            conversation_id=conversation_id,
         )
         logger.info("Session set up")
 
     @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         # Sends a prompt to the target and returns the response.
 
         convo_id = prompt_request.request_pieces[0].conversation_id
@@ -168,10 +176,14 @@ class RealtimeTarget(OpenAITarget):
         ).request_pieces[0]
 
         audio_response_piece = construct_response_from_request(
-            request=request, response_text_pieces=[output_audio_path], response_type="audio_path"
+            request=request,
+            response_text_pieces=[output_audio_path],
+            response_type="audio_path",
         ).request_pieces[0]
 
-        response_entry = PromptRequestResponse(request_pieces=[text_response_piece, audio_response_piece])
+        response_entry = PromptRequestResponse(
+            request_pieces=[text_response_piece, audio_response_piece]
+        )
         return response_entry
 
     async def save_audio(
@@ -191,7 +203,9 @@ class RealtimeTarget(OpenAITarget):
             sample_width (int): Sample width in bytes. Defaults to 2 for the PCM16 format
             sample_rate (int): Sample rate in Hz. Defaults to 16000 Hz for the PCM16 format
         """
-        data = data_serializer_factory(category="prompt-memory-entries", data_type="audio_path")
+        data = data_serializer_factory(
+            category="prompt-memory-entries", data_type="audio_path"
+        )
         if not output_filename:
             filename = await data.get_data_filename()
             output_filename = str(filename)
@@ -212,7 +226,9 @@ class RealtimeTarget(OpenAITarget):
         for conversation_id, websocket in self._existing_conversation.items():
             if websocket:
                 await websocket.close()
-                logger.info(f"Disconnected from {self._endpoint} with conversation ID: {conversation_id}")
+                logger.info(
+                    f"Disconnected from {self._endpoint} with conversation ID: {conversation_id}"
+                )
         self._existing_conversation = {}
 
     async def cleanup_conversation(self, conversation_id: str):
@@ -222,14 +238,18 @@ class RealtimeTarget(OpenAITarget):
         websocket = self._existing_conversation.get(conversation_id)
         if websocket:
             await websocket.close()
-            logger.info(f"Disconnected from {self._endpoint} with conversation ID: {conversation_id}")
+            logger.info(
+                f"Disconnected from {self._endpoint} with conversation ID: {conversation_id}"
+            )
             del self._existing_conversation[conversation_id]
 
     async def send_response_create(self, conversation_id: str):
         """
         Sends response.create message to the WebSocket server.
         """
-        await self.send_event(event={"type": "response.create"}, conversation_id=conversation_id)
+        await self.send_event(
+            event={"type": "response.create"}, conversation_id=conversation_id
+        )
 
     async def receive_events(self, conversation_id: str) -> list:
         """
@@ -252,7 +272,9 @@ class RealtimeTarget(OpenAITarget):
                 if msg_response_type:
                     if msg_response_type == "response.done":
                         logger.debug(f"event is: {json.dumps(event, indent=2)}")
-                        audio_transcript = event["response"]["output"][0]["content"][0]["transcript"]
+                        audio_transcript = event["response"]["output"][0]["content"][0][
+                            "transcript"
+                        ]
                         conversation_messages.append(audio_transcript)
                         break
                     elif msg_response_type == "error":
@@ -285,12 +307,18 @@ class RealtimeTarget(OpenAITarget):
         await self.send_response_create(conversation_id=conversation_id)
 
         # Listen for responses
-        receive_tasks = asyncio.create_task(self.receive_events(conversation_id=conversation_id))
+        receive_tasks = asyncio.create_task(
+            self.receive_events(conversation_id=conversation_id)
+        )
 
         logger.info(f"Sending text message: {text}")
         event = {
             "type": "conversation.item.create",
-            "item": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": text}]},
+            "item": {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": text}],
+            },
         }
         await self.send_event(event=event, conversation_id=conversation_id)
 
@@ -307,7 +335,6 @@ class RealtimeTarget(OpenAITarget):
             filename (str): The path to the audio file.
         """
         with wave.open(filename, "rb") as wav_file:
-
             # Read WAV parameters
             num_channels = wav_file.getnchannels()
             sample_width = wav_file.getsampwidth()  # Should be 2 bytes for PCM16
@@ -316,7 +343,9 @@ class RealtimeTarget(OpenAITarget):
 
             audio_content = wav_file.readframes(num_frames)
 
-        receive_tasks = asyncio.create_task(self.receive_events(conversation_id=conversation_id))
+        receive_tasks = asyncio.create_task(
+            self.receive_events(conversation_id=conversation_id)
+        )
 
         try:
             audio_base64 = base64.b64encode(audio_content).decode("utf-8")
@@ -332,10 +361,14 @@ class RealtimeTarget(OpenAITarget):
         event = {"type": "input_audio_buffer.commit"}
         await asyncio.sleep(0.1)
         await self.send_event(event, conversation_id=conversation_id)
-        await self.send_response_create(conversation_id=conversation_id)  # Sends response.create message
+        await self.send_response_create(
+            conversation_id=conversation_id
+        )  # Sends response.create message
 
         responses = await receive_tasks
-        output_audio_path = await self.save_audio(responses[0], num_channels, sample_width, frame_rate)
+        output_audio_path = await self.save_audio(
+            responses[0], num_channels, sample_width, frame_rate
+        )
         return output_audio_path, responses
 
     def _validate_request(self, *, prompt_request: PromptRequestResponse) -> None:
@@ -353,8 +386,13 @@ class RealtimeTarget(OpenAITarget):
         if len(prompt_request.request_pieces) != 1:
             raise ValueError("This target only supports one request piece.")
 
-        if prompt_request.request_pieces[0].converted_value_data_type not in ["text", "audio_path"]:
-            raise ValueError("This target only supports text and audio_path prompt input.")
+        if prompt_request.request_pieces[0].converted_value_data_type not in [
+            "text",
+            "audio_path",
+        ]:
+            raise ValueError(
+                "This target only supports text and audio_path prompt input."
+            )
 
     def is_json_response_supported(self) -> bool:
         """Indicates that this target supports JSON response format."""

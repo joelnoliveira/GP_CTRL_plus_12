@@ -23,7 +23,9 @@ class FloatScaleThresholdScorer(Scorer):
 
         self.scorer_type = "true_false"
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         """Scores the piece using the underlying float-scale scorer and thresholds the resulting score.
 
         Args:
@@ -50,10 +52,14 @@ class FloatScaleThresholdScorer(Scorer):
             score.score_type = self.scorer_type
             score.id = uuid.uuid4()
             score.scorer_class_identifier = self.get_identifier()
-            score.scorer_class_identifier["sub_identifier"] = self._scorer.get_identifier()
+            score.scorer_class_identifier["sub_identifier"] = (
+                self._scorer.get_identifier()
+            )
         self._memory.add_scores_to_memory(scores=scores)
         return scores
 
-    def validate(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> None:
+    def validate(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> None:
         """Validates the request response for scoring."""
         self._scorer.validate(request_response, task=task)

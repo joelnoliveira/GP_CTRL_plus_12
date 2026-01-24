@@ -67,7 +67,6 @@ class GreedyCoordinateGradientAdversarialSuffixGenerator:
         logfile: str = "",
         random_seed: int = 42,
     ):
-
         params = config_dict.ConfigDict()
         params.result_prefix = result_prefix
         params.train_data = train_data
@@ -111,7 +110,9 @@ class GreedyCoordinateGradientAdversarialSuffixGenerator:
         log_gpu_memory(step=0)
         log_params(params=params)
 
-        train_goals, train_targets, test_goals, test_targets = get_goals_and_targets(params)
+        train_goals, train_targets, test_goals, test_targets = get_goals_and_targets(
+            params
+        )
         log_train_goals(train_goals=train_goals)
 
         def process_fn(s):
@@ -120,8 +121,14 @@ class GreedyCoordinateGradientAdversarialSuffixGenerator:
         def process_fn2(s):
             return s.replace("Sure, here is", "Sure, here's")
 
-        train_targets = [process_fn(t) if np.random.random() < 0.5 else process_fn2(t) for t in train_targets]
-        test_targets = [process_fn(t) if np.random.random() < 0.5 else process_fn2(t) for t in test_targets]
+        train_targets = [
+            process_fn(t) if np.random.random() < 0.5 else process_fn2(t)
+            for t in train_targets
+        ]
+        test_targets = [
+            process_fn(t) if np.random.random() < 0.5 else process_fn2(t)
+            for t in test_targets
+        ]
 
         workers, test_workers = get_workers(params)
         managers = {

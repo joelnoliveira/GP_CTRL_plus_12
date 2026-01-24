@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 
 class RTOSystemPromptPaths(enum.Enum):
     TEXT_GENERATION = Path(RED_TEAM_ORCHESTRATOR_PATH, "text_generation.yaml").resolve()
-    IMAGE_GENERATION = Path(RED_TEAM_ORCHESTRATOR_PATH, "image_generation.yaml").resolve()
+    IMAGE_GENERATION = Path(
+        RED_TEAM_ORCHESTRATOR_PATH, "image_generation.yaml"
+    ).resolve()
     NAIVE_CRESCENDO = Path(RED_TEAM_ORCHESTRATOR_PATH, "naive_crescendo.yaml").resolve()
     VIOLENT_DURIAN = Path(RED_TEAM_ORCHESTRATOR_PATH, "violent_durian.yaml").resolve()
     CRUCIBLE = Path(RED_TEAM_ORCHESTRATOR_PATH, "crucible.yaml").resolve()
@@ -66,7 +68,6 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
         use_score_as_feedback: bool = True,
         verbose: bool = False,
     ) -> None:
-
         if objective_scorer.scorer_type != "true_false":
             raise ValueError(
                 f"The scorer must be a true/false scorer. The scorer type is {objective_scorer.scorer_type}."
@@ -94,7 +95,10 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
 
         for score in self._last_prepended_assistant_message_scores:
             # Extract existing score of the same type
-            if score.scorer_class_identifier["__type__"] == self._objective_scorer.get_identifier()["__type__"]:
+            if (
+                score.scorer_class_identifier["__type__"]
+                == self._objective_scorer.get_identifier()["__type__"]
+            ):
                 objective_score = score
                 break
 
@@ -105,8 +109,13 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
         Handle the last message in the prepended conversation if it is from a user.
         """
         custom_prompt = ""
-        if self._last_prepended_user_message and not self._last_prepended_assistant_message_scores:
-            logger.info("Sending last user message from prepended conversation to the prompt target.")
+        if (
+            self._last_prepended_user_message
+            and not self._last_prepended_assistant_message_scores
+        ):
+            logger.info(
+                "Sending last user message from prepended conversation to the prompt target."
+            )
             custom_prompt = self._last_prepended_user_message
 
         return custom_prompt
@@ -143,11 +152,15 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
         objective_target_conversation_id = str(uuid4())
         adversarial_chat_conversation_id = str(uuid4())
 
-        updated_memory_labels = combine_dict(existing_dict=self._global_memory_labels, new_dict=memory_labels)
+        updated_memory_labels = combine_dict(
+            existing_dict=self._global_memory_labels, new_dict=memory_labels
+        )
 
         # Prepare the conversation by adding any provided messages to memory.
         # If there is no prepended conversation, the turn count is 1.
-        turn = self._prepare_conversation(new_conversation_id=objective_target_conversation_id)
+        turn = self._prepare_conversation(
+            new_conversation_id=objective_target_conversation_id
+        )
 
         achieved_objective = False
 
@@ -234,7 +247,9 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
         """
         if not custom_prompt:
             # The prompt for the red teaming LLM needs to include the latest message from the prompt target.
-            logger.info("Generating a prompt for the prompt target using the red teaming LLM.")
+            logger.info(
+                "Generating a prompt for the prompt target using the red teaming LLM."
+            )
             prompt = await self._get_prompt_from_adversarial_chat(
                 objective=objective,
                 objective_target_conversation_id=objective_target_conversation_id,
@@ -245,7 +260,9 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
         else:
             prompt = custom_prompt
 
-        converter_configurations = PromptConverterConfiguration(converters=self._prompt_converters)
+        converter_configurations = PromptConverterConfiguration(
+            converters=self._prompt_converters
+        )
 
         seed_prompt_group = SeedPromptGroup(
             prompts=[SeedPrompt(value=prompt, data_type="text")],
@@ -264,7 +281,9 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
 
         return response_piece
 
-    async def _check_conversation_complete_async(self, objective_target_conversation_id: str) -> Union[Score, None]:
+    async def _check_conversation_complete_async(
+        self, objective_target_conversation_id: str
+    ) -> Union[Score, None]:
         """
         Returns the scoring result of the conversation.
         This function uses the scorer to classify the last response.
@@ -272,7 +291,9 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
         Args:
             prompt_target_conversation_id (str): the conversation ID for the prompt target.
         """
-        prompt_request_responses = self._memory.get_conversation(conversation_id=objective_target_conversation_id)
+        prompt_request_responses = self._memory.get_conversation(
+            conversation_id=objective_target_conversation_id
+        )
         if not prompt_request_responses:
             # If there are no messages, then the conversation is not complete.
             return None
@@ -282,11 +303,15 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
             return None
 
         score = (
-            await self._objective_scorer.score_async(request_response=prompt_request_responses[-1].request_pieces[0])
+            await self._objective_scorer.score_async(
+                request_response=prompt_request_responses[-1].request_pieces[0]
+            )
         )[0]
 
         if score.score_type != "true_false":
-            raise ValueError(f"The scorer must return a true_false score. The score type is {score.score_type}.")
+            raise ValueError(
+                f"The scorer must return a true_false score. The score type is {score.score_type}."
+            )
         return score
 
     def _handle_text_response(self, last_response_from_attack_target, feedback) -> str:
@@ -300,7 +325,8 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
             return prompt_text
         elif last_response_from_attack_target.response_error == "blocked":
             return (
-                "Request to target failed: blocked. " "Please rewrite your prompt to avoid getting blocked next time."
+                "Request to target failed: blocked. "
+                "Please rewrite your prompt to avoid getting blocked next time."
             )
         return f"Request to target failed: {last_response_from_attack_target.response_error}"
 
@@ -328,10 +354,15 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
                 "However, the use_score_as_feedback flag is set to False so it cannot be utilized."
             )
         if not feedback:
-            raise ValueError(f"{base_error_message}" "However, no scoring rationale was provided by the scorer.")
+            raise ValueError(
+                f"{base_error_message}"
+                "However, no scoring rationale was provided by the scorer."
+            )
         return feedback
 
-    def _get_prompt_for_adversarial_chat(self, *, objective_target_conversation_id: str, feedback: str | None) -> str:
+    def _get_prompt_for_adversarial_chat(
+        self, *, objective_target_conversation_id: str, feedback: str | None
+    ) -> str:
         """
         Generate prompt for the adversarial chat based off of the last response from the attack target.
 
@@ -354,11 +385,18 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
         if not last_response_from_objective_target:
             # If there is no response from the attack target (i.e., this is the first turn),
             # we use the initial red teaming prompt
-            logger.info(f"Using the specified initial adversarial prompt: {self._adversarial_chat_seed_prompt}")
+            logger.info(
+                f"Using the specified initial adversarial prompt: {self._adversarial_chat_seed_prompt}"
+            )
             return self._adversarial_chat_seed_prompt.value
 
-        if last_response_from_objective_target.converted_value_data_type in ["text", "error"]:
-            return self._handle_text_response(last_response_from_objective_target, feedback)
+        if last_response_from_objective_target.converted_value_data_type in [
+            "text",
+            "error",
+        ]:
+            return self._handle_text_response(
+                last_response_from_objective_target, feedback
+            )
 
         return self._handle_file_response(last_response_from_objective_target, feedback)
 
@@ -389,11 +427,23 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
                 prompts throughout the attack. These should already be combined with GLOBAL_MEMORY_LABELS.
         """
         prompt_text = self._get_prompt_for_adversarial_chat(
-            objective_target_conversation_id=objective_target_conversation_id, feedback=feedback
+            objective_target_conversation_id=objective_target_conversation_id,
+            feedback=feedback,
         )
 
-        if len(self._memory.get_conversation(conversation_id=adversarial_chat_conversation_id)) == 0:
-            system_prompt = self._adversarial_chat_system_seed_prompt.render_template_value(objective=objective)
+        if (
+            len(
+                self._memory.get_conversation(
+                    conversation_id=adversarial_chat_conversation_id
+                )
+            )
+            == 0
+        ):
+            system_prompt = (
+                self._adversarial_chat_system_seed_prompt.render_template_value(
+                    objective=objective
+                )
+            )
 
             self._adversarial_chat.set_system_prompt(
                 system_prompt=str(system_prompt),
@@ -422,7 +472,15 @@ class RedTeamingOrchestrator(MultiTurnOrchestrator):
 
         return response_text
 
-    def _get_last_objective_target_response(self, objective_target_conversation_id: str) -> PromptRequestPiece | None:
-        target_messages = self._memory.get_conversation(conversation_id=objective_target_conversation_id)
-        assistant_responses = [m.request_pieces[0] for m in target_messages if m.request_pieces[0].role == "assistant"]
+    def _get_last_objective_target_response(
+        self, objective_target_conversation_id: str
+    ) -> PromptRequestPiece | None:
+        target_messages = self._memory.get_conversation(
+            conversation_id=objective_target_conversation_id
+        )
+        assistant_responses = [
+            m.request_pieces[0]
+            for m in target_messages
+            if m.request_pieces[0].role == "assistant"
+        ]
         return assistant_responses[-1] if len(assistant_responses) > 0 else None

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import WarningIcon from "../components/WarningIcon";
 import CautionIcon from "../components/CautionIcon";
 import CloseIcon from "../components/CloseIcon";
@@ -12,23 +12,24 @@ const Toast = (
         icon_size = "medium",
         message,
         duration = 10000,
+        onClose,
     }
 ) => {
 
-    const [visible, setVisible] = useState(true);
     const [closing, setClosing] = useState(false);
 
     // Handle auto-dismiss
-    useEffect(() => {
-        const timer = setTimeout(() => handleClose(), duration);
-        return () => clearTimeout(timer);
-    }, [duration]);
+    const handleClose = useCallback(() => {
+        setClosing(true);
+        setTimeout(() => {
+            if (onClose) onClose();
+        }, 300);
+    }, [onClose]); // Only changes if onClose changes
 
-    const handleClose = () => {
-        setClosing(true); // Start fade-out
-        // Remove from DOM after animation
-        setTimeout(() => setVisible(false), 300); // match CSS transition duration
-    };
+    useEffect(() => {
+        const timer = setTimeout(handleClose, duration);
+        return () => clearTimeout(timer);
+    }, [duration, handleClose]);
 
     const icon_size_type = 
         icon_size === "small"

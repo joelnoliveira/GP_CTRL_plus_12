@@ -109,6 +109,7 @@ export default function Login() {
 
 			const data = await response.json();
 			
+			// console.log("Login success:", data);
 			login(data.access_token); // Pass the token/user data to your auth context
 
 		} catch (err) {

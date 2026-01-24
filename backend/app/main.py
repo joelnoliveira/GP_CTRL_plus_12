@@ -830,12 +830,14 @@ async def delete_api_key_config(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao deletar config: {str(e)}")
 
-
-@app.get("/runs-metrics/{run_id}")
-async def get_runs_metrics(run_id: int, db: Session = Depends(get_db)):
+@app.get("/runs-metrics/me")
+async def get_my_runs_metrics(
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
+):
+    user_id = _get_current_user_id(db, current_user_email)
     RunsMetrics = Base.classes.runs_metrics
-
-    run_metrics = (
+    return (
         db.query(RunsMetrics)
         .options(
             joinedload(RunsMetrics.scenarios),
@@ -843,15 +845,15 @@ async def get_runs_metrics(run_id: int, db: Session = Depends(get_db)):
             joinedload(RunsMetrics.users),
             joinedload(RunsMetrics.role_play_options),
         )
-        .filter(RunsMetrics.id == run_id)
-        .one_or_none()
+        .filter(RunsMetrics.users_id == user_id)
+        .all()
     )
-
-    return run_metrics
 
 
 @app.get("/runs-metrics")
-async def get_all_runs_metrics(db: Session = Depends(get_db)):
+async def get_all_runs_metrics(
+    db: Session = Depends(get_db)
+):
     RunsMetrics = Base.classes.runs_metrics
     return (
         db.query(RunsMetrics)
@@ -863,6 +865,29 @@ async def get_all_runs_metrics(db: Session = Depends(get_db)):
         )
         .all()
     )
+
+
+@app.get("/runs-metrics/{run_id}")
+async def get_runs_metrics(
+    run_id: int,
+    db: Session = Depends(get_db),
+):
+    RunsMetrics = Base.classes.runs_metrics
+
+    run_metrics = (
+        db.query(RunsMetrics)
+        .options(
+            joinedload(RunsMetrics.scenarios),
+            joinedload(RunsMetrics.template_datasets),
+            joinedload(RunsMetrics.users),
+            joinedload(RunsMetrics.role_play_options),
+            joinedload(RunsMetrics.role_play_options),
+        )
+        .filter(RunsMetrics.id == run_id)
+        .one_or_none()
+    )
+
+    return run_metrics
 
 
 @app.get("/role-play-options")

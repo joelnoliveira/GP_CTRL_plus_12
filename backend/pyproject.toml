@@ -63,7 +63,9 @@ dependencies = [
     "passlib[bcrypt]==1.7.4",
     "PyYAML",
     "python-multipart",
-    "bcrypt==4.0.1"
+    "magika",
+    "bcrypt==4.0.1",
+    "slowapi==0.1.9"
 ]
 
 [project.optional-dependencies]

@@ -17,7 +17,7 @@ from urllib.parse import quote
 from .routers import auth, file_upload
 from orchestrator import launch_attack, launch_attack_template, launch_over_refusal_test
 from sqlalchemy.orm import joinedload
-from .security import get_current_user
+from .security import get_current_user, get_current_user_or_public
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -46,8 +46,7 @@ async def lifespan(app: FastAPI):
     reflect_tables()
     yield
 
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, dependencies=[Depends(get_current_user_or_public)])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -59,8 +58,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 def _get_current_user_id(db: Session, current_user_email: str) -> int:
     User = Base.classes.users
     user = db.query(User).filter(User.email == current_user_email).first()

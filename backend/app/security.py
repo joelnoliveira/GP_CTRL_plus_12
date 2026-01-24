@@ -4,7 +4,7 @@ from typing import Optional
 import jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 load_dotenv()
@@ -18,6 +18,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 48 * 60
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password, hashed_password):
@@ -43,6 +44,45 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
+    token = credentials.credentials
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except jwt.PyJWTError:
+        raise credentials_exception
+    return email
+
+
+PUBLIC_PATHS = {
+    "/",
+    "/status/alive",
+    "/openapi.json",
+    "/docs",
+    "/docs/oauth2-redirect",
+    "/redoc",
+}
+
+
+async def get_current_user_or_public(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(optional_security),
+):
+    if request.url.path in PUBLIC_PATHS or request.url.path.startswith("/auth"):
+        return None
+
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authenticated",
+        )
+
     token = credentials.credentials
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

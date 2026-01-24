@@ -1,0 +1,4 @@
+[Unit]
+Description=Target for nightly update services
+StopWhenUnneeded=yes
+Wants=update_images.service

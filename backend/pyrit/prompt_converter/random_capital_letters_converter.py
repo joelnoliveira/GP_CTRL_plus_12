@@ -40,7 +40,9 @@ class RandomCapitalLettersConverter(PromptConverter):
     def generate_random_positions(self, total_length, set_number):
         # Ensure the set number is not greater than the total length
         if set_number > total_length:
-            logger.error(f"Set number {set_number} cannot be greater than the total length which is {total_length}.")
+            logger.error(
+                f"Set number {set_number} cannot be greater than the total length which is {total_length}."
+            )
             raise ValueError(
                 f"Set number {set_number} cannot be greater than the total length which is {total_length}."
             )
@@ -52,8 +54,12 @@ class RandomCapitalLettersConverter(PromptConverter):
 
     def string_to_upper_case_by_percentage(self, percentage, prompt):
         if not self.is_percentage(percentage):
-            logger.error(f"Percentage number {percentage} cannot be higher than 100 and lower than 1.")
-            raise ValueError(f"Percentage number {percentage} cannot be higher than 100 and lower than 1.")
+            logger.error(
+                f"Percentage number {percentage} cannot be higher than 100 and lower than 1."
+            )
+            raise ValueError(
+                f"Percentage number {percentage} cannot be higher than 100 and lower than 1."
+            )
         target_count = int(len(prompt) * (percentage / 100))
         random_positions = self.generate_random_positions(len(prompt), target_count)
         output = list(prompt)
@@ -62,7 +68,9 @@ class RandomCapitalLettersConverter(PromptConverter):
                 output[pos] = prompt[pos].upper()
         return "".join(output)
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Simple converter that converts the prompt to capital letters via a percentage .
         """

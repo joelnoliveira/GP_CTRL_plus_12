@@ -18,7 +18,7 @@ O diagrama de contexto apresentado na Figura~\ref{fig:diagrama_contexto} descrev
   \label{fig:diagrama_contexto}
 \end{figure}
 
-O utilizador é representado como o ator humano responsável por configurar, executar e analisar ataques adversariais contra Modelos de Linguagem (LLMs). A sua interação com o sistema ocorre através de uma interface gráfica (frontend), onde pode definir parâmetros de ataque, iniciar execuções e consultar resultados.
+O utilizador é representado como o ator humano responsável por configurar, executar e analisar ataques adversariais contra LLMs. A sua interação com o sistema ocorre através de uma interface gráfica (frontend), onde pode definir parâmetros de ataque, iniciar execuções e consultar resultados.
 
 O \textbf{Sistema}, por sua vez, representa a solução central que permite orquestrar essas experiências adversariais. Ele recebe as configurações enviadas pelo utilizador, executa ataques sobre os modelos de linguagem alvo, recolhe as respostas e gera relatórios com as métricas e avaliações correspondentes.  
 O utilizador submete pedidos de execução e vê os resultados, outputs e relatórios de avaliação.
@@ -76,9 +76,17 @@ O \textit{File System} representa o sistema de ficheiros da máquina onde o sist
 \end{itemize}
 A comunicação é feita através do sistema de ficheiros local, permitindo ao \textit{Backend} aceder e gerir artefactos de forma eficiente e rastreável.
 
-\subsubsection{LangFuse \textit{(Container LangFuse)}}
+\subsubsection{LangFuse \textit{(Stack LangFuse)}}
 Plataforma de observabilidade e análise de \textit{tracing} que recolhe informações sobre cada execução.
 O \textit{Backend} envia eventos relativos a prompts, respostas e métricas, permitindo o versionamento de artefactos e o acompanhamento das execuções em tempo real.
+
+\textbf{Nota:} O LangFuse v3 é implementado como uma stack de múltiplos serviços de suporte, incluindo:
+\begin{itemize}
+\item \textbf{Redis}: Sistema de cache e fila de mensagens que acelera o processamento de eventos e garante comunicação assíncrona entre os componentes do LangFuse;
+\item \textbf{ClickHouse}: Base de dados analítica otimizada para consultas de alto desempenho sobre grandes volumes de dados de tracing, permitindo análises históricas e agregações em tempo real;
+\item \textbf{MinIO}: Serviço de armazenamento de objetos compatível com S3, utilizado para persistir artefactos, payloads de eventos e ficheiros de grande dimensão associados às execuções.
+\end{itemize}
+No diagrama de containers, estes serviços são representados de forma simplificada como uma única unidade ``LangFuse'', uma vez que funcionam de forma coesa e transparente para o restante sistema.
 
 \subsubsection{Raciocínio de Desenho}
 O sistema foi desenhado com base em princípios de separação de responsabilidades, auditabilidade e escalabilidade:

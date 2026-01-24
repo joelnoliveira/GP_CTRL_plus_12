@@ -9,12 +9,13 @@ from pyrit.score.scorer import Scorer
 
 
 class MarkdownInjectionScorer(Scorer):
-
     def __init__(self):
         self._category = "security"
         self.scorer_type = "true_false"
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         """
         Check for markdown injection in the text. It returns True if markdown injection is detected, else False.
 
@@ -57,6 +58,8 @@ class MarkdownInjectionScorer(Scorer):
         self._memory.add_scores_to_memory(scores=scores)
         return scores
 
-    def validate(self, request_response: PromptRequestPiece, *, task: Optional[str] = None):
+    def validate(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ):
         if request_response.converted_value_data_type != "text":
             raise ValueError("Expected text data type")

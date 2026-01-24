@@ -72,7 +72,9 @@ def run_trainer(*, model_name: str, setup: str = "single", **extra_config_parame
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Script to run the adversarial suffix trainer")
+    parser = argparse.ArgumentParser(
+        description="Script to run the adversarial suffix trainer"
+    )
     parser.add_argument("--model_name", type=str, help="The name of the model")
     parser.add_argument(
         "--setup",

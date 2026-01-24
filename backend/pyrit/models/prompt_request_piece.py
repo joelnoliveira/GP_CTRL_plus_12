@@ -73,7 +73,6 @@ class PromptRequestPiece(abc.ABC):
         timestamp: Optional[datetime] = None,
         scores: Optional[List[Score]] = None,
     ):
-
         self.id = id if id else uuid4()
 
         if role not in ChatMessageRole.__args__:  # type: ignore
@@ -92,7 +91,9 @@ class PromptRequestPiece(abc.ABC):
         self.labels = labels
         self.prompt_metadata = prompt_metadata
 
-        self.converter_identifiers = converter_identifiers if converter_identifiers else []
+        self.converter_identifiers = (
+            converter_identifiers if converter_identifiers else []
+        )
 
         self.prompt_target_identifier = prompt_target_identifier
         self.orchestrator_identifier = orchestrator_identifier
@@ -101,7 +102,9 @@ class PromptRequestPiece(abc.ABC):
         self.original_value = original_value
 
         if original_value_data_type not in get_args(PromptDataType):
-            raise ValueError(f"original_value_data_type {original_value_data_type} is not a valid data type.")
+            raise ValueError(
+                f"original_value_data_type {original_value_data_type} is not a valid data type."
+            )
 
         self.original_value_data_type = original_value_data_type
 
@@ -110,14 +113,18 @@ class PromptRequestPiece(abc.ABC):
         self.converted_value = converted_value
 
         if converted_value_data_type not in get_args(PromptDataType):
-            raise ValueError(f"converted_value_data_type {converted_value_data_type} is not a valid data type.")
+            raise ValueError(
+                f"converted_value_data_type {converted_value_data_type} is not a valid data type."
+            )
 
         self.converted_value_data_type = converted_value_data_type
 
         self.converted_value_sha256 = converted_value_sha256
 
         if response_error not in get_args(PromptResponseError):
-            raise ValueError(f"response_error {response_error} is not a valid response error.")
+            raise ValueError(
+                f"response_error {response_error} is not a valid response error."
+            )
 
         self.response_error = response_error
         self.originator = originator
@@ -138,12 +145,16 @@ class PromptRequestPiece(abc.ABC):
         from pyrit.models.data_type_serializer import data_serializer_factory
 
         original_serializer = data_serializer_factory(
-            category="prompt-memory-entries", data_type=self.original_value_data_type, value=self.original_value
+            category="prompt-memory-entries",
+            data_type=self.original_value_data_type,
+            value=self.original_value,
         )
         self.original_value_sha256 = await original_serializer.get_sha256()
 
         converted_serializer = data_serializer_factory(
-            category="prompt-memory-entries", data_type=self.converted_value_data_type, value=self.converted_value
+            category="prompt-memory-entries",
+            data_type=self.converted_value_data_type,
+            value=self.converted_value,
         )
         self.converted_value_sha256 = await converted_serializer.get_sha256()
 
@@ -200,16 +211,27 @@ class PromptRequestPiece(abc.ABC):
         )
 
 
-def sort_request_pieces(prompt_pieces: list[PromptRequestPiece]) -> list[PromptRequestPiece]:
+def sort_request_pieces(
+    prompt_pieces: list[PromptRequestPiece],
+) -> list[PromptRequestPiece]:
     """
     Group by conversation_id.
     Order conversations by the earliest timestamp within each conversation_id.
     Within each conversation, order messages by sequence.
     """
     earliest_timestamps = {
-        convo_id: min(x.timestamp for x in prompt_pieces if x.conversation_id == convo_id)
+        convo_id: min(
+            x.timestamp for x in prompt_pieces if x.conversation_id == convo_id
+        )
         for convo_id in {x.conversation_id for x in prompt_pieces}
     }
 
     # Sort using the precomputed timestamp values, then by sequence
-    return sorted(prompt_pieces, key=lambda x: (earliest_timestamps[x.conversation_id], x.conversation_id, x.sequence))
+    return sorted(
+        prompt_pieces,
+        key=lambda x: (
+            earliest_timestamps[x.conversation_id],
+            x.conversation_id,
+            x.sequence,
+        ),
+    )

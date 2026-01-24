@@ -46,18 +46,27 @@ class PersuasionConverter(PromptConverter):
         - misrepresentation: Presenting oneself or an issue in a way that's not genuine or true.
     """
 
-    def __init__(self, *, converter_target: PromptChatTarget, persuasion_technique: str):
+    def __init__(
+        self, *, converter_target: PromptChatTarget, persuasion_technique: str
+    ):
         self.converter_target = converter_target
 
         try:
             prompt_template = SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "persuasion" / f"{persuasion_technique}.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "persuasion"
+                / f"{persuasion_technique}.yaml"
             )
         except FileNotFoundError:
-            raise ValueError(f"Persuasion technique '{persuasion_technique}' does not exist or is not supported.")
+            raise ValueError(
+                f"Persuasion technique '{persuasion_technique}' does not exist or is not supported."
+            )
         self.system_prompt = str(prompt_template.value)
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converter to generate versions of prompt with new, prepended sentences.
         """
@@ -108,7 +117,9 @@ class PersuasionConverter(PromptConverter):
             return parsed_response["mutated_text"]
 
         except json.JSONDecodeError:
-            raise InvalidJsonException(message=f"Invalid JSON encountered: {response_msg}")
+            raise InvalidJsonException(
+                message=f"Invalid JSON encountered: {response_msg}"
+            )
 
     def input_supported(self, input_type: PromptDataType) -> bool:
         return input_type == "text"

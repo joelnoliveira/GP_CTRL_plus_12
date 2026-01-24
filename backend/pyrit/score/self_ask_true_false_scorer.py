@@ -13,14 +13,20 @@ from pyrit.models.score import Score, UnvalidatedScore
 from pyrit.prompt_target import PromptChatTarget
 from pyrit.score.scorer import Scorer
 
-TRUE_FALSE_QUESTIONS_PATH = Path(DATASETS_PATH, "score", "true_false_question").resolve()
+TRUE_FALSE_QUESTIONS_PATH = Path(
+    DATASETS_PATH, "score", "true_false_question"
+).resolve()
 
 
 class TrueFalseQuestionPaths(enum.Enum):
     CURRENT_EVENTS = Path(TRUE_FALSE_QUESTIONS_PATH, "current_events.yaml").resolve()
     GROUNDED = Path(TRUE_FALSE_QUESTIONS_PATH, "grounded.yaml").resolve()
-    PROMPT_INJECTION = Path(TRUE_FALSE_QUESTIONS_PATH, "prompt_injection.yaml").resolve()
-    QUESTION_ANSWERING = Path(TRUE_FALSE_QUESTIONS_PATH, "question_answering.yaml").resolve()
+    PROMPT_INJECTION = Path(
+        TRUE_FALSE_QUESTIONS_PATH, "prompt_injection.yaml"
+    ).resolve()
+    QUESTION_ANSWERING = Path(
+        TRUE_FALSE_QUESTIONS_PATH, "question_answering.yaml"
+    ).resolve()
     GANDALF = Path(TRUE_FALSE_QUESTIONS_PATH, "gandalf.yaml").resolve()
 
 
@@ -32,12 +38,18 @@ class TrueFalseQuestion:
     """
 
     def __init__(
-        self, *, true_description: str, false_description: str = "", category: str = "", metadata: Optional[str] = ""
+        self,
+        *,
+        true_description: str,
+        false_description: str = "",
+        category: str = "",
+        metadata: Optional[str] = "",
     ):
         self.true_description = true_description
 
         self.false_description = (
-            false_description or "Anything that does not fulfill or is not related to the true description."
+            false_description
+            or "Anything that does not fulfill or is not related to the true description."
         )
 
         self.category = category
@@ -71,11 +83,17 @@ class SelfAskTrueFalseScorer(Scorer):
         self.scorer_type = "true_false"
 
         if not true_false_question_path and not true_false_question:
-            raise ValueError("Either true_false_question_path or true_false_question must be provided.")
+            raise ValueError(
+                "Either true_false_question_path or true_false_question must be provided."
+            )
         if true_false_question_path and true_false_question:
-            raise ValueError("Only one of true_false_question_path or true_false_question should be provided.")
+            raise ValueError(
+                "Only one of true_false_question_path or true_false_question should be provided."
+            )
         if true_false_question_path:
-            true_false_question = yaml.safe_load(true_false_question_path.read_text(encoding="utf-8"))
+            true_false_question = yaml.safe_load(
+                true_false_question_path.read_text(encoding="utf-8")
+            )
 
         for key in ["category", "true_description", "false_description"]:
             if key not in true_false_question:
@@ -85,7 +103,9 @@ class SelfAskTrueFalseScorer(Scorer):
         true_category = true_false_question["true_description"]
         false_category = true_false_question["false_description"]
 
-        metadata = true_false_question["metadata"] if "metadata" in true_false_question else ""
+        metadata = (
+            true_false_question["metadata"] if "metadata" in true_false_question else ""
+        )
 
         true_false_system_prompt_path = (
             true_false_system_prompt_path
@@ -93,13 +113,19 @@ class SelfAskTrueFalseScorer(Scorer):
             else TRUE_FALSE_QUESTIONS_PATH / "true_false_system_prompt.yaml"
         )
 
-        scoring_instructions_template = SeedPrompt.from_yaml_file(true_false_system_prompt_path)
-
-        self._system_prompt = scoring_instructions_template.render_template_value(
-            true_description=true_category, false_description=false_category, metadata=metadata
+        scoring_instructions_template = SeedPrompt.from_yaml_file(
+            true_false_system_prompt_path
         )
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+        self._system_prompt = scoring_instructions_template.render_template_value(
+            true_description=true_category,
+            false_description=false_category,
+            metadata=metadata,
+        )
+
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         """
         Scores the given request_response using "self-ask" for the chat target and adds score to memory.
 
@@ -127,10 +153,14 @@ class SelfAskTrueFalseScorer(Scorer):
             task=task,
         )
 
-        score = unvalidated_score.to_score(score_value=unvalidated_score.raw_score_value)
+        score = unvalidated_score.to_score(
+            score_value=unvalidated_score.raw_score_value
+        )
 
         self._memory.add_scores_to_memory(scores=[score])
         return [score]
 
-    def validate(self, request_response: PromptRequestPiece, *, task: Optional[str] = None):
+    def validate(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ):
         pass

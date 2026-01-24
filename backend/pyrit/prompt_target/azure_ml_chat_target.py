@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 class AzureMLChatTarget(PromptChatTarget):
-
     endpoint_uri_environment_variable: str = "AZURE_ML_MANAGED_ENDPOINT"
     api_key_environment_variable: str = "AZURE_ML_KEY"
 
@@ -89,7 +88,9 @@ class AzureMLChatTarget(PromptChatTarget):
         self._extra_parameters = param_kwargs
 
     def _set_env_configuration_vars(
-        self, endpoint_uri_environment_variable: str = None, api_key_environment_variable: str = None
+        self,
+        endpoint_uri_environment_variable: str = None,
+        api_key_environment_variable: str = None,
     ) -> None:
         """
         Sets the environment configuration variable names from which to pull the endpoint uri and the api key
@@ -105,8 +106,12 @@ class AzureMLChatTarget(PromptChatTarget):
         Returns:
             None
         """
-        self.endpoint_uri_environment_variable = endpoint_uri_environment_variable or "AZURE_ML_MANAGED_ENDPOINT"
-        self.api_key_environment_variable = api_key_environment_variable or "AZURE_ML_KEY"
+        self.endpoint_uri_environment_variable = (
+            endpoint_uri_environment_variable or "AZURE_ML_MANAGED_ENDPOINT"
+        )
+        self.api_key_environment_variable = (
+            api_key_environment_variable or "AZURE_ML_KEY"
+        )
         self._initialize_vars()
 
     def _initialize_vars(self, endpoint: str = None, api_key: str = None) -> None:
@@ -152,12 +157,15 @@ class AzureMLChatTarget(PromptChatTarget):
         self._extra_parameters = param_kwargs
 
     @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
-
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         self._validate_request(prompt_request=prompt_request)
         request = prompt_request.request_pieces[0]
 
-        messages = self._memory.get_chat_messages_with_conversation_id(conversation_id=request.conversation_id)
+        messages = self._memory.get_chat_messages_with_conversation_id(
+            conversation_id=request.conversation_id
+        )
 
         messages.append(request.to_chat_message())
 
@@ -169,13 +177,19 @@ class AzureMLChatTarget(PromptChatTarget):
             )
 
             if not resp_text:
-                raise EmptyResponseException(message="The chat returned an empty response.")
+                raise EmptyResponseException(
+                    message="The chat returned an empty response."
+                )
 
-            response_entry = construct_response_from_request(request=request, response_text_pieces=[resp_text])
+            response_entry = construct_response_from_request(
+                request=request, response_text_pieces=[resp_text]
+            )
         except HTTPStatusError as hse:
             if hse.response.status_code == 400:
                 # Handle Bad Request
-                response_entry = handle_bad_request_exception(response_text=hse.response.text, request=request)
+                response_entry = handle_bad_request_exception(
+                    response_text=hse.response.text, request=request
+                )
             elif hse.response.status_code == 429:
                 raise RateLimitException()
             else:
@@ -210,14 +224,19 @@ class AzureMLChatTarget(PromptChatTarget):
         payload = self._construct_http_body(messages)
 
         response = await net_utility.make_request_and_raise_if_error_async(
-            endpoint_uri=self._endpoint, method="POST", request_body=payload, headers=headers
+            endpoint_uri=self._endpoint,
+            method="POST",
+            request_body=payload,
+            headers=headers,
         )
 
         try:
             return response.json()["output"]
         except Exception as e:
             if response.json() == {}:
-                raise EmptyResponseException(message="The chat returned an empty response.")
+                raise EmptyResponseException(
+                    message="The chat returned an empty response."
+                )
             raise e(
                 f"Exception obtaining response from the target. Returned response: {response.json()}. "
                 + f"Exception: {str(e)}"  # type: ignore

@@ -39,7 +39,9 @@ class _TextEmbedding(EmbeddingSupport, abc.ABC):
         Returns:
             The embedding response
         """
-        embedding_obj = self._client.embeddings.create(input=text, model=self._model, **kwargs)
+        embedding_obj = self._client.embeddings.create(
+            input=text, model=self._model, **kwargs
+        )
         embedding_response = EmbeddingResponse(
             model=embedding_obj.model,
             object=embedding_obj.object,

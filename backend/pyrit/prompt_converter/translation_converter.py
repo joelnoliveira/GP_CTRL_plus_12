@@ -26,7 +26,13 @@ logger = logging.getLogger(__name__)
 
 
 class TranslationConverter(PromptConverter):
-    def __init__(self, *, converter_target: PromptChatTarget, language: str, prompt_template: SeedPrompt = None):
+    def __init__(
+        self,
+        *,
+        converter_target: PromptChatTarget,
+        language: str,
+        prompt_template: SeedPrompt = None,
+    ):
         """
         Initializes a TranslationConverter object.
 
@@ -45,7 +51,9 @@ class TranslationConverter(PromptConverter):
             prompt_template
             if prompt_template
             else SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "translation_converter.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "translation_converter.yaml"
             )
         )
 
@@ -56,7 +64,9 @@ class TranslationConverter(PromptConverter):
 
         self.system_prompt = prompt_template.render_template_value(languages=language)
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Generates variations of the input prompt using the converter target.
         Parameters:
@@ -117,11 +127,15 @@ class TranslationConverter(PromptConverter):
         try:
             llm_response: dict[str, str] = json.loads(response_msg)
             if "output" not in llm_response:
-                raise InvalidJsonException(message=f"Invalid JSON encountered; missing 'output' key: {response_msg}")
+                raise InvalidJsonException(
+                    message=f"Invalid JSON encountered; missing 'output' key: {response_msg}"
+                )
             return llm_response["output"]
 
         except json.JSONDecodeError:
-            raise InvalidJsonException(message=f"Invalid JSON encountered: {response_msg}")
+            raise InvalidJsonException(
+                message=f"Invalid JSON encountered: {response_msg}"
+            )
 
     def input_supported(self, input_type: PromptDataType) -> bool:
         return input_type == "text"

@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 class Orchestrator(abc.ABC, Identifier):
-
     _memory: MemoryInterface
 
     def __init__(
@@ -38,7 +37,10 @@ class Orchestrator(abc.ABC, Identifier):
         # Pull in global memory labels from .env.local. memory_labels. These labels will be applied to all prompts
         # sent via orchestrator.
         self._global_memory_labels: dict[str, str] = ast.literal_eval(
-            default_values.get_non_required_value(env_var_name="GLOBAL_MEMORY_LABELS", passed_value=None) or "{}"
+            default_values.get_non_required_value(
+                env_var_name="GLOBAL_MEMORY_LABELS", passed_value=None
+            )
+            or "{}"
         )
 
         if self._verbose:
@@ -66,7 +68,6 @@ class Orchestrator(abc.ABC, Identifier):
         converters=None,
         metadata=None,
     ) -> NormalizerRequest:
-
         if converters is None:
             converters = self._prompt_converters
 
@@ -80,7 +81,9 @@ class Orchestrator(abc.ABC, Identifier):
             ]
         )
 
-        converter_configurations = [PromptConverterConfiguration(converters=converters if converters else [])]
+        converter_configurations = [
+            PromptConverterConfiguration(converters=converters if converters else [])
+        ]
 
         request = NormalizerRequest(
             seed_prompt_group=seed_prompt_group,

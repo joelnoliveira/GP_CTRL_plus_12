@@ -57,15 +57,23 @@ def data_serializer_factory(
         if data_type == "text":
             return TextDataTypeSerializer(prompt_text=value)
         elif data_type == "image_path":
-            return ImagePathDataTypeSerializer(category=category, prompt_text=value, extension=extension)
+            return ImagePathDataTypeSerializer(
+                category=category, prompt_text=value, extension=extension
+            )
         elif data_type == "audio_path":
-            return AudioPathDataTypeSerializer(category=category, prompt_text=value, extension=extension)
+            return AudioPathDataTypeSerializer(
+                category=category, prompt_text=value, extension=extension
+            )
         elif data_type == "video_path":
-            return VideoPathDataTypeSerializer(category=category, prompt_text=value, extension=extension)
+            return VideoPathDataTypeSerializer(
+                category=category, prompt_text=value, extension=extension
+            )
         elif data_type == "error":
             return ErrorDataTypeSerializer(prompt_text=value)
         elif data_type == "url":
-            return URLDataTypeSerializer(category=category, prompt_text=value, extension=extension)
+            return URLDataTypeSerializer(
+                category=category, prompt_text=value, extension=extension
+            )
         else:
             raise ValueError(f"Data type {data_type} not supported")
     else:
@@ -193,7 +201,9 @@ class DataTypeSerializer(abc.ABC):
             bytes: The data read from storage.
         """
         if not self.data_on_disk():
-            raise TypeError(f"Data for data Type {self.data_type} is not stored on disk")
+            raise TypeError(
+                f"Data for data Type {self.data_type} is not stored on disk"
+            )
 
         if not self.value:
             raise RuntimeError("Prompt text not set")
@@ -228,7 +238,9 @@ class DataTypeSerializer(abc.ABC):
             if isinstance(self.value, str):
                 input_bytes = self.value.encode("utf-8")
             else:
-                raise ValueError(f"Invalid data type {self.value}, expected str data type.")
+                raise ValueError(
+                    f"Invalid data type {self.value}, expected str data type."
+                )
 
         hash_object = hashlib.sha256(input_bytes)
         return hash_object.hexdigest()
@@ -251,11 +263,17 @@ class DataTypeSerializer(abc.ABC):
 
         if self._is_azure_storage_url(results_path):
             full_data_directory_path = results_path + self.data_sub_directory
-            self._file_path = full_data_directory_path + f"/{ticks}.{self.file_extension}"
+            self._file_path = (
+                full_data_directory_path + f"/{ticks}.{self.file_extension}"
+            )
         else:
             full_data_directory_path = results_path + self.data_sub_directory
-            await self._memory.results_storage_io.create_directory_if_not_exists(Path(full_data_directory_path))
-            self._file_path = Path(full_data_directory_path, f"{ticks}.{self.file_extension}")
+            await self._memory.results_storage_io.create_directory_if_not_exists(
+                Path(full_data_directory_path)
+            )
+            self._file_path = Path(
+                full_data_directory_path, f"{ticks}.{self.file_extension}"
+            )
 
         return self._file_path
 
@@ -286,11 +304,13 @@ class DataTypeSerializer(abc.ABC):
             bool: True if the path is an Azure Blob Storage URL.
         """
         parsed = urlparse(path)
-        return parsed.scheme in ("http", "https") and "blob.core.windows.net" in parsed.netloc
+        return (
+            parsed.scheme in ("http", "https")
+            and "blob.core.windows.net" in parsed.netloc
+        )
 
 
 class TextDataTypeSerializer(DataTypeSerializer):
-
     def __init__(self, *, prompt_text: str):
         self.data_type = "text"
         self.value = prompt_text
@@ -309,7 +329,9 @@ class ErrorDataTypeSerializer(DataTypeSerializer):
 
 
 class URLDataTypeSerializer(DataTypeSerializer):
-    def __init__(self, *, category: str, prompt_text: str, extension: Optional[str] = None):
+    def __init__(
+        self, *, category: str, prompt_text: str, extension: Optional[str] = None
+    ):
         self.data_type = "url"
         self.value = prompt_text
         self.data_sub_directory = f"/{category}/urls"
@@ -320,7 +342,13 @@ class URLDataTypeSerializer(DataTypeSerializer):
 
 
 class ImagePathDataTypeSerializer(DataTypeSerializer):
-    def __init__(self, *, category: str, prompt_text: Optional[str] = None, extension: Optional[str] = None):
+    def __init__(
+        self,
+        *,
+        category: str,
+        prompt_text: Optional[str] = None,
+        extension: Optional[str] = None,
+    ):
         self.data_type = "image_path"
         self.data_sub_directory = f"/{category}/images"
         self.file_extension = extension if extension else "png"

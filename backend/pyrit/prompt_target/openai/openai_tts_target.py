@@ -19,11 +19,12 @@ logger = logging.getLogger(__name__)
 
 TTSModel = Literal["tts-1", "tts-1-hd"]
 TTSVoice = Literal["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
-TTSResponseFormat = Literal["flac", "mp3", "mp4", "mpeg", "mpga", "m4a", "ogg", "wav", "webm"]
+TTSResponseFormat = Literal[
+    "flac", "mp3", "mp4", "mpeg", "mpga", "m4a", "ogg", "wav", "webm"
+]
 
 
 class OpenAITTSTarget(OpenAITarget):
-
     def __init__(
         self,
         voice: TTSVoice = "alloy",
@@ -34,9 +35,12 @@ class OpenAITTSTarget(OpenAITarget):
         *args,
         **kwargs,
     ):
-
-        if (kwargs.get("use_aad_auth") is not None) and (kwargs.get("use_aad_auth") is True):
-            raise NotImplementedError("AAD authentication not implemented for TTSTarget yet.")
+        if (kwargs.get("use_aad_auth") is not None) and (
+            kwargs.get("use_aad_auth") is True
+        ):
+            raise NotImplementedError(
+                "AAD authentication not implemented for TTSTarget yet."
+            )
 
         super().__init__(*args, **kwargs)
 
@@ -52,7 +56,9 @@ class OpenAITTSTarget(OpenAITarget):
         self.api_key_environment_variable = "AZURE_OPENAI_TTS_KEY"
 
     @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         self._validate_request(prompt_request=prompt_request)
         request = prompt_request.request_pieces[0]
 
@@ -69,9 +75,7 @@ class OpenAITTSTarget(OpenAITarget):
         self._extra_headers["api-key"] = self._api_key
 
         response_entry = None
-        endpoint_uri = (
-            f"{self._endpoint}/openai/deployments/{self._deployment_name}/audio/speech?api-version={self._api_version}"
-        )
+        endpoint_uri = f"{self._endpoint}/openai/deployments/{self._deployment_name}/audio/speech?api-version={self._api_version}"
         try:
             # Note the openai client doesn't work here, potentially due to a mismatch
             response = await net_utility.make_request_and_raise_if_error_async(
@@ -83,7 +87,9 @@ class OpenAITTSTarget(OpenAITarget):
         except HTTPStatusError as hse:
             if hse.response.status_code == 400:
                 # Handle Bad Request
-                response_entry = handle_bad_request_exception(response_text=hse.response.text, request=request)
+                response_entry = handle_bad_request_exception(
+                    response_text=hse.response.text, request=request
+                )
             elif hse.response.status_code == 429:
                 raise RateLimitException()
             else:
@@ -92,7 +98,9 @@ class OpenAITTSTarget(OpenAITarget):
         logger.info("Received valid response from the prompt target")
 
         audio_response = data_serializer_factory(
-            category="prompt-memory-entries", data_type="audio_path", extension=self._response_format
+            category="prompt-memory-entries",
+            data_type="audio_path",
+            extension=self._response_format,
         )
 
         data = response.content
@@ -101,7 +109,9 @@ class OpenAITTSTarget(OpenAITarget):
 
         if not response_entry:
             response_entry = construct_response_from_request(
-                request=request, response_text_pieces=[str(audio_response.value)], response_type="audio_path"
+                request=request,
+                response_text_pieces=[str(audio_response.value)],
+                response_type="audio_path",
             )
 
         return response_entry
@@ -114,7 +124,9 @@ class OpenAITTSTarget(OpenAITarget):
             raise ValueError("This target only supports text prompt input.")
 
         request = prompt_request.request_pieces[0]
-        messages = self._memory.get_chat_messages_with_conversation_id(conversation_id=request.conversation_id)
+        messages = self._memory.get_chat_messages_with_conversation_id(
+            conversation_id=request.conversation_id
+        )
 
         if len(messages) > 0:
             raise ValueError("This target only supports a single turn conversation.")

@@ -52,8 +52,6 @@ const CompareResults = (
         });
         const data = await response.json();
 
-        console.log(data);
-
         const experiments = Object.fromEntries(
         data.map((item) => [
             item.id,

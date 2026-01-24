@@ -8,7 +8,7 @@ try:
     client = get_client()
     print("Methods/Attributes of Langfuse client:")
     print(dir(client))
-    
+
     print("\nMethods/Attributes of client.api.datasets:")
     print(dir(client.api.datasets))
 except Exception as e:

@@ -5,9 +5,10 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 
+
 def extract_times(issues, since_date=None):
     """Extracts time per user. If since_date is given, filters closed issues after it."""
-    pattern = re.compile(r'@([\w-]+)\s+(\d+)')
+    pattern = re.compile(r"@([\w-]+)\s+(\d+)")
     user_data = {}
 
     for issue in issues:
@@ -15,7 +16,9 @@ def extract_times(issues, since_date=None):
         if not closed_at:
             continue
 
-        closed_at_dt = datetime.strptime(closed_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        closed_at_dt = datetime.strptime(closed_at, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc
+        )
         if since_date and closed_at_dt < since_date:
             continue
 
@@ -23,7 +26,9 @@ def extract_times(issues, since_date=None):
         if not body:
             continue
 
-        estimated_section = re.search(r"Estimated Time \(minutes\)\s*\n+([^\n#]+)", body)
+        estimated_section = re.search(
+            r"Estimated Time \(minutes\)\s*\n+([^\n#]+)", body
+        )
         actual_section = re.search(r"Actual Time \(minutes\)\s*\n+([^\n#]+)", body)
 
         if estimated_section:
@@ -70,7 +75,9 @@ def main():
     days_since_monday = now.weekday()
 
     # Get Monday of this week
-    this_monday = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    this_monday = (now - timedelta(days=days_since_monday)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
 
     # Get Monday of previous week
     last_monday = this_monday - timedelta(weeks=1)
@@ -84,7 +91,7 @@ def main():
         weekly_path,
         weekly_data,
         user_names,
-        ["Name (Real names)", "Expected Time (min)", "Actual Time (min)"]
+        ["Name (Real names)", "Expected Time (min)", "Actual Time (min)"],
     )
     print(f"✅ Weekly report created: {weekly_path}")
 
@@ -96,7 +103,7 @@ def main():
         total_path,
         total_data,
         user_names,
-        ["Name (Real names)", "Total Expected Time (min)", "Total Actual Time (min)"]
+        ["Name (Real names)", "Total Expected Time (min)", "Total Actual Time (min)"],
     )
     print(f"📊 Total time report generated: {total_path}")
 

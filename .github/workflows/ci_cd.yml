@@ -14,12 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/ruff-action@v3
-        with:
-          args: "check backend"
-      - uses: astral-sh/ruff-action@v3
-        with:
-          args: "format --check backend"
+      - uses: astral-sh/setup-ruff@v3
+      - run: ruff check .
+        working-directory: backend
+      - run: ruff format --check .
+        working-directory: backend
 
   lint-frontend:
     runs-on: ubuntu-latest

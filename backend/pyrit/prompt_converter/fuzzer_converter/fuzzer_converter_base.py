@@ -37,7 +37,12 @@ class FuzzerConverter(PromptConverter):
             the chat target.
     """
 
-    def __init__(self, *, converter_target: PromptChatTarget, prompt_template: Optional[SeedPrompt] = None):
+    def __init__(
+        self,
+        *,
+        converter_target: PromptChatTarget,
+        prompt_template: Optional[SeedPrompt] = None,
+    ):
         self.converter_target = converter_target
         self.system_prompt = prompt_template.value
         self.template_label = "TEMPLATE"
@@ -45,7 +50,9 @@ class FuzzerConverter(PromptConverter):
     def update(self, **kwargs) -> None:
         pass
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converter to generate versions of prompt with new, prepended sentences.
 
@@ -97,11 +104,15 @@ class FuzzerConverter(PromptConverter):
         try:
             parsed_response = json.loads(response_msg)
             if "output" not in parsed_response:
-                raise InvalidJsonException(message=f"Invalid JSON encountered; missing 'output' key: {response_msg}")
+                raise InvalidJsonException(
+                    message=f"Invalid JSON encountered; missing 'output' key: {response_msg}"
+                )
             return parsed_response["output"]
 
         except json.JSONDecodeError:
-            raise InvalidJsonException(message=f"Invalid JSON encountered: {response_msg}")
+            raise InvalidJsonException(
+                message=f"Invalid JSON encountered: {response_msg}"
+            )
 
     def input_supported(self, input_type: PromptDataType) -> bool:
         return input_type == "text"

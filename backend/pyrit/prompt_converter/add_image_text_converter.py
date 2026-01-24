@@ -43,7 +43,9 @@ class AddImageTextConverter(PromptConverter):
         if not img_to_add:
             raise ValueError("Please provide valid image path")
         if not font_name.endswith(".ttf"):
-            raise ValueError("The specified font must be a TrueType font with a .ttf extension")
+            raise ValueError(
+                "The specified font must be a TrueType font with a .ttf extension"
+            )
         self._img_to_add = img_to_add
         self._font_name = font_name
         self._font_size = font_size
@@ -67,7 +69,9 @@ class AddImageTextConverter(PromptConverter):
         try:
             font = ImageFont.truetype(self._font_name, self._font_size)
         except OSError:
-            logger.warning(f"Cannot open font resource: {self._font_name}. Using default font.")
+            logger.warning(
+                f"Cannot open font resource: {self._font_name}. Using default font."
+            )
             font = ImageFont.load_default()
         return font
 
@@ -92,7 +96,9 @@ class AddImageTextConverter(PromptConverter):
         max_width_pixels = image.size[0] - margin
 
         # Estimate the maximum chars that can fit on a line
-        alphabet_letters = string.ascii_letters  # This gives 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        alphabet_letters = (
+            string.ascii_letters
+        )  # This gives 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
         bbox = draw.textbbox((0, 0), alphabet_letters, font=self._font)
         avg_char_width = (bbox[2] - bbox[0]) / len(alphabet_letters)
         max_chars_per_line = int(max_width_pixels // avg_char_width)
@@ -110,7 +116,9 @@ class AddImageTextConverter(PromptConverter):
 
         return image
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converter that overlays input text on the img_to_add.
 
@@ -124,7 +132,9 @@ class AddImageTextConverter(PromptConverter):
             raise ValueError("Input type not supported")
 
         img_serializer = data_serializer_factory(
-            category="prompt-memory-entries", value=self._img_to_add, data_type="image_path"
+            category="prompt-memory-entries",
+            value=self._img_to_add,
+            data_type="image_path",
         )
 
         # Add text to the image
@@ -137,7 +147,9 @@ class AddImageTextConverter(PromptConverter):
         image_str = base64.b64encode(image_bytes.getvalue())
         # Save image as generated UUID filename
         await img_serializer.save_b64_image(data=image_str)
-        return ConverterResult(output_text=str(img_serializer.value), output_type="image_path")
+        return ConverterResult(
+            output_text=str(img_serializer.value), output_type="image_path"
+        )
 
     def input_supported(self, input_type: PromptDataType) -> bool:
         return input_type == "text"

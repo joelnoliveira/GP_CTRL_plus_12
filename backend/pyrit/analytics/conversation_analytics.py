@@ -80,12 +80,16 @@ class ConversationAnalytics:
                 continue
 
             memory_embedding = np.array(memory.embedding).reshape((1, -1))
-            similarity_score = cosine_similarity(target_embedding, memory_embedding)[0][0]
+            similarity_score = cosine_similarity(target_embedding, memory_embedding)[0][
+                0
+            ]
 
             if similarity_score >= threshold:
                 similar_messages.append(
                     EmbeddingMessageWithSimilarity(
-                        score=similarity_score, uuid=memory.id, metric="cosine_similarity"  # type: ignore
+                        score=similarity_score,
+                        uuid=memory.id,
+                        metric="cosine_similarity",  # type: ignore
                     )
                 )
 

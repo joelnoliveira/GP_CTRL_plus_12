@@ -23,7 +23,11 @@ class MemoryExporter:
         }
 
     def export_data(
-        self, data: list[PromptRequestPiece], *, file_path: Path = None, export_type: str = "json"
+        self,
+        data: list[PromptRequestPiece],
+        *,
+        file_path: Path = None,
+        export_type: str = "json",
     ):  # type: ignore
         """
         Exports the provided data to a file in the specified format.
@@ -45,7 +49,9 @@ class MemoryExporter:
         else:
             raise ValueError(f"Unsupported export format: {export_type}")
 
-    def export_to_json(self, data: list[PromptRequestPiece], file_path: Path = None) -> None:  # type: ignore
+    def export_to_json(
+        self, data: list[PromptRequestPiece], file_path: Path = None
+    ) -> None:  # type: ignore
         """
         Exports the provided data to a JSON file at the specified file path.
         Each item in the data list, representing a row from the table,
@@ -68,7 +74,9 @@ class MemoryExporter:
         with open(file_path, "w") as f:
             json.dump(export_data, f, indent=4)
 
-    def export_to_csv(self, data: list[PromptRequestPiece], file_path: Path = None) -> None:  # type: ignore
+    def export_to_csv(
+        self, data: list[PromptRequestPiece], file_path: Path = None
+    ) -> None:  # type: ignore
         """
         Exports the provided data to a CSV file at the specified file path.
         Each item in the data list, representing a row from the table,

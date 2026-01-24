@@ -117,7 +117,11 @@ class PromptNormalizer(abc.ABC):
 
             await self._calc_hash(request=error_response)
             self._memory.add_request_response_to_memory(request=error_response)
-            cid = request.request_pieces[0].conversation_id if request and request.request_pieces else None
+            cid = (
+                request.request_pieces[0].conversation_id
+                if request and request.request_pieces
+                else None
+            )
             raise Exception(
                 f"Error sending prompt (conversation_id={cid}): {type(ex).__name__}: {ex}"
             ) from ex
@@ -125,7 +129,10 @@ class PromptNormalizer(abc.ABC):
         if response is None:
             return None
 
-        await self.convert_values(converter_configurations=response_converter_configurations, request_response=response)
+        await self.convert_values(
+            converter_configurations=response_converter_configurations,
+            request_response=response,
+        )
 
         await self._calc_hash(request=response)
         self._memory.add_request_response_to_memory(request=response)
@@ -190,7 +197,6 @@ class PromptNormalizer(abc.ABC):
         converter_configurations: list[PromptConverterConfiguration],
         request_response: PromptRequestResponse,
     ):
-
         for converter_configuration in converter_configurations:
             for piece_index, piece in enumerate(request_response.request_pieces):
                 indexes = converter_configuration.indexes_to_apply
@@ -202,7 +208,10 @@ class PromptNormalizer(abc.ABC):
                     continue
 
                 piece.converter_identifiers.extend(
-                    [converter.get_identifier() for converter in converter_configuration.converters]
+                    [
+                        converter.get_identifier()
+                        for converter in converter_configuration.converters
+                    ]
                 )
 
                 converted_text = piece.converted_value
@@ -221,7 +230,9 @@ class PromptNormalizer(abc.ABC):
                 piece.converted_value = converted_text
                 piece.converted_value_data_type = converted_text_data_type
 
-    def set_skip_criteria(self, skip_criteria: PromptFilterCriteria, skip_value_type: PromptConverterState) -> None:
+    def set_skip_criteria(
+        self, skip_criteria: PromptFilterCriteria, skip_value_type: PromptConverterState
+    ) -> None:
         """
         Sets the skip criteria for the orchestrator.
 
@@ -247,16 +258,22 @@ class PromptNormalizer(abc.ABC):
         )
 
         self._original_sha256_prompts_to_skip = [
-            prompt.original_value_sha256 for prompt in prompts_to_skip if prompt.original_value_sha256
+            prompt.original_value_sha256
+            for prompt in prompts_to_skip
+            if prompt.original_value_sha256
         ]
 
         self._converted_sha256_prompts_to_skip = [
-            prompt.converted_value_sha256 for prompt in prompts_to_skip if prompt.converted_value_sha256
+            prompt.converted_value_sha256
+            for prompt in prompts_to_skip
+            if prompt.converted_value_sha256
         ]
 
         self._skip_value_type = skip_value_type
 
-    def _should_skip_based_on_skip_criteria(self, prompt_request: PromptRequestResponse) -> bool:
+    def _should_skip_based_on_skip_criteria(
+        self, prompt_request: PromptRequestResponse
+    ) -> bool:
         """
         Filters out prompts from prompt_request_list that match the skip criteria.
 
@@ -267,10 +284,16 @@ class PromptNormalizer(abc.ABC):
 
         for user_prompt in prompt_request.request_pieces:
             if self._skip_value_type == "converted":
-                if user_prompt.converted_value_sha256 not in self._converted_sha256_prompts_to_skip:
+                if (
+                    user_prompt.converted_value_sha256
+                    not in self._converted_sha256_prompts_to_skip
+                ):
                     return False
             else:
-                if user_prompt.original_value_sha256 not in self._original_sha256_prompts_to_skip:
+                if (
+                    user_prompt.original_value_sha256
+                    not in self._original_sha256_prompts_to_skip
+                ):
                     return False
         return True
 
@@ -278,7 +301,10 @@ class PromptNormalizer(abc.ABC):
         """
         Adds a request to the memory.
         """
-        tasks = [asyncio.create_task(piece.set_sha256_values_async()) for piece in request.request_pieces]
+        tasks = [
+            asyncio.create_task(piece.set_sha256_values_async())
+            for piece in request.request_pieces
+        ]
         await asyncio.gather(*tasks)
 
     async def _build_prompt_request_response(
@@ -316,7 +342,6 @@ class PromptNormalizer(abc.ABC):
         # All prompt request pieces within PromptRequestResponse needs to have same conversation ID.
         conversation_id = conversation_id if conversation_id else str(uuid4())
         for seed_prompt in seed_prompt_group.prompts:
-
             prompt_request_piece = PromptRequestPiece(
                 role="user",
                 original_value=seed_prompt.value,
@@ -333,5 +358,8 @@ class PromptNormalizer(abc.ABC):
 
         response = PromptRequestResponse(request_pieces=entries)
 
-        await self.convert_values(converter_configurations=request_converter_configurations, request_response=response)
+        await self.convert_values(
+            converter_configurations=request_converter_configurations,
+            request_response=response,
+        )
         return response

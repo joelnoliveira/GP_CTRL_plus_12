@@ -14,7 +14,9 @@ from pyrit.score.scorer import Scorer
 
 
 class ContentClassifierPaths(enum.Enum):
-    HARMFUL_CONTENT_CLASSIFIER = Path(CONTENT_CLASSIFIERS_PATH, "harmful_content.yaml").resolve()
+    HARMFUL_CONTENT_CLASSIFIER = Path(
+        CONTENT_CLASSIFIERS_PATH, "harmful_content.yaml"
+    ).resolve()
     SENTIMENT_CLASSIFIER = Path(CONTENT_CLASSIFIERS_PATH, "sentiment.yaml").resolve()
 
 
@@ -42,10 +44,14 @@ class SelfAskCategoryScorer(Scorer):
         self._prompt_target = chat_target
         self.scorer_type = "true_false"
 
-        category_file_contents = yaml.safe_load(content_classifier.read_text(encoding="utf-8"))
+        category_file_contents = yaml.safe_load(
+            content_classifier.read_text(encoding="utf-8")
+        )
 
         self._no_category_found_category = category_file_contents["no_category_found"]
-        categories_as_string = self._content_classifier_to_string(category_file_contents["categories"])
+        categories_as_string = self._content_classifier_to_string(
+            category_file_contents["categories"]
+        )
 
         scoring_instructions_template = SeedPrompt.from_yaml_file(
             CONTENT_CLASSIFIERS_PATH / "content_classifier_system_prompt.yaml"
@@ -67,7 +73,9 @@ class SelfAskCategoryScorer(Scorer):
             str: The string representation of the categories.
         """
         if not categories:
-            raise ValueError("Improperly formatted content classifier yaml file. No categories provided")
+            raise ValueError(
+                "Improperly formatted content classifier yaml file. No categories provided"
+            )
 
         category_descriptions = ""
 
@@ -78,11 +86,15 @@ class SelfAskCategoryScorer(Scorer):
             category_descriptions += f"'{name}': {desc}\n"
 
         if self._no_category_found_category not in category_descriptions:
-            raise ValueError(f"False category {self._no_category_found_category} not found in classifier categories")
+            raise ValueError(
+                f"False category {self._no_category_found_category} not found in classifier categories"
+            )
 
         return category_descriptions
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         """
         Scores the given request_response using the chat target and adds score to memory.
 
@@ -108,10 +120,14 @@ class SelfAskCategoryScorer(Scorer):
             task=task,
         )
 
-        score = unvalidated_score.to_score(score_value=unvalidated_score.raw_score_value)
+        score = unvalidated_score.to_score(
+            score_value=unvalidated_score.raw_score_value
+        )
 
         self._memory.add_scores_to_memory(scores=[score])
         return [score]
 
-    def validate(self, request_response: PromptRequestPiece, *, task: Optional[str] = None):
+    def validate(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ):
         pass

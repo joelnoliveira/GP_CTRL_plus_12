@@ -67,8 +67,14 @@ class PDFConverter(PromptConverter):
         self._injection_items = injection_items or []
 
         # Validate font color
-        if not (isinstance(font_color, tuple) and len(font_color) == 3 and all(0 <= c <= 255 for c in font_color)):
-            raise ValueError(f"Invalid font_color: {font_color}. Must be a tuple of three integers (0-255).")
+        if not (
+            isinstance(font_color, tuple)
+            and len(font_color) == 3
+            and all(0 <= c <= 255 for c in font_color)
+        ):
+            raise ValueError(
+                f"Invalid font_color: {font_color}. Must be a tuple of three integers (0-255)."
+            )
 
         # If a valid path is provided, load it into memory as BytesIO
         if existing_pdf is not None:
@@ -86,7 +92,9 @@ class PDFConverter(PromptConverter):
         if not all(isinstance(item, dict) for item in self._injection_items):
             raise ValueError("Each injection item must be a dictionary.")
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converts the given prompt into a PDF. If a template is provided, it injects the prompt into the template,
         otherwise, it generates a simple PDF with the prompt as the content. Further it can modify existing PDFs.
@@ -139,17 +147,25 @@ class PDFConverter(PromptConverter):
             str: The prepared content.
         """
         if self._prompt_template:
-            logger.debug(f"Preparing content with template: {self._prompt_template.value}")
+            logger.debug(
+                f"Preparing content with template: {self._prompt_template.value}"
+            )
             try:
                 # Parse string prompt to dictionary
-                dynamic_data = ast.literal_eval(prompt) if isinstance(prompt, str) else prompt
+                dynamic_data = (
+                    ast.literal_eval(prompt) if isinstance(prompt, str) else prompt
+                )
                 logger.debug(f"Parsed dynamic data: {dynamic_data}")
 
                 if not isinstance(dynamic_data, dict):
-                    raise ValueError("Prompt must be a dictionary-compatible object after parsing.")
+                    raise ValueError(
+                        "Prompt must be a dictionary-compatible object after parsing."
+                    )
 
                 # Use SeedPrompt's render_template_value for rendering
-                rendered_content = self._prompt_template.render_template_value(**dynamic_data)
+                rendered_content = self._prompt_template.render_template_value(
+                    **dynamic_data
+                )
                 logger.debug(f"Rendered content: {rendered_content}")
                 return rendered_content
 
@@ -178,7 +194,9 @@ class PDFConverter(PromptConverter):
         pdf = FPDF(format=(self._page_width, self._page_height))  # Use custom page size
         pdf.add_page()
         pdf.set_font(self._font_type, size=self._font_size)  # Use custom font settings
-        pdf.multi_cell(self._column_width, self._row_height, content)  # Use configurable cell dimensions
+        pdf.multi_cell(
+            self._column_width, self._row_height, content
+        )  # Use configurable cell dimensions
 
         pdf_bytes = BytesIO()
         pdf.output(pdf_bytes)
@@ -196,7 +214,9 @@ class PDFConverter(PromptConverter):
             ValueError: If the existing PDF or injection items are not provided.
         """
         if not self._existing_pdf_bytes or not self._injection_items:
-            raise ValueError("Existing PDF and injection items are required for modification.")
+            raise ValueError(
+                "Existing PDF and injection items are required for modification."
+            )
 
         reader = PdfReader(self._existing_pdf_bytes)
         writer = PdfWriter()
@@ -208,7 +228,9 @@ class PDFConverter(PromptConverter):
             # We know page_number is valid because enumerate() only provides indices in range(total_pages).
             # Therefore, no extra check needed here.
 
-            logger.info(f"Processing page {page_number} with {len(self._injection_items)} injection items.")
+            logger.info(
+                f"Processing page {page_number} with {len(self._injection_items)} injection items."
+            )
 
             # Extract page dimensions for early coordinate checks
             page_width = float(page.mediabox[2] - page.mediabox[0])
@@ -228,7 +250,9 @@ class PDFConverter(PromptConverter):
 
                     # Coordinate validation before calling _inject_text_into_page
                     if not (0 <= x <= page_width and 0 <= y <= page_height):
-                        raise ValueError(f"Coordinates x={x}, y={y} out of bounds for page {page_number}.")
+                        raise ValueError(
+                            f"Coordinates x={x}, y={y} out of bounds for page {page_number}."
+                        )
 
                     # (1) Build the overlay PageObject + buffer
                     overlay_page, overlay_buffer = self._inject_text_into_page(
@@ -256,7 +280,14 @@ class PDFConverter(PromptConverter):
         return output_pdf.getvalue()
 
     def _inject_text_into_page(
-        self, page: PageObject, x: float, y: float, text: str, font: str, font_size: int, font_color: tuple
+        self,
+        page: PageObject,
+        x: float,
+        y: float,
+        text: str,
+        font: str,
+        font_size: int,
+        font_color: tuple,
     ) -> tuple[PageObject, BytesIO]:
         """
         Generates an overlay PDF with the given text injected at the specified coordinates.
@@ -282,14 +313,22 @@ class PDFConverter(PromptConverter):
             logger.error(f"x_pos is less than 0 and therefore out of bounds: x={x}")
             raise ValueError(f"x_pos is less than 0 and therefore out of bounds: x={x}")
         if x > page_width:
-            logger.error(f"x_pos exceeds page width and is out of bounds: x={x}, page_width={page_width}")
-            raise ValueError(f"x_pos exceeds page width and is out of bounds: x={x}, page_width={page_width}")
+            logger.error(
+                f"x_pos exceeds page width and is out of bounds: x={x}, page_width={page_width}"
+            )
+            raise ValueError(
+                f"x_pos exceeds page width and is out of bounds: x={x}, page_width={page_width}"
+            )
         if y < 0:
             logger.error(f"y_pos is less than 0 and therefore out of bounds: y={y}")
             raise ValueError(f"y_pos is less than 0 and therefore out of bounds: y={y}")
         if y > page_height:
-            logger.error(f"y_pos exceeds page height and is out of bounds: y={y}, page_height={page_height}")
-            raise ValueError(f"y_pos exceeds page height and is out of bounds: y={y}, page_height={page_height}")
+            logger.error(
+                f"y_pos exceeds page height and is out of bounds: y={y}, page_height={page_height}"
+            )
+            raise ValueError(
+                f"y_pos exceeds page height and is out of bounds: y={y}, page_height={page_height}"
+            )
 
         # Create a small overlay PDF in memory
         overlay_pdf = FPDF(unit="pt", format=(page_width, page_height))
@@ -330,7 +369,10 @@ class PDFConverter(PromptConverter):
             DataTypeSerializer: The serializer object containing metadata about the saved file.
         """
         pdf_serializer = data_serializer_factory(
-            category="prompt-memory-entries", data_type="url", value=content, extension="pdf"
+            category="prompt-memory-entries",
+            data_type="url",
+            value=content,
+            extension="pdf",
         )
         await pdf_serializer.save_data(pdf_bytes)
         return pdf_serializer

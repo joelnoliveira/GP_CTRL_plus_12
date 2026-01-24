@@ -17,7 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 class LLMGenericTextConverter(PromptConverter):
-    def __init__(self, *, converter_target: PromptChatTarget, prompt_template: SeedPrompt, **kwargs):
+    def __init__(
+        self,
+        *,
+        converter_target: PromptChatTarget,
+        prompt_template: SeedPrompt,
+        **kwargs,
+    ):
         """
         Generic LLM converter that expects text to be transformed (e.g. no JSON parsing or format)
 
@@ -31,7 +37,9 @@ class LLMGenericTextConverter(PromptConverter):
         self._prompt_template = prompt_template
         self._prompt_kwargs = kwargs
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Convert a prompt based on the prompt template
 
@@ -77,8 +85,12 @@ class LLMGenericTextConverter(PromptConverter):
             ]
         )
 
-        response = await self._converter_target.send_prompt_async(prompt_request=request)
-        return ConverterResult(output_text=response.request_pieces[0].converted_value, output_type="text")
+        response = await self._converter_target.send_prompt_async(
+            prompt_request=request
+        )
+        return ConverterResult(
+            output_text=response.request_pieces[0].converted_value, output_type="text"
+        )
 
     def input_supported(self, input_type: PromptDataType) -> bool:
         return input_type == "text"

@@ -24,7 +24,9 @@ class UnicodeConfusableConverter(PromptConverter):
     def __init__(
         self,
         *,
-        source_package: Literal["confusable_homoglyphs", "confusables"] = "confusable_homoglyphs",
+        source_package: Literal[
+            "confusable_homoglyphs", "confusables"
+        ] = "confusable_homoglyphs",
         deterministic: bool = False,
     ):
         """
@@ -83,9 +85,15 @@ class UnicodeConfusableConverter(PromptConverter):
             confusables = is_confusable(word, greedy=True)
             if confusables:
                 # Return a list of all homoglyph variants instead of only the first one
-                return [homoglyph["c"] for item in confusables for homoglyph in item["homoglyphs"]]
+                return [
+                    homoglyph["c"]
+                    for item in confusables
+                    for homoglyph in item["homoglyphs"]
+                ]
         except UnicodeDecodeError:
-            logger.error(f"Cannot process word '{word}' due to UnicodeDecodeError. Returning empty list.")
+            logger.error(
+                f"Cannot process word '{word}' due to UnicodeDecodeError. Returning empty list."
+            )
             return []
 
         # Default return if no homoglyphs are found
@@ -112,7 +120,11 @@ class UnicodeConfusableConverter(PromptConverter):
                 homoglyph_variants = self._get_homoglyph_variants(char)
                 if homoglyph_variants:
                     # Randomly choose a homoglyph variant
-                    variant = random.choice(homoglyph_variants) if not self._deterministic else homoglyph_variants[-1]
+                    variant = (
+                        random.choice(homoglyph_variants)
+                        if not self._deterministic
+                        else homoglyph_variants[-1]
+                    )
                     logger.debug(f"Replacing character '{char}' with '{variant}'")
                     perturbed_chars.append(variant)
                 else:

@@ -70,10 +70,12 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         max_backtracks: int = 10,
         verbose: bool = False,
     ) -> None:
-
         adversarial_chat_system_prompt_path = (
             adversarial_chat_system_prompt_path
-            or Path(DATASETS_PATH) / "orchestrators" / "crescendo" / "crescendo_variant_1.yaml"
+            or Path(DATASETS_PATH)
+            / "orchestrators"
+            / "crescendo"
+            / "crescendo_variant_1.yaml"
         )
 
         objective_scorer = FloatScaleThresholdScorer(
@@ -126,12 +128,18 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         for score in self._last_prepended_assistant_message_scores:
             scorer_class = score.scorer_class_identifier["__type__"]
             if scorer_class == self._refusal_scorer.get_identifier()["__type__"]:
-                logger.info("REFUSAL_SCORER for target response is: " f"{score.get_value()} {score.score_rationale}")
+                logger.info(
+                    "REFUSAL_SCORER for target response is: "
+                    f"{score.get_value()} {score.score_rationale}"
+                )
 
                 if score.get_value():
                     refused_text = self._last_prepended_user_message
             elif scorer_class == self._objective_scorer.get_identifier()["__type__"]:
-                logger.info("EVAL_SCORER for target response is: " f"{score.get_value()} {score.score_rationale}")
+                logger.info(
+                    "EVAL_SCORER for target response is: "
+                    f"{score.get_value()} {score.score_rationale}"
+                )
 
                 objective_score = score
 
@@ -142,8 +150,13 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         Handle the last message in the prepended conversation if it is from a user.
         """
         attack_prompt = None
-        if self._last_prepended_user_message and not self._last_prepended_assistant_message_scores:
-            logger.info("Using last user message from prepended conversation as Attack Prompt.")
+        if (
+            self._last_prepended_user_message
+            and not self._last_prepended_assistant_message_scores
+        ):
+            logger.info(
+                "Using last user message from prepended conversation as Attack Prompt."
+            )
             attack_prompt = self._last_prepended_user_message
 
         return attack_prompt
@@ -179,17 +192,23 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         """
 
         if self._max_turns <= 0:
-            logger.info(f"Please set max_turns to a positive integer. `max_turns` current value: {self._max_turns}")
+            logger.info(
+                f"Please set max_turns to a positive integer. `max_turns` current value: {self._max_turns}"
+            )
             raise ValueError
 
         adversarial_chat_conversation_id = str(uuid4())
         objective_target_conversation_id = str(uuid4())
 
-        updated_memory_labels = combine_dict(existing_dict=self._global_memory_labels, new_dict=memory_labels)
+        updated_memory_labels = combine_dict(
+            existing_dict=self._global_memory_labels, new_dict=memory_labels
+        )
 
-        adversarial_chat_system_prompt = self._adversarial_chat_system_seed_prompt.render_template_value(
-            objective=objective,
-            max_turns=self._max_turns,
+        adversarial_chat_system_prompt = (
+            self._adversarial_chat_system_seed_prompt.render_template_value(
+                objective=objective,
+                max_turns=self._max_turns,
+            )
         )
 
         self._adversarial_chat.set_system_prompt(
@@ -201,7 +220,9 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
 
         # Prepare the conversation by adding any provided messages to memory.
         # If there is no prepended conversation, the turn count is 1.
-        turn_num = self._prepare_conversation(new_conversation_id=objective_target_conversation_id)
+        turn_num = self._prepare_conversation(
+            new_conversation_id=objective_target_conversation_id
+        )
 
         backtrack_count = 0
         achieved_objective = False
@@ -210,7 +231,6 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         attack_prompt = self._handle_last_prepended_user_message()
 
         while turn_num <= self._max_turns:
-
             logger.info(f"TURN {turn_num}\n-----------")
 
             if not attack_prompt:
@@ -228,7 +248,9 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
                 )
 
             refused_text = ""
-            attack_prompt = attack_prompt + " Make sure to return the code inside code blocks"
+            attack_prompt = (
+                attack_prompt + " Make sure to return the code inside code blocks"
+            )
             logger.info("Sending attack prompt to TARGET")
 
             last_response = await self._send_prompt_to_target_async(
@@ -240,7 +262,9 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
             if backtrack_count < self._max_backtracks:
                 logger.info("Sending last response to REFUSAL_SCORER")
                 refusal_score = (
-                    await self._refusal_scorer.score_async(request_response=last_response, task=attack_prompt)
+                    await self._refusal_scorer.score_async(
+                        request_response=last_response, task=attack_prompt
+                    )
                 )[0]
 
                 logger.info(
@@ -249,7 +273,6 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
                 )
 
                 if refusal_score.get_value():
-
                     logger.info("Response rejected, performing back tracking step...")
 
                     refused_text = attack_prompt
@@ -268,7 +291,9 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
 
             logger.info("Sending last response to EVAL_SCORER")
             objective_score = (
-                await self._objective_scorer.score_async(request_response=last_response, task=objective)
+                await self._objective_scorer.score_async(
+                    request_response=last_response, task=objective
+                )
             )[0]
 
             logger.info(
@@ -294,7 +319,9 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         else:
             logger.info("The crescendo orchestrator has not achieved the objective.")
 
-        logger.info(f"\nFINAL RESULTS, TOTAL TURNS: {turn_num}, TOTAL BACKTRACKS {backtrack_count}:\n")
+        logger.info(
+            f"\nFINAL RESULTS, TOTAL TURNS: {turn_num}, TOTAL BACKTRACKS {backtrack_count}:\n"
+        )
         logger.info("\nPROMPT_TARGET MEMORY: ")
         self._log_target_memory(conversation_id=objective_target_conversation_id)
         logger.info("\nRED_TEAMING_CHAT MEMORY: ")
@@ -318,7 +345,6 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         objective_score: Score = None,
         memory_labels: Optional[dict[str, str]] = None,
     ) -> str:
-
         prompt_text = (
             f"This is the turn {turn_num} of {max_turns} turns. "
             "Generate the next question in the series of questions you need to ask "
@@ -348,7 +374,11 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
 
         prompt_metadata = {"response_format": "json"}
         seed_prompt_group = SeedPromptGroup(
-            prompts=[SeedPrompt(value=prompt_text, data_type="text", metadata=prompt_metadata)]
+            prompts=[
+                SeedPrompt(
+                    value=prompt_text, data_type="text", metadata=prompt_metadata
+                )
+            ]
         )
 
         response_text = (
@@ -366,7 +396,11 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         )
         response_text = remove_markdown_json(response_text)
 
-        expected_output = ["generated_question", "rationale_behind_jailbreak", "last_response_summary"]
+        expected_output = [
+            "generated_question",
+            "rationale_behind_jailbreak",
+            "last_response_summary",
+        ]
         try:
             parsed_output = json.loads(response_text)
             for key in expected_output:
@@ -378,10 +412,14 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
             attack_prompt = parsed_output["generated_question"]
 
         except json.JSONDecodeError:
-            raise InvalidJsonException(message=f"Invalid JSON encountered: {response_text}")
+            raise InvalidJsonException(
+                message=f"Invalid JSON encountered: {response_text}"
+            )
 
         if len(parsed_output.keys()) != len(expected_output):
-            raise InvalidJsonException(message=f"Unexpected keys found in JSON response: {response_text}")
+            raise InvalidJsonException(
+                message=f"Unexpected keys found in JSON response: {response_text}"
+            )
 
         return str(attack_prompt)
 
@@ -392,12 +430,15 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         objective_target_conversation_id: str = None,
         memory_labels: Optional[dict[str, str]] = None,
     ) -> PromptRequestPiece:
-
         # Sends the attack prompt to the objective target and returns the response
 
-        seed_prompt_group = SeedPromptGroup(prompts=[SeedPrompt(value=attack_prompt, data_type="text")])
+        seed_prompt_group = SeedPromptGroup(
+            prompts=[SeedPrompt(value=attack_prompt, data_type="text")]
+        )
 
-        converter_configuration = PromptConverterConfiguration(converters=self._prompt_converters)
+        converter_configuration = PromptConverterConfiguration(
+            converters=self._prompt_converters
+        )
 
         return (
             await self._prompt_normalizer.send_prompt_async(
@@ -425,16 +466,19 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
         Args:
             conversation_id (str): The ID of the conversation.
         """
-        target_messages = self._memory.get_prompt_request_pieces(conversation_id=conversation_id)
+        target_messages = self._memory.get_prompt_request_pieces(
+            conversation_id=conversation_id
+        )
         for message in target_messages:
             logger.info(f"{message.role}: {message.converted_value}\n")
 
     def output_conversations_to_json(self, file_path: str = "conversations.json"):
         import json
+
         """Outputs the conversation to a json file."""
         messages = self.get_memory()
         conversations_json = {}
-        #conversation_json is a dictionary of dictionaries, each main dictionary contains the conversation id and a dictionary of messages
+        # conversation_json is a dictionary of dictionaries, each main dictionary contains the conversation id and a dictionary of messages
         for message in messages:
             if message.conversation_id not in conversations_json:
                 conversations_json[message.conversation_id] = {}
@@ -445,5 +489,5 @@ class CrescendoOrchestrator(MultiTurnOrchestrator):
             }
         with open(file_path, "w") as f:
             json.dump(conversations_json, f)
-        
+
         return conversations_json

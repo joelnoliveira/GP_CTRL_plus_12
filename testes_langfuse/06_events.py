@@ -2,10 +2,9 @@
 Test 6: Events and Observability
 Log custom events for user actions and system behavior
 """
-import os
+import time
 from dotenv import load_dotenv
 from langfuse import Langfuse
-import time
 
 load_dotenv()
 

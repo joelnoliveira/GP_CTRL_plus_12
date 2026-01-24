@@ -1,5 +1,4 @@
 from langfuse import get_client
-import os
 from dotenv import load_dotenv
 
 # Load .env to ensure we have credentials (though get_client might work without if we just want to inspect the object class, but better safe)

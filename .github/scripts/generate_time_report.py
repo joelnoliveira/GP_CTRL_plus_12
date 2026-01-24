@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-import json, re, csv, os, datetime
+import csv
+import json
+import os
+import re
 from datetime import datetime, timedelta, timezone
 
 def extract_times(issues, since_date=None):

@@ -31,8 +31,8 @@ try:
         }
     )
     print(f"✅ Created prompt: {prompt.name}")
-except Exception as e:
-    print(f"⚠️  Prompt might already exist, fetching...")
+except Exception as exc:
+    print("⚠️  Prompt might already exist, fetching...", exc)
     prompt = langfuse.get_prompt("greeting-template")
 
 # Compile prompt

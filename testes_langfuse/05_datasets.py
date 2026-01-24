@@ -25,7 +25,7 @@ dataset_name = "ml-concepts-qa"
 try:
     langfuse.create_dataset(name=dataset_name)
     print(f"✅ Created dataset: {dataset_name}")
-except:
+except Exception:
     print(f"⚠️  Dataset {dataset_name} already exists")
 
 # Adicionar test cases
@@ -52,7 +52,7 @@ for idx, case in enumerate(test_cases):
             expected_output=case["expected_output"]
         )
         print(f"✅ Added test case {idx+1}")
-    except:
+    except Exception:
         print(f"⚠️  Test case {idx+1} might already exist")
 
 # Evaluate model on dataset

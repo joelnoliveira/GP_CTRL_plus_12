@@ -135,7 +135,7 @@ const RunExperiment = (
   useEffect(() => {
     const fetchScenarios = async () => {
       try {
-        const response = await fetch("http://localhost:8000/scenarios", {
+        const response = await fetch("http://10.17.0.162:8000/scenarios", {
           method: "GET"
         });
         if (!response.ok) throw new Error("Failed to fetch scenarios");
@@ -164,7 +164,7 @@ const RunExperiment = (
   useEffect(() => {
     const fetchTemplate = async () => {
       try {
-        const response = await fetch("http://localhost:8000/template-datasets", {
+        const response = await fetch("http://10.17.0.162:8000/template-datasets", {
           method: "GET"
         });
         if (!response.ok) throw new Error("Failed to fetch template");
@@ -204,7 +204,7 @@ const RunExperiment = (
   useEffect(() => {
     const fetchRolePlayOption = async () => {
       try {
-        const response = await fetch("http://localhost:8000/role-play-options", {
+        const response = await fetch("http://10.17.0.162:8000/role-play-options", {
           method: "GET"
         });
         if (!response.ok) throw new Error("Failed to fetch roleplay option");
@@ -278,7 +278,7 @@ const handleExecute = async () => {
     let payload = {};
 
     if (scenarioType.label === "Over Refusal Test") {
-      endpoint = "http://localhost:8000/over-refusal-test"; 
+      endpoint = "http://10.17.0.162:8000/over-refusal-test"; 
       payload = {
         target_model_name: selections.target_model_name      
       };
@@ -291,7 +291,7 @@ const handleExecute = async () => {
           return;
         }
 
-        endpoint = "http://localhost:8000/attack"; 
+        endpoint = "http://10.17.0.162:8000/attack"; 
         payload = {
           attack_option: selections.attack_option,
           scenario_id: scenarioType.key,
@@ -306,7 +306,7 @@ const handleExecute = async () => {
           return;
         }
 
-        endpoint = "http://localhost:8000/attack-template";
+        endpoint = "http://10.17.0.162:8000/attack-template";
         payload = {
           scenario_id: scenarioType.key,
           target_model_name: selections.target_model_name,

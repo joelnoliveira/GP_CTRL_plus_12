@@ -247,8 +247,8 @@ async def launch_attack_template(ollama_host, **kwargs):
 
         # baseline from Donato... it will need to be adapted to our needs
         # to quickly test the attack template, we will limit the number of goals and prompts
-        goals_list = goals_list[:1]
-        seed_prompt_dataset.prompts = seed_prompt_dataset.prompts[:3]
+        #goals_list = goals_list[:1]
+        #seed_prompt_dataset.prompts = seed_prompt_dataset.prompts[:3]
 
         for goal in goals_list:
             for p in seed_prompt_dataset.prompts:

@@ -29,7 +29,9 @@ def get_available_files(model_id: str, token: str):
         return []
 
 
-async def download_specific_files(model_id: str, file_patterns: list, token: str, cache_dir: Path):
+async def download_specific_files(
+    model_id: str, file_patterns: list, token: str, cache_dir: Path
+):
     """
     Downloads specific files from a Hugging Face model repository.
     If file_patterns is None, downloads all files.
@@ -46,7 +48,11 @@ async def download_specific_files(model_id: str, file_patterns: list, token: str
         logger.info(f"Downloading all files for model {model_id}.")
     else:
         # Filter files based on the patterns provided
-        files_to_download = [file for file in available_files if any(pattern in file for pattern in file_patterns)]
+        files_to_download = [
+            file
+            for file in available_files
+            if any(pattern in file for pattern in file_patterns)
+        ]
         if not files_to_download:
             logger.info(f"No files matched the patterns provided for model {model_id}.")
             return
@@ -97,7 +103,9 @@ async def download_file(url, token, download_dir, num_splits):
         logger.info(f"Downloaded {file_name} to {file_path}")
 
 
-async def download_files(urls: list[str], token: str, download_dir: Path, num_splits=3, parallel_downloads=4):
+async def download_files(
+    urls: list[str], token: str, download_dir: Path, num_splits=3, parallel_downloads=4
+):
     """Download multiple files with parallel downloads and segmented downloading."""
 
     # Limit the number of parallel downloads

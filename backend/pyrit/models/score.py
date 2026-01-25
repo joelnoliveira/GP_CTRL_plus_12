@@ -10,7 +10,6 @@ ScoreType = Literal["true_false", "float_scale"]
 
 
 class Score:
-
     id: uuid.UUID | str
 
     # The value the scorer ended up with; e.g. True (if true_false) or 0 (if float_scale)
@@ -104,15 +103,24 @@ class Score:
         raise ValueError(f"Unknown scorer type: {self.score_type}")
 
     def validate(self, scorer_type, score_value):
-        if scorer_type == "true_false" and str(score_value).lower() not in ["true", "false"]:
-            raise ValueError(f"True False scorers must have a score value of 'true' or 'false' not {score_value}")
+        if scorer_type == "true_false" and str(score_value).lower() not in [
+            "true",
+            "false",
+        ]:
+            raise ValueError(
+                f"True False scorers must have a score value of 'true' or 'false' not {score_value}"
+            )
         elif scorer_type == "float_scale":
             try:
                 score = float(score_value)
                 if not (0 <= score <= 1):
-                    raise ValueError(f"Float scale scorers must have a score value between 0 and 1. Got {score_value}")
+                    raise ValueError(
+                        f"Float scale scorers must have a score value between 0 and 1. Got {score_value}"
+                    )
             except ValueError:
-                raise ValueError(f"Float scale scorers require a numeric score value. Got {score_value}")
+                raise ValueError(
+                    f"Float scale scorers require a numeric score value. Got {score_value}"
+                )
 
     def to_dict(self):
         return {

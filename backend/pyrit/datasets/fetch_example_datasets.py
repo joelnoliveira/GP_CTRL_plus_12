@@ -85,7 +85,9 @@ def _fetch_from_public_url(source: str, file_type: str) -> List[Dict[str, str]]:
             valid_types = ", ".join(FILE_TYPE_HANDLERS.keys())
             raise ValueError(f"Invalid file_type. Expected one of: {valid_types}.")
     else:
-        raise Exception(f"Failed to fetch examples from public URL. Status code: {response.status_code}")
+        raise Exception(
+            f"Failed to fetch examples from public URL. Status code: {response.status_code}"
+        )
 
 
 def _fetch_from_file(source: str, file_type: str) -> List[Dict[str, str]]:
@@ -148,7 +150,9 @@ def fetch_examples(
     if cache:
         _write_cache(cache_file, examples, file_type)
     else:
-        with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=f".{file_type}") as temp_file:
+        with tempfile.NamedTemporaryFile(
+            delete=False, mode="w", suffix=f".{file_type}"
+        ) as temp_file:
             FILE_TYPE_HANDLERS[file_type]["write"](temp_file, examples)
 
     return examples
@@ -224,8 +228,12 @@ def fetch_seclists_bias_testing_dataset(
         "Nationality": lambda: (
             nationality if nationality else random.choice(countries).name
         ),  # Same as Country, the target LLM should be able to understand the context
-        "GENDER": lambda: gender if gender else random.choice(["male", "female", "non-binary"]),
-        "SKIN_COLOR": lambda: skin_color if skin_color else random.choice(["white", "black", "brown", "yellow"]),
+        "GENDER": lambda: gender
+        if gender
+        else random.choice(["male", "female", "non-binary"]),
+        "SKIN_COLOR": lambda: skin_color
+        if skin_color
+        else random.choice(["white", "black", "brown", "yellow"]),
     }
 
     # Replace placeholders in the examples with generated values
@@ -424,7 +432,9 @@ def fetch_decoding_trust_stereotypes_dataset(
         https://github.com/centerforaisafety/HarmBench
     """
     if system_prompt_type not in ["benign", "untargeted", "targeted"]:
-        raise ValueError("Invalid system_prompt_type. Expected 'benign', 'untargeted', or 'targeted'}")
+        raise ValueError(
+            "Invalid system_prompt_type. Expected 'benign', 'untargeted', or 'targeted'}"
+        )
     # Determine the file type from the source URL
     file_type = source.split(".")[-1]
     if file_type not in FILE_TYPE_HANDLERS:
@@ -433,15 +443,24 @@ def fetch_decoding_trust_stereotypes_dataset(
 
     if system_prompt_type == "targeted":
         system_prompt = SeedPrompt.from_yaml_file(
-            Path(DATASETS_PATH) / "prompt_templates" / "jailbreak" / "dt_stereotypes_targeted.yaml"
+            Path(DATASETS_PATH)
+            / "prompt_templates"
+            / "jailbreak"
+            / "dt_stereotypes_targeted.yaml"
         )
     elif system_prompt_type == "untargeted":
         system_prompt = SeedPrompt.from_yaml_file(
-            Path(DATASETS_PATH) / "prompt_templates" / "jailbreak" / "dt_stereotypes_untargeted.yaml"
+            Path(DATASETS_PATH)
+            / "prompt_templates"
+            / "jailbreak"
+            / "dt_stereotypes_untargeted.yaml"
         )
     else:
         system_prompt = SeedPrompt.from_yaml_file(
-            Path(DATASETS_PATH) / "prompt_templates" / "jailbreak" / "dt_stereotypes_benign.yaml"
+            Path(DATASETS_PATH)
+            / "prompt_templates"
+            / "jailbreak"
+            / "dt_stereotypes_benign.yaml"
         )
 
     # Required keys to validate each example
@@ -469,7 +488,9 @@ def fetch_decoding_trust_stereotypes_dataset(
             continue
 
         prompt = (
-            system_prompt.render_template_value(prompt=example["user_prompt"], target_group=example["target_group"])
+            system_prompt.render_template_value(
+                prompt=example["user_prompt"], target_group=example["target_group"]
+            )
             if is_targeted
             else system_prompt.render_template_value(prompt=example["user_prompt"])
         )
@@ -495,7 +516,8 @@ def fetch_decoding_trust_stereotypes_dataset(
 
 def fetch_adv_bench_dataset(
     source: str = (
-        "https://raw.githubusercontent.com/llm-attacks/llm-attacks/main/data/advbench/" "harmful_behaviors.csv"
+        "https://raw.githubusercontent.com/llm-attacks/llm-attacks/main/data/advbench/"
+        "harmful_behaviors.csv"
     ),
     source_type: Literal["public_url"] = "public_url",
     cache: bool = True,
@@ -600,7 +622,10 @@ def fetch_pku_safe_rlhf_dataset(include_safe_prompts: bool = True) -> SeedPrompt
         prompts = [
             item["prompt"]
             for item in data["train"]
-            if (item["is_response_0_safe"] is False or item["is_response_1_safe"] is False)
+            if (
+                item["is_response_0_safe"] is False
+                or item["is_response_1_safe"] is False
+            )
         ]
 
     harm_categories = [
@@ -763,7 +788,11 @@ def fetch_librAI_do_not_answer_dataset() -> SeedPromptDataset:
             data_type="text",
             name="",
             dataset_name="LibrAI/Do-Not-Answer",
-            harm_categories=[entry["risk_area"], entry["types_of_harm"], entry["specific_harms"]],
+            harm_categories=[
+                entry["risk_area"],
+                entry["types_of_harm"],
+                entry["specific_harms"],
+            ],
             description=(
                 f"This is a prompt from the 'Do Not Answer' dataset under the risk area: {entry['risk_area']}, "
                 f"harm type: {entry['types_of_harm']}, and specific harm: {entry['specific_harms']}."
@@ -797,7 +826,9 @@ def fetch_wmdp_dataset(category: Optional[str] = None) -> QuestionAnsweringDatas
     if not category:  # if category is not specified, read in all 3 subsets of data
         data_categories = ["wmdp-cyber", "wmdp-bio", "wmdp-chem"]
     elif category not in ["cyber", "bio", "chem"]:
-        raise ValueError(f"Invalid Parameter: {category}. Expected 'cyber', 'bio', or 'chem'")
+        raise ValueError(
+            f"Invalid Parameter: {category}. Expected 'cyber', 'bio', or 'chem'"
+        )
     else:
         data_categories = ["wmdp-" + category]
 

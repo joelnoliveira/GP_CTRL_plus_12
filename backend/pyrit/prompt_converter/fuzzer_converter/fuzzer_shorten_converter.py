@@ -12,12 +12,19 @@ from pyrit.prompt_target import PromptChatTarget
 
 
 class FuzzerShortenConverter(FuzzerConverter):
-    def __init__(self, *, converter_target: PromptChatTarget, prompt_template: SeedPrompt = None):
+    def __init__(
+        self, *, converter_target: PromptChatTarget, prompt_template: SeedPrompt = None
+    ):
         prompt_template = (
             prompt_template
             if prompt_template
             else SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "fuzzer_converters" / "shorten_converter.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "fuzzer_converters"
+                / "shorten_converter.yaml"
             )
         )
-        super().__init__(converter_target=converter_target, prompt_template=prompt_template)
+        super().__init__(
+            converter_target=converter_target, prompt_template=prompt_template
+        )

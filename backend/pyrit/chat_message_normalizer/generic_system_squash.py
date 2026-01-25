@@ -13,13 +13,16 @@ class GenericSystemSquash(ChatMessageNormalizer[list[ChatMessage]]):
         """
 
         normalized_messages = ChatMessageNormalizer.squash_system_message(
-            messages=messages, squash_function=GenericSystemSquash.combine_system_user_message
+            messages=messages,
+            squash_function=GenericSystemSquash.combine_system_user_message,
         )
         return normalized_messages
 
     @staticmethod
     def combine_system_user_message(
-        system_message: ChatMessage, user_message: ChatMessage, msg_type: ChatMessageRole = "user"
+        system_message: ChatMessage,
+        user_message: ChatMessage,
+        msg_type: ChatMessageRole = "user",
     ) -> ChatMessage:
         """Combines the system message with the user message.
 

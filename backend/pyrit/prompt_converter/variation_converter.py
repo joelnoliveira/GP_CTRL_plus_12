@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class VariationConverter(PromptConverter):
-    def __init__(self, *, converter_target: PromptChatTarget, prompt_template: SeedPrompt = None):
+    def __init__(
+        self, *, converter_target: PromptChatTarget, prompt_template: SeedPrompt = None
+    ):
         self.converter_target = converter_target
 
         # set to default strategy if not provided
@@ -34,15 +36,23 @@ class VariationConverter(PromptConverter):
             prompt_template
             if prompt_template
             else SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "variation_converter.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "variation_converter.yaml"
             )
         )
 
         self.number_variations = 1
 
-        self.system_prompt = str(prompt_template.render_template_value(number_iterations=str(self.number_variations)))
+        self.system_prompt = str(
+            prompt_template.render_template_value(
+                number_iterations=str(self.number_variations)
+            )
+        )
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Generates variations of the input prompts using the converter target.
         Parameters:

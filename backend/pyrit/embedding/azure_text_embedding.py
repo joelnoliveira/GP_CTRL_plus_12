@@ -13,7 +13,12 @@ class AzureTextEmbedding(_TextEmbedding):
     DEPLOYMENT_ENVIRONMENT_VARIABLE: str = "AZURE_OPENAI_EMBEDDING_DEPLOYMENT"
 
     def __init__(
-        self, *, api_key: str = None, endpoint: str = None, deployment: str = None, api_version: str = "2024-02-01"
+        self,
+        *,
+        api_key: str = None,
+        endpoint: str = None,
+        deployment: str = None,
+        api_version: str = "2024-02-01",
     ) -> None:
         """Generate embedding using the Azure API
 

@@ -22,7 +22,9 @@ class InteractionFunction(Protocol):
     Defines the structure of interaction functions used with PlaywrightTarget.
     """
 
-    async def __call__(self, page: "Page", request_piece: PromptRequestPiece) -> str: ...
+    async def __call__(
+        self, page: "Page", request_piece: PromptRequestPiece
+    ) -> str: ...
 
 
 class PlaywrightTarget(PromptTarget):
@@ -44,7 +46,9 @@ class PlaywrightTarget(PromptTarget):
         self._interaction_func = interaction_func
         self._page = page
 
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         self._validate_request(prompt_request=prompt_request)
         if not self._page:
             raise RuntimeError(
@@ -58,7 +62,9 @@ class PlaywrightTarget(PromptTarget):
         except Exception as e:
             raise RuntimeError(f"An error occurred during interaction: {str(e)}") from e
 
-        response_entry = construct_response_from_request(request=request_piece, response_text_pieces=[text])
+        response_entry = construct_response_from_request(
+            request=request_piece, response_text_pieces=[text]
+        )
         return response_entry
 
     def _validate_request(self, *, prompt_request: PromptRequestResponse) -> None:

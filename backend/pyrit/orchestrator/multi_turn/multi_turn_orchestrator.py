@@ -37,7 +37,9 @@ class MultiTurnAttackResult:
         Args:
             prompt_target_conversation_id (str): the conversation ID for the prompt target.
         """
-        target_messages = self._memory.get_conversation(conversation_id=self.conversation_id)
+        target_messages = self._memory.get_conversation(
+            conversation_id=self.conversation_id
+        )
 
         if not target_messages or len(target_messages) == 0:
             print("No conversation with the target")
@@ -62,39 +64,56 @@ class MultiTurnAttackResult:
                         print(f"Original value: {piece.original_value}")
                     print(f"Converted value: {piece.converted_value}")
                 else:
-                    print(f"{Style.NORMAL}{Fore.YELLOW}{piece.role}: {piece.converted_value}")
+                    print(
+                        f"{Style.NORMAL}{Fore.YELLOW}{piece.role}: {piece.converted_value}"
+                    )
 
                 await display_image_response(piece)
 
-                scores = self._memory.get_scores_by_prompt_ids(prompt_request_response_ids=[str(piece.id)])
+                scores = self._memory.get_scores_by_prompt_ids(
+                    prompt_request_response_ids=[str(piece.id)]
+                )
                 if scores and len(scores) > 0:
                     for score in scores:
-                        print(f"{Style.RESET_ALL}score: {score} : {score.score_rationale}")
+                        print(
+                            f"{Style.RESET_ALL}score: {score} : {score.score_rationale}"
+                        )
 
     async def get_data_from_conversation_async(self):
         """
         Gets the data from the conversation.
         """
-        target_messages = self._memory.get_conversation(conversation_id=self.conversation_id)
+        target_messages = self._memory.get_conversation(
+            conversation_id=self.conversation_id
+        )
         if not target_messages or len(target_messages) == 0:
             print("No conversation with the target")
             return
-    
-        data = {"conversation_id": self.conversation_id, 
-                "achieved_objective": self.achieved_objective, 
-                "objective": self.objective,
-                "messages": []}
-        
+
+        data = {
+            "conversation_id": self.conversation_id,
+            "achieved_objective": self.achieved_objective,
+            "objective": self.objective,
+            "messages": [],
+        }
+
         for message in target_messages:
             for piece in message.request_pieces:
-                data["messages"].append({
-                    "role": piece.role,
-                    "content": piece.converted_value,
-                    "scores": [score.to_dict() for score in self._memory.get_scores_by_prompt_ids(prompt_request_response_ids=[str(piece.id)])]
-                })
-        
+                data["messages"].append(
+                    {
+                        "role": piece.role,
+                        "content": piece.converted_value,
+                        "scores": [
+                            score.to_dict()
+                            for score in self._memory.get_scores_by_prompt_ids(
+                                prompt_request_response_ids=[str(piece.id)]
+                            )
+                        ],
+                    }
+                )
+
         return data
-        
+
 
 class MultiTurnOrchestrator(Orchestrator):
     """
@@ -134,24 +153,31 @@ class MultiTurnOrchestrator(Orchestrator):
         objective_scorer: Scorer,
         verbose: bool = False,
     ) -> None:
-
         super().__init__(prompt_converters=prompt_converters, verbose=verbose)
 
         self._objective_target = objective_target
         self._achieved_objective = False
 
-        self._adversarial_chat_system_seed_prompt = SeedPrompt.from_yaml_file(adversarial_chat_system_prompt_path)
+        self._adversarial_chat_system_seed_prompt = SeedPrompt.from_yaml_file(
+            adversarial_chat_system_prompt_path
+        )
 
         if "objective" not in self._adversarial_chat_system_seed_prompt.parameters:
-            raise ValueError(f"Adversarial seed prompt must have an objective: '{adversarial_chat_system_prompt_path}'")
+            raise ValueError(
+                f"Adversarial seed prompt must have an objective: '{adversarial_chat_system_prompt_path}'"
+            )
 
         self._prompt_normalizer = PromptNormalizer()
         self._adversarial_chat = adversarial_chat
 
-        self._adversarial_chat_seed_prompt = self._get_adversarial_chat_seed_prompt(adversarial_chat_seed_prompt)
+        self._adversarial_chat_seed_prompt = self._get_adversarial_chat_seed_prompt(
+            adversarial_chat_seed_prompt
+        )
 
         if max_turns <= 0:
-            raise ValueError("The maximum number of turns must be greater than or equal to 0.")
+            raise ValueError(
+                "The maximum number of turns must be greater than or equal to 0."
+            )
 
         self._max_turns = max_turns
 
@@ -191,7 +217,11 @@ class MultiTurnOrchestrator(Orchestrator):
         """
 
     async def run_attacks_async(
-        self, *, objectives: list[str], memory_labels: Optional[dict[str, str]] = None, batch_size=5
+        self,
+        *,
+        objectives: list[str],
+        memory_labels: Optional[dict[str, str]] = None,
+        batch_size=5,
     ) -> list[MultiTurnAttackResult]:
         """Applies the attack strategy for each objective in the list of objectives.
 
@@ -210,13 +240,17 @@ class MultiTurnOrchestrator(Orchestrator):
 
         async def limited_run_attack(objective):
             async with semaphore:
-                return await self.run_attack_async(objective=objective, memory_labels=memory_labels)
+                return await self.run_attack_async(
+                    objective=objective, memory_labels=memory_labels
+                )
 
         tasks = [limited_run_attack(objective) for objective in objectives]
         results = await asyncio.gather(*tasks)
         return results
 
-    def set_prepended_conversation(self, *, prepended_conversation: list[PromptRequestResponse]):
+    def set_prepended_conversation(
+        self, *, prepended_conversation: list[PromptRequestResponse]
+    ):
         """Sets the prepended conversation to be sent to the objective target.
         This can be used to set the system prompt of the objective target, or send a series of
         user/assistant messages from which the orchestrator should start the conversation from.
@@ -235,8 +269,10 @@ class MultiTurnOrchestrator(Orchestrator):
             self._last_prepended_user_message = last_message.converted_value
         elif last_message.role == "assistant":
             # Get scores for the last assistant message based off of the original id
-            self._last_prepended_assistant_message_scores = self._memory.get_scores_by_prompt_ids(
-                prompt_request_response_ids=[str(last_message.original_prompt_id)]
+            self._last_prepended_assistant_message_scores = (
+                self._memory.get_scores_by_prompt_ids(
+                    prompt_request_response_ids=[str(last_message.original_prompt_id)]
+                )
             )
 
             # Do not set last user message if there are no scores for the last assistant message
@@ -248,7 +284,9 @@ class MultiTurnOrchestrator(Orchestrator):
                 len(self._prepended_conversation) > 1
                 and self._prepended_conversation[-2].request_pieces[0].role == "user"
             ):
-                self._last_prepended_user_message = self._prepended_conversation[-2].request_pieces[0].converted_value
+                self._last_prepended_user_message = (
+                    self._prepended_conversation[-2].request_pieces[0].converted_value
+                )
             else:
                 raise ValueError(
                     "There must be a user message preceding the assistant message in prepended conversations."
@@ -274,7 +312,10 @@ class MultiTurnOrchestrator(Orchestrator):
             ValueError: If the objective target is not a PromptChatTarget, as PromptTargets do
                         not support setting system prompts.
         """
-        logger.log(level=logging.INFO, msg=f"Preparing conversation with ID: {new_conversation_id}")
+        logger.log(
+            level=logging.INFO,
+            msg=f"Preparing conversation with ID: {new_conversation_id}",
+        )
 
         turn_count = 1
         skip_iter = -1
@@ -306,14 +347,16 @@ class MultiTurnOrchestrator(Orchestrator):
 
                             add_to_memory = False
                         else:
-                            raise ValueError("Objective Target must be a PromptChatTarget to set system prompt.")
+                            raise ValueError(
+                                "Objective Target must be a PromptChatTarget to set system prompt."
+                            )
                     elif piece.role == "assistant":
                         # Number of complete turns should be the same as the number of assistant messages
                         turn_count += 1
 
                         if turn_count > self._max_turns:
                             raise ValueError(
-                                f"The number of turns in the prepended conversation ({turn_count-1}) is equal to"
+                                f"The number of turns in the prepended conversation ({turn_count - 1}) is equal to"
                                 + f" or exceeds the maximum number of turns ({self._max_turns}), which means the"
                                 + " conversation will not be able to continue. Please reduce the number of turns in"
                                 + " the prepended conversation or increase the maximum number of turns and try again."

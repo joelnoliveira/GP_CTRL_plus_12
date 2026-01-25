@@ -145,7 +145,6 @@ class AzureBlobStorageIO(StorageIO):
         sas_token: Optional[str] = None,
         blob_content_type: SupportedContentType = SupportedContentType.PLAIN_TEXT,
     ) -> None:
-
         self._blob_content_type: str = blob_content_type.value
         if not container_url:
             raise ValueError("Invalid Azure Storage Account Container URL.")
@@ -159,7 +158,9 @@ class AzureBlobStorageIO(StorageIO):
         AZURE_STORAGE_ACCOUNT_SAS_TOKEN environment variable or the init sas_token parameter, it will be used
         for authentication. Otherwise, a delegation SAS token will be created using Entra ID authentication."""
         if not self._sas_token:
-            logger.info("SAS token not provided. Creating a delegation SAS token using Entra ID authentication.")
+            logger.info(
+                "SAS token not provided. Creating a delegation SAS token using Entra ID authentication."
+            )
             sas_token = await AzureStorageAuth.get_sas_token(self._container_url)
 
         self._client_async = AsyncContainerClient.from_container_url(
@@ -167,7 +168,9 @@ class AzureBlobStorageIO(StorageIO):
             credential=sas_token,
         )
 
-    async def _upload_blob_async(self, file_name: str, data: bytes, content_type: str) -> None:
+    async def _upload_blob_async(
+        self, file_name: str, data: bytes, content_type: str
+    ) -> None:
         """
         (Async) Handles uploading blob to given storage container.
 
@@ -269,7 +272,9 @@ class AzureBlobStorageIO(StorageIO):
             await self._create_container_client_async()
         _, blob_name = self.parse_blob_url(str(path))
         try:
-            await self._upload_blob_async(file_name=blob_name, data=data, content_type=self._blob_content_type)
+            await self._upload_blob_async(
+                file_name=blob_name, data=data, content_type=self._blob_content_type
+            )
         except Exception as exc:
             logger.exception(f"Failed to write file at {blob_name}: {exc}")
             raise
@@ -307,7 +312,9 @@ class AzureBlobStorageIO(StorageIO):
             await self._client_async.close()
             self._client_async = None
 
-    async def create_directory_if_not_exists(self, directory_path: Union[Path, str]) -> None:
+    async def create_directory_if_not_exists(
+        self, directory_path: Union[Path, str]
+    ) -> None:
         logger.info(
             f"Directory creation is handled automatically during upload operations in Azure Blob Storage. "
             f"Directory path: {directory_path}"

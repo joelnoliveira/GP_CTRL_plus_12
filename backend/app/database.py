@@ -14,6 +14,7 @@ engine = create_engine(DATABASE_URL, echo=True)
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 # Dependency to get database session
 def get_db():
     """FastAPI dependency that provides a database session"""

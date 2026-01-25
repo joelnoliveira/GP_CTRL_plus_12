@@ -19,7 +19,9 @@ class AsciiSmugglerConverter(PromptConverter):
 
     """
 
-    def __init__(self, action: Literal["encode", "decode"] = "encode", unicode_tags: bool = False):
+    def __init__(
+        self, action: Literal["encode", "decode"] = "encode", unicode_tags: bool = False
+    ):
         """
         Initialize the converter with options for encoding/decoding.
 
@@ -32,7 +34,9 @@ class AsciiSmugglerConverter(PromptConverter):
         if self.action not in ["encode", "decode"]:
             raise ValueError("Action must be either 'encode' or 'decode'")
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Process the prompt to either encode or decode based on options and prompt type.
         Args:

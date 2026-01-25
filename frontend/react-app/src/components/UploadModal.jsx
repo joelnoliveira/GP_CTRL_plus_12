@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from './Button';
 
 import '../styles/components/uploadmodal.css'; // Path to your CSS file
@@ -17,10 +17,20 @@ const UploadModal = ({
 }) => {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState('idle'); // idle | loading | error
-  const isScenario = targetType === 'scenario';
+  const isScenario = targetType === 'scenarios';
 
-  // If modal is closed, don't render anything
-  if (!isOpen) return null;
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (!isOpen) return null;
+
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [isOpen,onClose]);
 
   const handleFileChange = (e) => {
     const f = e.target.files && e.target.files[0];
@@ -29,6 +39,8 @@ const UploadModal = ({
       setStatus('idle');
     }
   };
+
+  if (!isOpen) return null;
 
 //   const isValid = (obj) => obj && (obj.malicious_goals || obj.vulnerable_goals);
 
@@ -40,9 +52,7 @@ const UploadModal = ({
       const formData = new FormData();
       formData.append('file', file, file.name);
 
-      console.log(formData);
-
-      const res = await fetch('http://localhost:8000/files/upload', {
+      const res = await fetch(`http://localhost:8000/files/upload/${targetType}`, {
         method: 'POST',
         body: formData,
       });
@@ -64,10 +74,10 @@ const UploadModal = ({
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-container">
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title">Upload {targetType === 'scenario' ? 'Scenario' : 'Template'}</div>
+          <div className="modal-title">Upload {targetType === 'scenarios' ? 'Scenario' : (targetType === 'template_datasets' ? 'Template': 'Role Playing Type')}</div>
           <button className="close-btn" onClick={onClose} aria-label="close">×</button>
         </div>
 

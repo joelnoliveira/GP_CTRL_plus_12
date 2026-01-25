@@ -65,7 +65,9 @@ class PromptMemoryEntry(Base):
     __tablename__ = "PromptMemoryEntries"
     __table_args__ = {"extend_existing": True}
     id = Column(Uuid, nullable=False, primary_key=True)
-    role: Mapped[Literal["system", "user", "assistant"]] = Column(String, nullable=False)
+    role: Mapped[Literal["system", "user", "assistant"]] = Column(
+        String, nullable=False
+    )
     conversation_id = Column(String, nullable=False)
     sequence = Column(INTEGER, nullable=False)
     timestamp = Column(DateTime, nullable=False)
@@ -74,17 +76,19 @@ class PromptMemoryEntry(Base):
     converter_identifiers: Mapped[dict[str, str]] = Column(JSON)
     prompt_target_identifier: Mapped[dict[str, str]] = Column(JSON)
     orchestrator_identifier: Mapped[dict[str, str]] = Column(JSON)
-    response_error: Mapped[Literal["blocked", "none", "processing", "unknown"]] = Column(String, nullable=True)
-
-    original_value_data_type: Mapped[Literal["text", "image_path", "audio_path", "url", "error"]] = Column(
-        String, nullable=False
+    response_error: Mapped[Literal["blocked", "none", "processing", "unknown"]] = (
+        Column(String, nullable=True)
     )
+
+    original_value_data_type: Mapped[
+        Literal["text", "image_path", "audio_path", "url", "error"]
+    ] = Column(String, nullable=False)
     original_value = Column(Unicode, nullable=False)
     original_value_sha256 = Column(String)
 
-    converted_value_data_type: Mapped[Literal["text", "image_path", "audio_path", "url", "error"]] = Column(
-        String, nullable=False
-    )
+    converted_value_data_type: Mapped[
+        Literal["text", "image_path", "audio_path", "url", "error"]
+    ] = Column(String, nullable=False)
     converted_value = Column(Unicode)
     converted_value_sha256 = Column(String)
 
@@ -167,7 +171,11 @@ class EmbeddingDataEntry(Base):  # type: ignore
     __tablename__ = "EmbeddingData"
     # Allows table redefinition if already defined.
     __table_args__ = {"extend_existing": True}
-    id = Column(Uuid(as_uuid=True), ForeignKey(f"{PromptMemoryEntry.__tablename__}.id"), primary_key=True)
+    id = Column(
+        Uuid(as_uuid=True),
+        ForeignKey(f"{PromptMemoryEntry.__tablename__}.id"),
+        primary_key=True,
+    )
     embedding = Column(ARRAY(Float).with_variant(JSON, "mssql"))  # type: ignore
     embedding_type_name = Column(String)
 
@@ -187,15 +195,21 @@ class ScoreEntry(Base):  # type: ignore
     id = Column(Uuid(as_uuid=True), nullable=False, primary_key=True)
     score_value = Column(String, nullable=False)
     score_value_description = Column(String, nullable=True)
-    score_type: Mapped[Literal["true_false", "float_scale"]] = Column(String, nullable=False)
+    score_type: Mapped[Literal["true_false", "float_scale"]] = Column(
+        String, nullable=False
+    )
     score_category = Column(String, nullable=False)
     score_rationale = Column(String, nullable=True)
     score_metadata = Column(String, nullable=True)
     scorer_class_identifier: Mapped[dict[str, str]] = Column(JSON)
-    prompt_request_response_id = Column(Uuid(as_uuid=True), ForeignKey(f"{PromptMemoryEntry.__tablename__}.id"))
+    prompt_request_response_id = Column(
+        Uuid(as_uuid=True), ForeignKey(f"{PromptMemoryEntry.__tablename__}.id")
+    )
     timestamp = Column(DateTime, nullable=False)
     task = Column(String, nullable=True)
-    prompt_request_piece: Mapped["PromptMemoryEntry"] = relationship("PromptMemoryEntry", back_populates="scores")
+    prompt_request_piece: Mapped["PromptMemoryEntry"] = relationship(
+        "PromptMemoryEntry", back_populates="scores"
+    )
 
     def __init__(self, *, entry: Score):
         self.id = entry.id
@@ -206,7 +220,11 @@ class ScoreEntry(Base):  # type: ignore
         self.score_rationale = entry.score_rationale
         self.score_metadata = entry.score_metadata
         self.scorer_class_identifier = entry.scorer_class_identifier
-        self.prompt_request_response_id = entry.prompt_request_response_id if entry.prompt_request_response_id else None
+        self.prompt_request_response_id = (
+            entry.prompt_request_response_id
+            if entry.prompt_request_response_id
+            else None
+        )
         self.timestamp = entry.timestamp
         self.task = entry.task
 

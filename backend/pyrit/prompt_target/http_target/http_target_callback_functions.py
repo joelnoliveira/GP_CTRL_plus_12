@@ -34,7 +34,9 @@ def get_http_target_json_response_callback_function(key: str) -> Callable:
     return parse_json_http_response
 
 
-def get_http_target_regex_matching_callback_function(key: str, url: str = None) -> Callable:
+def get_http_target_regex_matching_callback_function(
+    key: str, url: str = None
+) -> Callable:
     def parse_using_regex(response: requests.Response):
         """
         Purpose: parses text outputs using regex

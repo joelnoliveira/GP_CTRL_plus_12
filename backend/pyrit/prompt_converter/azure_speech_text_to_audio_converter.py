@@ -41,13 +41,14 @@ class AzureSpeechTextToAudioConverter(PromptConverter):
         synthesis_voice_name: str = "en-US-AvaNeural",
         output_format: AzureSpeachAudioFormat = "wav",
     ) -> None:
-
         self._azure_speech_region: str = default_values.get_required_value(
-            env_var_name=self.AZURE_SPEECH_REGION_ENVIRONMENT_VARIABLE, passed_value=azure_speech_region
+            env_var_name=self.AZURE_SPEECH_REGION_ENVIRONMENT_VARIABLE,
+            passed_value=azure_speech_region,
         )
 
         self._azure_speech_key: str = default_values.get_required_value(
-            env_var_name=self.AZURE_SPEECH_KEY_ENVIRONMENT_VARIABLE, passed_value=azure_speech_key
+            env_var_name=self.AZURE_SPEECH_KEY_ENVIRONMENT_VARIABLE,
+            passed_value=azure_speech_key,
         )
 
         self._synthesis_language = synthesis_language
@@ -57,7 +58,9 @@ class AzureSpeechTextToAudioConverter(PromptConverter):
     def input_supported(self, input_type: PromptDataType) -> bool:
         return input_type == "text"
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         if not self.input_supported(input_type):
             raise ValueError("Input type not supported")
 
@@ -65,7 +68,9 @@ class AzureSpeechTextToAudioConverter(PromptConverter):
             raise ValueError("Prompt was empty. Please provide valid input prompt.")
 
         audio_serializer = data_serializer_factory(
-            category="prompt-memory-entries", data_type="audio_path", extension=self._output_format
+            category="prompt-memory-entries",
+            data_type="audio_path",
+            extension=self._output_format,
         )
 
         audio_serializer_file = None
@@ -82,7 +87,9 @@ class AzureSpeechTextToAudioConverter(PromptConverter):
                     speechsdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
                 )
 
-            speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
+            speech_synthesizer = speechsdk.SpeechSynthesizer(
+                speech_config=speech_config
+            )
 
             result = speech_synthesizer.speak_text_async(prompt).get()
             if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
@@ -96,9 +103,13 @@ class AzureSpeechTextToAudioConverter(PromptConverter):
                 )
             elif result.reason == speechsdk.ResultReason.Canceled:
                 cancellation_details = result.cancellation_details
-                logger.info("Speech synthesis canceled: {}".format(cancellation_details.reason))
+                logger.info(
+                    "Speech synthesis canceled: {}".format(cancellation_details.reason)
+                )
                 if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                    logger.error("Error details: {}".format(cancellation_details.error_details))
+                    logger.error(
+                        "Error details: {}".format(cancellation_details.error_details)
+                    )
                 raise RuntimeError(
                     "Speech synthesis canceled: {}".format(cancellation_details.reason)
                     + "Error details: {}".format(cancellation_details.error_details)
@@ -106,4 +117,6 @@ class AzureSpeechTextToAudioConverter(PromptConverter):
         except Exception as e:
             logger.error("Failed to convert prompt to audio: %s", str(e))
             raise
-        return ConverterResult(output_text=audio_serializer_file, output_type="audio_path")
+        return ConverterResult(
+            output_text=audio_serializer_file, output_type="audio_path"
+        )

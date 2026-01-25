@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export const useExperimentData = () => {
+  const { token } = useAuth();
   const [scenarios, setScenarios] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [rolePlayOptions, setRolePlayOptions] = useState([]);
@@ -8,7 +10,13 @@ export const useExperimentData = () => {
 
   const fetchScenarios = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8000/scenarios");
+      const res = await fetch("http://localhost:8000/scenarios", {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`,
+                },
+              });
       if (!res.ok) throw new Error("Failed to fetch scenarios");
 
       const data = await res.json();
@@ -25,7 +33,13 @@ export const useExperimentData = () => {
 
   const fetchTemplates = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8000/template-datasets");
+      const res = await fetch("http://localhost:8000/template-datasets", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        });
       if (!res.ok) throw new Error("Failed to fetch templates");
 
       const data = await res.json();
@@ -42,7 +56,13 @@ export const useExperimentData = () => {
 
   const fetchRolePlayOptions = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8000/role-play-options");
+      const res = await fetch("http://localhost:8000/role-play-options", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        });
       if (!res.ok) throw new Error("Failed to fetch role play options");
 
       const data = await res.json();

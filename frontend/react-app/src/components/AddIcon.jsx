@@ -30,4 +30,4 @@ const AddIcon = ({
   )
 }
 
-export default AddIcon
+export default AddIcon;

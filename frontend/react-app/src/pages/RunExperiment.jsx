@@ -53,7 +53,11 @@ const RunExperiment = (
     const fetchFormats = async () => {
       try {
         const response = await fetch("http://localhost:8000/files/formats", {
-          method: "GET"
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
         });
         if (!response.ok) throw new Error("Failed to fetch file formats");
         const data = await response.json();
@@ -228,15 +232,21 @@ const handleExecute = async () => {
       }
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+
     //Fazer a chamada ao backend
     const response = await fetch(endpoint, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(payload)
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Erro ${response.status}: ${response.statusText}`);
@@ -247,9 +257,11 @@ const handleExecute = async () => {
     const newSuccess = {type: "success", message: "Attack successfully executed!"};
     setToastConfig(newSuccess);
   } catch (err) {
-    console.error("Error executing attack:", err);
-    const newError = { type: "error", message: `Error executing attack: ${err.message}.`};
-    setToastConfig(newError);
+    if (err.name === 'AbortError') {
+      setToastConfig({ type: "caution", message: "Request timed out. The process will continue on the background." });
+    } else {
+      setToastConfig({ type: "error", message: err.message });
+    }
   } finally {
     setIsLoading(false); // 3. Stop loading regardless of success/fail
   }

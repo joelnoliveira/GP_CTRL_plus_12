@@ -20,7 +20,9 @@ class AzureStorageAuth:
     """
 
     @staticmethod
-    async def get_user_delegation_key(blob_service_client: BlobServiceClient) -> UserDelegationKey:
+    async def get_user_delegation_key(
+        blob_service_client: BlobServiceClient,
+    ) -> UserDelegationKey:
         """
         Retrieves a user delegation key valid for one day.
 
@@ -35,7 +37,8 @@ class AzureStorageAuth:
         delegation_key_expiry_time = delegation_key_start_time + timedelta(days=1)
 
         user_delegation_key = await blob_service_client.get_user_delegation_key(
-            key_start_time=delegation_key_start_time, key_expiry_time=delegation_key_expiry_time
+            key_start_time=delegation_key_start_time,
+            key_expiry_time=delegation_key_expiry_time,
         )
 
         return user_delegation_key
@@ -70,8 +73,9 @@ class AzureStorageAuth:
         credential = DefaultAzureCredential()
 
         try:
-            async with BlobServiceClient(account_url=account_url, credential=credential) as blob_service_client:
-
+            async with BlobServiceClient(
+                account_url=account_url, credential=credential
+            ) as blob_service_client:
                 user_delegation_key = await AzureStorageAuth.get_user_delegation_key(
                     blob_service_client=blob_service_client
                 )
@@ -86,7 +90,9 @@ class AzureStorageAuth:
                     account_name=storage_account_name,
                     container_name=container_name,
                     user_delegation_key=user_delegation_key,
-                    permission=ContainerSasPermissions(read=True, write=True, create=True, list=True, delete=True),
+                    permission=ContainerSasPermissions(
+                        read=True, write=True, create=True, list=True, delete=True
+                    ),
                     expiry=expiry_time,
                     start=start_time,
                 )

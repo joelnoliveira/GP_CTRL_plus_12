@@ -68,7 +68,9 @@ class OpenAIDALLETarget(OpenAITarget):
             self.style = style
         elif dalle_version == "dall-e-2":
             if num_images < 1 or num_images > 10:
-                raise ValueError("DALL-E-2 can generate only up to 10 images at a time.")
+                raise ValueError(
+                    "DALL-E-2 can generate only up to 10 images at a time."
+                )
 
         self.image_size = image_size
         self.num_images = num_images
@@ -112,17 +114,23 @@ class OpenAIDALLETarget(OpenAITarget):
 
         try:
             b64_data = await self._generate_image_response_async(image_generation_args)
-            data = data_serializer_factory(category="prompt-memory-entries", data_type="image_path")
+            data = data_serializer_factory(
+                category="prompt-memory-entries", data_type="image_path"
+            )
             await data.save_b64_image(data=b64_data)
             resp_text = data.value
             response_type: PromptDataType = "image_path"
 
             response_entry = construct_response_from_request(
-                request=request, response_text_pieces=[resp_text], response_type=response_type
+                request=request,
+                response_text_pieces=[resp_text],
+                response_type=response_type,
             )
 
         except BadRequestError as bre:
-            response_entry = handle_bad_request_exception(response_text=bre.message, request=request)
+            response_entry = handle_bad_request_exception(
+                response_text=bre.message, request=request
+            )
 
         return response_entry
 

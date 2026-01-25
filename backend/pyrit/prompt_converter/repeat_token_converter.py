@@ -35,7 +35,11 @@ class RepeatTokenConverter(PromptConverter):
     """
 
     def __init__(
-        self, *, token_to_repeat: str = None, times_to_repeat: int = None, token_insert_mode: str = "split"
+        self,
+        *,
+        token_to_repeat: str = None,
+        times_to_repeat: int = None,
+        token_insert_mode: str = "split",
     ) -> None:
         self.token_to_repeat = " " + token_to_repeat.strip()
         self.times_to_repeat = times_to_repeat
@@ -68,9 +72,13 @@ class RepeatTokenConverter(PromptConverter):
 
                 self.insert = insert
             case _:
-                raise ValueError('Invalid insert mode. Must be one of "split", "prepend", "append", or "repeat".')
+                raise ValueError(
+                    'Invalid insert mode. Must be one of "split", "prepend", "append", or "repeat".'
+                )
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converter to insert repeated tokens into the prompt.
         """

@@ -45,10 +45,15 @@ class FuzzerCrossOverConverter(FuzzerConverter):
             prompt_template
             if prompt_template
             else SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "fuzzer_converters" / "crossover_converter.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "fuzzer_converters"
+                / "crossover_converter.yaml"
             )
         )
-        super().__init__(converter_target=converter_target, prompt_template=prompt_template)
+        super().__init__(
+            converter_target=converter_target, prompt_template=prompt_template
+        )
         self.prompt_templates = prompt_templates or []
         self.template_label = "TEMPLATE 1"
 
@@ -56,7 +61,9 @@ class FuzzerCrossOverConverter(FuzzerConverter):
         if "prompt_templates" in kwargs:
             self.prompt_templates = kwargs["prompt_templates"]
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converter to generate versions of prompt with new, prepended sentences.
         """
@@ -77,9 +84,7 @@ class FuzzerCrossOverConverter(FuzzerConverter):
         )
 
         formatted_prompt = f"===={self.template_label} BEGINS====\n{prompt}\n===={self.template_label} ENDS===="
-        formatted_prompt += (
-            f"\n====TEMPLATE 2 BEGINS====\n{random.choice(self.prompt_templates)}\n====TEMPLATE 2 ENDS====\n"
-        )
+        formatted_prompt += f"\n====TEMPLATE 2 BEGINS====\n{random.choice(self.prompt_templates)}\n====TEMPLATE 2 ENDS====\n"
 
         prompt_metadata = {"response_format": "json"}
         request = PromptRequestResponse(

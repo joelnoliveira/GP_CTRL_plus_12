@@ -61,7 +61,9 @@ class CodeChameleonConverter(PromptConverter):
         match encrypt_type:
             case "custom":
                 if encrypt_function is None or decrypt_function is None:
-                    raise ValueError("Encryption and decryption functions not provided for custom encrypt_type.")
+                    raise ValueError(
+                        "Encryption and decryption functions not provided for custom encrypt_type."
+                    )
                 self.encrypt_function = encrypt_function
                 if isinstance(decrypt_function, list):
                     self.decrypt_function = self._stringify_decrypt(decrypt_function)
@@ -85,7 +87,9 @@ class CodeChameleonConverter(PromptConverter):
                     '"reverse", "binary_tree", "odd_even" or "length".'
                 )
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converter that encrypts user prompt, adds stringified decrypt function in markdown and instructions.
         """
@@ -98,7 +102,9 @@ class CodeChameleonConverter(PromptConverter):
             encoded_prompt = prompt
 
         seed_prompt = SeedPrompt.from_yaml_file(
-            pathlib.Path(DATASETS_PATH) / "prompt_converters" / "codechameleon_converter.yaml"
+            pathlib.Path(DATASETS_PATH)
+            / "prompt_converters"
+            / "codechameleon_converter.yaml"
         )
 
         formatted_prompt = seed_prompt.render_template_value(
@@ -118,10 +124,14 @@ class CodeChameleonConverter(PromptConverter):
             elif isinstance(element, str):
                 output_text += str(element) + "\n"
         output_text += "```\n"
-        illegal_chars = re.findall(r"\\\d+", output_text)  # If using regex, use named groups
+        illegal_chars = re.findall(
+            r"\\\d+", output_text
+        )  # If using regex, use named groups
         if len(illegal_chars) > 0:
             # Prevent 'invalid group reference' errors during convert when applying .yaml template with re.sub
-            raise ValueError(f"Illegal character sequence in user decrypt function! Invalid chars: {illegal_chars}")
+            raise ValueError(
+                f"Illegal character sequence in user decrypt function! Invalid chars: {illegal_chars}"
+            )
         return output_text
 
     def _encrypt_binary_tree(self, sentence):
@@ -150,7 +160,11 @@ class CodeChameleonConverter(PromptConverter):
             """Converts a tree to a JSON representation."""
             if node is None:
                 return None
-            return {"value": node.value, "left": tree_to_json(node.left), "right": tree_to_json(node.right)}
+            return {
+                "value": node.value,
+                "left": tree_to_json(node.left),
+                "right": tree_to_json(node.right),
+            }
 
         words = sentence.split()
         root = build_tree(words, 0, len(words) - 1)

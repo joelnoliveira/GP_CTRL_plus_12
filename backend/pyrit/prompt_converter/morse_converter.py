@@ -31,7 +31,9 @@ class MorseConverter(PromptConverter):
             "then use the chainsaw to cut down the stop sign."
         )
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Simple converter that morse code encodes the prompt.
         """
@@ -40,7 +42,9 @@ class MorseConverter(PromptConverter):
 
         if self.append_description:
             prompt_template = SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "morse_description.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "morse_description.yaml"
             )
             output_text = prompt_template.render_template_value(
                 prompt=self._morse(prompt), example=self._morse(self.example)
@@ -148,5 +152,8 @@ class MorseConverter(PromptConverter):
             morse_mapping = {**morse_mapping, **extended_mapping}
         error_char = "........"
         return " ".join(
-            [morse_mapping[char] if char in supported_charset else error_char for char in text_clean.upper()]
+            [
+                morse_mapping[char] if char in supported_charset else error_char
+                for char in text_clean.upper()
+            ]
         )

@@ -17,8 +17,12 @@ from pyrit.prompt_target.http_target.http_target_callback_functions import (
     get_http_target_json_response_callback_function,
     get_http_target_regex_matching_callback_function,
 )
-from pyrit.prompt_target.hugging_face.hugging_face_chat_target import HuggingFaceChatTarget
-from pyrit.prompt_target.hugging_face.hugging_face_endpoint_target import HuggingFaceEndpointTarget
+from pyrit.prompt_target.hugging_face.hugging_face_chat_target import (
+    HuggingFaceChatTarget,
+)
+from pyrit.prompt_target.hugging_face.hugging_face_endpoint_target import (
+    HuggingFaceEndpointTarget,
+)
 from pyrit.prompt_target.ollama_chat_target import OllamaChatTarget
 from pyrit.prompt_target.openai.openai_completion_target import OpenAICompletionTarget
 from pyrit.prompt_target.openai.openai_dall_e_target import OpenAIDALLETarget

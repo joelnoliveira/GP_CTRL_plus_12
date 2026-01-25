@@ -67,7 +67,9 @@ class ScoringOrchestrator(Orchestrator):
         request_pieces = self._remove_duplicates(request_pieces)
 
         return await scorer.score_prompts_with_tasks_batch_async(
-            request_responses=request_pieces, batch_size=self._batch_size, tasks=[task] * len(request_pieces)
+            request_responses=request_pieces,
+            batch_size=self._batch_size,
+            tasks=[task] * len(request_pieces),
         )
 
     async def score_responses_by_filters_async(
@@ -127,21 +129,33 @@ class ScoringOrchestrator(Orchestrator):
         request_pieces = self._remove_duplicates(request_pieces)
 
         if not request_pieces:
-            raise ValueError("No entries match the provided filters. Please check your filters.")
+            raise ValueError(
+                "No entries match the provided filters. Please check your filters."
+            )
 
         return await scorer.score_responses_inferring_tasks_batch_async(
             request_responses=request_pieces, batch_size=self._batch_size
         )
 
-    def _extract_responses_only(self, request_responses: Sequence[PromptRequestPiece]) -> list[PromptRequestPiece]:
+    def _extract_responses_only(
+        self, request_responses: Sequence[PromptRequestPiece]
+    ) -> list[PromptRequestPiece]:
         """
         Extracts the responses from the list of PromptRequestPiece objects.
         """
-        return [response for response in request_responses if response.role == "assistant"]
+        return [
+            response for response in request_responses if response.role == "assistant"
+        ]
 
-    def _remove_duplicates(self, request_responses: Sequence[PromptRequestPiece]) -> list[PromptRequestPiece]:
+    def _remove_duplicates(
+        self, request_responses: Sequence[PromptRequestPiece]
+    ) -> list[PromptRequestPiece]:
         """
         Removes the duplicates from the list of PromptRequestPiece objects so that identical prompts are not
         scored twice.
         """
-        return [response for response in request_responses if response.original_prompt_id == response.id]
+        return [
+            response
+            for response in request_responses
+            if response.original_prompt_id == response.id
+        ]

@@ -25,7 +25,9 @@ class HumanInTheLoopConverter(PromptConverter):
     ):
         self._converters = converters or []
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Before sending a prompt to a target, user is given three options to choose from:
         (1) Proceed with sending the prompt as is.
@@ -63,21 +65,29 @@ class HumanInTheLoopConverter(PromptConverter):
             return await self.convert_async(prompt=new_input, input_type=input_type)
         elif user_input == "3":
             if self._converters:
-                converters_str = str([converter.__class__.__name__ for converter in self._converters])
+                converters_str = str(
+                    [converter.__class__.__name__ for converter in self._converters]
+                )
                 converter_index = -1
                 while not 0 <= converter_index < len(self._converters):
                     converter_index = int(
                         input(
                             f"The available converters are {converters_str}. \
                                                 Enter the index of the converter you would like to run on \
-                                                the input (0 to {len(self._converters)-1})"
+                                                the input (0 to {len(self._converters) - 1})"
                         ).strip()
                     )
                 converter = self._converters[converter_index]
-                new_result = await converter.convert_async(prompt=prompt, input_type=input_type)
-                return await self.convert_async(prompt=new_result.output_text, input_type=new_result.output_type)
+                new_result = await converter.convert_async(
+                    prompt=prompt, input_type=input_type
+                )
+                return await self.convert_async(
+                    prompt=new_result.output_text, input_type=new_result.output_type
+                )
             else:
-                raise ValueError("No converters were passed into the HumanInTheLoopConverter")
+                raise ValueError(
+                    "No converters were passed into the HumanInTheLoopConverter"
+                )
         return ConverterResult(output_text=prompt, output_type=input_type)
 
     def input_supported(self, input_type: PromptDataType) -> bool:

@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class XPIAOrchestrator(Orchestrator):
-
     def __init__(
         self,
         *,
@@ -58,7 +57,9 @@ class XPIAOrchestrator(Orchestrator):
 
         self._scorer = scorer
         self._prompt_normalizer = PromptNormalizer()
-        self._attack_setup_target_conversation_id = attack_setup_target_conversation_id or str(uuid4())
+        self._attack_setup_target_conversation_id = (
+            attack_setup_target_conversation_id or str(uuid4())
+        )
         self._processing_conversation_id = str(uuid4())
         self._attack_content = str(attack_content)
 
@@ -76,7 +77,9 @@ class XPIAOrchestrator(Orchestrator):
 
         converters = PromptConverterConfiguration(converters=self._prompt_converters)
 
-        seed_prompt_group = SeedPromptGroup(prompts=[SeedPrompt(value=self._attack_content, data_type="text")])
+        seed_prompt_group = SeedPromptGroup(
+            prompts=[SeedPrompt(value=self._attack_content, data_type="text")]
+        )
 
         response = await self._prompt_normalizer.send_prompt_async(
             seed_prompt_group=seed_prompt_group,
@@ -86,18 +89,24 @@ class XPIAOrchestrator(Orchestrator):
             orchestrator_identifier=self.get_identifier(),
         )
 
-        logger.info(f'Received the following response from the prompt target "{response}"')
+        logger.info(
+            f'Received the following response from the prompt target "{response}"'
+        )
 
         processing_response = await self._processing_callback()
 
-        logger.info(f'Received the following response from the processing target "{processing_response}"')
+        logger.info(
+            f'Received the following response from the processing target "{processing_response}"'
+        )
 
         if not self._scorer:
             logger.info("No scorer provided, skipping scoring")
             return None
 
         pool = concurrent.futures.ThreadPoolExecutor()
-        score = pool.submit(asyncio.run, self._scorer.score_text_async(processing_response)).result()[0]
+        score = pool.submit(
+            asyncio.run, self._scorer.score_text_async(processing_response)
+        ).result()[0]
 
         logger.info(f"Score of the processing response: {score}")
         return score
@@ -151,7 +160,6 @@ class XPIATestOrchestrator(XPIAOrchestrator):
         self._processing_prompt = SeedPrompt(value=processing_prompt, data_type="text")
 
     async def _process_async(self) -> str:
-
         seed_prompt_group = SeedPromptGroup(prompts=[self._processing_prompt])
 
         processing_response = await self._prompt_normalizer.send_prompt_async(
@@ -203,4 +211,6 @@ class XPIAManualProcessingOrchestrator(XPIAOrchestrator):
         )
 
     async def _input_async(self):
-        return await ainput("Please trigger the processing target's execution and paste the output here: ")
+        return await ainput(
+            "Please trigger the processing target's execution and paste the output here: "
+        )

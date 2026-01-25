@@ -2,6 +2,7 @@
 Test 4: Prompt Management
 Create and use prompt templates from Langfuse
 """
+
 import os
 from dotenv import load_dotenv
 from langfuse import Langfuse
@@ -15,7 +16,7 @@ langfuse = Langfuse()
 
 client = OpenAI(
     base_url=os.getenv("OLLAMA_BASE_URL"),
-    api_key='ollama',
+    api_key="ollama",
 )
 
 print("📝 Testing prompt management...")
@@ -25,21 +26,16 @@ try:
     prompt = langfuse.create_prompt(
         name="greeting-template",
         prompt="Hello {{name}}, you are a {{role}}. Please {{task}}.",
-        config={
-            "model": OLLAMA_MODEL,
-            "temperature": 0.7
-        }
+        config={"model": OLLAMA_MODEL, "temperature": 0.7},
     )
     print(f"✅ Created prompt: {prompt.name}")
-except Exception as e:
-    print(f"⚠️  Prompt might already exist, fetching...")
+except Exception as exc:
+    print("⚠️  Prompt might already exist, fetching...", exc)
     prompt = langfuse.get_prompt("greeting-template")
 
 # Compile prompt
 compiled_text = prompt.compile(
-    name="Alice",
-    role="data scientist",
-    task="explain what an autoencoder is"
+    name="Alice", role="data scientist", task="explain what an autoencoder is"
 )
 
 print(f"🔧 Compiled prompt: {compiled_text}")
@@ -49,8 +45,7 @@ trace_id = langfuse.create_trace_id()
 trace_context = {"trace_id": trace_id}
 
 response = client.chat.completions.create(
-    model=OLLAMA_MODEL,
-    messages=[{"role": "user", "content": compiled_text}]
+    model=OLLAMA_MODEL, messages=[{"role": "user", "content": compiled_text}]
 )
 
 generation = langfuse.start_observation(

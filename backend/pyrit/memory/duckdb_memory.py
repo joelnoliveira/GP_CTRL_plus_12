@@ -42,7 +42,9 @@ class DuckDBMemory(MemoryInterface, metaclass=Singleton):
         if db_path == ":memory:":
             self.db_path: Union[Path, str] = ":memory:"
         else:
-            self.db_path = Path(db_path or Path(DB_DATA_PATH, self.DEFAULT_DB_FILE_NAME)).resolve()
+            self.db_path = Path(
+                db_path or Path(DB_DATA_PATH, self.DEFAULT_DB_FILE_NAME)
+            ).resolve()
         self.results_path = str(DB_DATA_PATH)
 
         self.engine = self._create_engine(has_echo=verbose)
@@ -91,21 +93,34 @@ class DuckDBMemory(MemoryInterface, metaclass=Singleton):
         result: list[EmbeddingDataEntry] = self._query_entries(EmbeddingDataEntry)
         return result
 
-    def _get_prompt_pieces_memory_label_conditions(self, *, memory_labels: dict[str, str]):
-        conditions = [PromptMemoryEntry.labels.op("->>")(key) == value for key, value in memory_labels.items()]
+    def _get_prompt_pieces_memory_label_conditions(
+        self, *, memory_labels: dict[str, str]
+    ):
+        conditions = [
+            PromptMemoryEntry.labels.op("->>")(key) == value
+            for key, value in memory_labels.items()
+        ]
         return and_(*conditions)
 
     def _get_prompt_pieces_orchestrator_conditions(self, *, orchestrator_id: str):
-        return PromptMemoryEntry.orchestrator_identifier.op("->>")("id") == orchestrator_id
+        return (
+            PromptMemoryEntry.orchestrator_identifier.op("->>")("id") == orchestrator_id
+        )
 
-    def add_request_pieces_to_memory(self, *, request_pieces: Sequence[PromptRequestPiece]) -> None:
+    def add_request_pieces_to_memory(
+        self, *, request_pieces: Sequence[PromptRequestPiece]
+    ) -> None:
         """
         Inserts a list of prompt request pieces into the memory storage.
 
         """
-        self._insert_entries(entries=[PromptMemoryEntry(entry=piece) for piece in request_pieces])
+        self._insert_entries(
+            entries=[PromptMemoryEntry(entry=piece) for piece in request_pieces]
+        )
 
-    def _add_embeddings_to_memory(self, *, embedding_data: list[EmbeddingDataEntry]) -> None:
+    def _add_embeddings_to_memory(
+        self, *, embedding_data: list[EmbeddingDataEntry]
+    ) -> None:
         """
         Inserts embedding data into memory storage
         """
@@ -150,11 +165,18 @@ class DuckDBMemory(MemoryInterface, metaclass=Singleton):
                 session.commit()
             except SQLAlchemyError as e:
                 session.rollback()
-                logger.exception(f"Error inserting multiple entries into the table: {e}")
+                logger.exception(
+                    f"Error inserting multiple entries into the table: {e}"
+                )
                 raise
 
     def _query_entries(
-        self, model, *, conditions: Optional = None, distinct: bool = False, join_scores: bool = False  # type: ignore
+        self,
+        model,
+        *,
+        conditions: Optional = None,
+        distinct: bool = False,
+        join_scores: bool = False,  # type: ignore
     ) -> list[Base]:
         """
         Fetches data from the specified table model with optional conditions.
@@ -179,10 +201,14 @@ class DuckDBMemory(MemoryInterface, metaclass=Singleton):
                     return query.distinct().all()
                 return query.all()
             except SQLAlchemyError as e:
-                logger.exception(f"Error fetching data from table {model.__tablename__}: {e}")
+                logger.exception(
+                    f"Error fetching data from table {model.__tablename__}: {e}"
+                )
                 return []
 
-    def _update_entries(self, *, entries: MutableSequence[Base], update_fields: dict) -> bool:  # type: ignore
+    def _update_entries(
+        self, *, entries: MutableSequence[Base], update_fields: dict
+    ) -> bool:  # type: ignore
         """
         Updates the given entries with the specified field values.
 
@@ -235,7 +261,9 @@ class DuckDBMemory(MemoryInterface, metaclass=Singleton):
             table_name = model.__tablename__
             file_extension = f".{export_type}"
             file_path = DB_DATA_PATH / f"{table_name}{file_extension}"
-            self.exporter.export_data(data, file_path=file_path, export_type=export_type)
+            self.exporter.export_data(
+                data, file_path=file_path, export_type=export_type
+            )
 
     def print_schema(self):
         metadata = MetaData()

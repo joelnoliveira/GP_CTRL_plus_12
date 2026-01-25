@@ -37,7 +37,9 @@ class EmojiConverter(PromptConverter):
         "z": ["🅩", "🆉", "🅉"],
     }
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converts English text to randomly chosen circle or square character emojis.
 

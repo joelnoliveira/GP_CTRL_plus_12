@@ -2,6 +2,7 @@
 Test 3: Scoring and Feedback
 Add scores to traces to evaluate quality
 """
+
 import os
 from dotenv import load_dotenv
 from langfuse import Langfuse
@@ -15,7 +16,7 @@ langfuse = Langfuse()
 
 client = OpenAI(
     base_url=os.getenv("OLLAMA_BASE_URL"),
-    api_key='ollama',
+    api_key="ollama",
 )
 
 print("⭐ Testing scoring/feedback...")
@@ -27,7 +28,7 @@ trace_context = {"trace_id": trace_id}
 # Generate response
 response = client.chat.completions.create(
     model=OLLAMA_MODEL,
-    messages=[{"role": "user", "content": "Explain neural networks in one sentence."}]
+    messages=[{"role": "user", "content": "Explain neural networks in one sentence."}],
 )
 
 generation = langfuse.start_observation(
@@ -46,20 +47,13 @@ langfuse.create_score(
     trace_id=trace_id,
     name="accuracy",
     value=0.85,
-    comment="Good but could be more precise"
+    comment="Good but could be more precise",
 )
 
-langfuse.create_score(
-    trace_id=trace_id,
-    name="conciseness",
-    value=0.95
-)
+langfuse.create_score(trace_id=trace_id, name="conciseness", value=0.95)
 
 langfuse.create_score(
-    trace_id=trace_id,
-    name="user-feedback",
-    value=1,
-    data_type="BOOLEAN"
+    trace_id=trace_id, name="user-feedback", value=1, data_type="BOOLEAN"
 )
 
 print(f"✅ Added 3 scores to trace {trace_id}")

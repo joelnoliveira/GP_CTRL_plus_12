@@ -58,7 +58,6 @@ class PromptShieldTarget(PromptTarget):
         field: Optional[PromptShieldEntryField] = None,
         max_requests_per_minute: Optional[int] = None,
     ) -> None:
-
         super().__init__(max_requests_per_minute=max_requests_per_minute)
 
         self._endpoint = default_values.get_required_value(
@@ -74,7 +73,9 @@ class PromptShieldTarget(PromptTarget):
         self._force_entry_field: PromptShieldEntryField = field
 
     @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         """
         Parses the text in prompt_request to separate the userPrompt and documents contents,
         then sends an HTTP request to the endpoint and obtains a response in JSON. For more info, visit
@@ -98,7 +99,10 @@ class PromptShieldTarget(PromptTarget):
 
         parsed_prompt: dict = self._input_parser(request.original_value)
 
-        body = {"userPrompt": parsed_prompt["userPrompt"], "documents": parsed_prompt["documents"]}
+        body = {
+            "userPrompt": parsed_prompt["userPrompt"],
+            "documents": parsed_prompt["documents"],
+        }
 
         response = await net_utility.make_request_and_raise_if_error_async(
             endpoint_uri=f"{self._endpoint}/contentsafety/text:shieldPrompt",
@@ -144,7 +148,9 @@ class PromptShieldTarget(PromptTarget):
         lookup_user_prompt: str | None = response_body.get("userPromptAnalysis")
         lookup_documents: list[str] | None = response_body.get("documentsAnalysis")
 
-        if (user_prompt_sent and not lookup_user_prompt) or (documents_sent and not lookup_documents):
+        if (user_prompt_sent and not lookup_user_prompt) or (
+            documents_sent and not lookup_documents
+        ):
             raise ValueError(
                 f"Sent: userPrompt: {user_prompt_sent}, documents: {documents_sent} "
                 f"but received userPrompt: {lookup_user_prompt}, documents: {lookup_documents} from Prompt Shield."
@@ -175,4 +181,7 @@ class PromptShieldTarget(PromptTarget):
                     else:
                         documents.append(contents[0])
 
-                return {"userPrompt": user_prompt, "documents": documents if documents else []}
+                return {
+                    "userPrompt": user_prompt,
+                    "documents": documents if documents else [],
+                }

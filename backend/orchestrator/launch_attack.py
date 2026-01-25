@@ -1,18 +1,19 @@
 import os
 from dotenv import load_dotenv
 import json
-import yaml
-#import attacks
+
+# import attacks
 from orchestrator import attacks
 from orchestrator.constants import TypesOfAttacks, Goals, DEFAULTS
-from pyrit.orchestrator.single_turn.role_play_orchestrator import RolePlayPaths 
+from pyrit.orchestrator.single_turn.role_play_orchestrator import RolePlayPaths
+
 
 def load_labels(label: str):
     """
     Args:
-        label (str): The type of labels to load. Must be either 
+        label (str): The type of labels to load. Must be either
                      'malicious_goals' or 'vulnerable_goals'
-    
+
     Returns:
         list[str]: List of prompt strings from the selected dataset
     """
@@ -21,12 +22,11 @@ def load_labels(label: str):
 
         with open(file_path, "r") as f:
             goals = json.load(f)
-        #goals = goals[:1]
-        #convert malicious_goals to a list of prompts
-        goals_list = [goal['Prompt'] for goal in goals]
+        # goals = goals[:1]
+        # convert malicious_goals to a list of prompts
+        goals_list = [goal["Prompt"] for goal in goals]
         return goals_list
 
-    
     except Exception as e:
         print(f"Error loading labels: {e}")
 
@@ -52,73 +52,74 @@ async def launch_attack(
     judge_model_name: str = None,
     jury_models: list[str] = None,
     role_play_option: str = None,
-    goals_file_name: str = None,
     target_provider: str = "OLLAMA",
-    api_key:str = None,
-    db = None,
+    api_key: str = None,
+    db=None,
     scenario_id: int = None,
-    user_id: int = None
+    role_play_option_id: int = None,
+    user_id: int = None,
 ):
-    load_dotenv()    
+    load_dotenv()
     # Load goals
-    final_goals_list = []
-    if goals_file_name:
-        # Se for um path absoluto, usar diretamente
-        if os.path.isabs(goals_file_name):
-            goals_path = goals_file_name
-        else:
-            # Path relativo - procurar em uploads primeiro, depois em datasets
-            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            goals_path = os.path.join(base_path, "datasets", "uploads", goals_file_name)
-            
-            if not os.path.exists(goals_path):
-                # Fallback para datasets (ficheiros builtin)
-                goals_path = os.path.join(base_path, "datasets", goals_file_name)
-        
-        if not os.path.exists(goals_path):
-            raise FileNotFoundError(f"Custom goals file not found: {goals_path}")
-        
-        try:
-            with open(goals_path, "r", encoding='utf-8') as f:
-                goals_data = json.load(f)
-                # Malicious goals format: [{"Id": 1, "Prompt": "..."}]
-                if isinstance(goals_data, list):
-                    for item in goals_data:
-                        if "Prompt" in item:
-                            final_goals_list.append(item["Prompt"])
-                        else:
-                             # Fallback if just a list of strings
-                             if isinstance(item, str):
-                                 final_goals_list.append(item)
-                else:
-                    raise ValueError("Invalid goals file format. Expected a JSON list.")
-        except Exception as e:
-             raise ValueError(f"Error loading custom goals file: {e}")
-    else:
-        final_goals_list = load_labels(label=label)
-    
+    final_goals_list = load_labels(label=label)
+
     # Use defaults for any parameter not provided
     seed = seed if seed is not None else DEFAULTS["seed"]
-    temperature_judges = temperature_judges if temperature_judges is not None else DEFAULTS["temperature_judges"]
-    temperature_attacker = temperature_attacker if temperature_attacker is not None else DEFAULTS["temperature_attacker"]
-    temperature_target = temperature_target if temperature_target is not None else DEFAULTS["temperature_target"]
-    target_model_name = target_model_name if target_model_name is not None else DEFAULTS["target_model_name"]
-    attacker_model_name = attacker_model_name if attacker_model_name is not None else DEFAULTS["attacker_model_name"]
-    judge_model_name = judge_model_name if judge_model_name is not None else DEFAULTS["judge_model_name"]
+    temperature_judges = (
+        temperature_judges
+        if temperature_judges is not None
+        else DEFAULTS["temperature_judges"]
+    )
+    temperature_attacker = (
+        temperature_attacker
+        if temperature_attacker is not None
+        else DEFAULTS["temperature_attacker"]
+    )
+    temperature_target = (
+        temperature_target
+        if temperature_target is not None
+        else DEFAULTS["temperature_target"]
+    )
+    target_model_name = (
+        target_model_name
+        if target_model_name is not None
+        else DEFAULTS["target_model_name"]
+    )
+    attacker_model_name = (
+        attacker_model_name
+        if attacker_model_name is not None
+        else DEFAULTS["attacker_model_name"]
+    )
+    judge_model_name = (
+        judge_model_name
+        if judge_model_name is not None
+        else DEFAULTS["judge_model_name"]
+    )
     jury_models = jury_models if jury_models is not None else DEFAULTS["jury_models"]
     role_play_option_name = role_play_option
-    role_play_path = _get_role_play_path(role_play_option) if role_play_option else RolePlayPaths.MR_ROBOT.value
-    
+    role_play_path = (
+        _get_role_play_path(role_play_option)
+        if role_play_option
+        else RolePlayPaths.MR_ROBOT.value
+    )
+
     attacks_dict = {
         TypesOfAttacks.CRESCENDO_ATTACK.value: attacks.launch_crescendo_attack,
         TypesOfAttacks.FLIP_ATTACK.value: attacks.launch_flip_attack,
-        TypesOfAttacks.ROLE_PLAY_ATTACK.value: attacks.launch_role_play_attack,  
+        TypesOfAttacks.ROLE_PLAY_ATTACK.value: attacks.launch_role_play_attack,
     }
-    if attack_option not in attacks_dict and attack_option != TypesOfAttacks.ALL_ATTACKS.value:
+    if (
+        attack_option not in attacks_dict
+        and attack_option != TypesOfAttacks.ALL_ATTACKS.value
+    ):
         raise ValueError(f"Invalid attack option: {attack_option}")
-    
-    #if attack_option is ALL_ATTACKS, run all attacks
-    targets = attacks_dict.keys() if attack_option == TypesOfAttacks.ALL_ATTACKS.value else [attack_option] 
+
+    # if attack_option is ALL_ATTACKS, run all attacks
+    targets = (
+        attacks_dict.keys()
+        if attack_option == TypesOfAttacks.ALL_ATTACKS.value
+        else [attack_option]
+    )
     for attack in targets:
         print(f"Executing attack: {attack}")
 
@@ -128,8 +129,8 @@ async def launch_attack(
             label=label,
             target_provider=target_provider,
             temperature_judges=temperature_judges,
-            temperature_attacker= temperature_attacker,
-            temperature_target = temperature_target,
+            temperature_attacker=temperature_attacker,
+            temperature_target=temperature_target,
             attacker_model_name=attacker_model_name,
             judge_model_name=judge_model_name,
             jury_models=jury_models,
@@ -140,6 +141,7 @@ async def launch_attack(
             db=db,
             scenario_id=scenario_id,
             role_play_option_name=role_play_option_name,
+            role_play_option_id=role_play_option_id,
             user_id=user_id,
         )
 
@@ -154,22 +156,38 @@ async def launch_attack_template(
     jury_models: list[str] = None,
     template_path: str = None,
     target_provider: str = "OLLAMA",
-    api_key:str = None,
-    db = None,
+    api_key: str = None,
+    db=None,
     template_dataset_id: int = None,
     scenario_id: int = None,
-    user_id: int = None
+    user_id: int = None,
 ):
     load_dotenv()
-    
+
     # Use defaults for any parameter not provided
     seed = seed if seed is not None else DEFAULTS["seed"]
-    temperature_judges = temperature_judges if temperature_judges is not None else DEFAULTS["temperature_judges"]
-    temperature_attacker = temperature_attacker if temperature_attacker is not None else DEFAULTS["temperature_attacker"]
-    temperature_target = temperature_target if temperature_target is not None else DEFAULTS["temperature_target"]
-    target_model_name = target_model_name if target_model_name is not None else DEFAULTS["target_model_name"]
+    temperature_judges = (
+        temperature_judges
+        if temperature_judges is not None
+        else DEFAULTS["temperature_judges"]
+    )
+    temperature_attacker = (
+        temperature_attacker
+        if temperature_attacker is not None
+        else DEFAULTS["temperature_attacker"]
+    )
+    temperature_target = (
+        temperature_target
+        if temperature_target is not None
+        else DEFAULTS["temperature_target"]
+    )
+    target_model_name = (
+        target_model_name
+        if target_model_name is not None
+        else DEFAULTS["target_model_name"]
+    )
     jury_models = jury_models if jury_models is not None else DEFAULTS["jury_models"]
-    
+
     await attacks.launch_attack_template(
         ollama_host=os.getenv("OLLAMA_BASE_URL"),
         seed=seed,
@@ -177,7 +195,9 @@ async def launch_attack_template(
         temperature_judges=temperature_judges,
         temperature_attacker=temperature_attacker,
         temperature_target=temperature_target,
-        attacker_model_name=DEFAULTS["attacker_model_name"],  # Not configurable for template
+        attacker_model_name=DEFAULTS[
+            "attacker_model_name"
+        ],  # Not configurable for template
         judge_model_name=DEFAULTS["judge_model_name"],  # Not configurable for template
         jury_models=jury_models,
         target_model_name=target_model_name,
@@ -200,20 +220,36 @@ async def launch_over_refusal_test(
     target_model_name: str = None,
     jury_models: list[str] = None,
     target_provider: str = "OLLAMA",
-    api_key:str = None,
-    db = None,
+    api_key: str = None,
+    db=None,
     user_id: int = None,
 ):
     load_dotenv()
-    
+
     # Use defaults for any parameter not provided
     seed = seed if seed is not None else DEFAULTS["seed"]
-    temperature_judges = temperature_judges if temperature_judges is not None else DEFAULTS["temperature_judges"]
-    temperature_attacker = temperature_attacker if temperature_attacker is not None else DEFAULTS["temperature_attacker"]
-    temperature_target = temperature_target if temperature_target is not None else DEFAULTS["temperature_target"]
-    target_model_name = target_model_name if target_model_name is not None else DEFAULTS["target_model_name"]
+    temperature_judges = (
+        temperature_judges
+        if temperature_judges is not None
+        else DEFAULTS["temperature_judges"]
+    )
+    temperature_attacker = (
+        temperature_attacker
+        if temperature_attacker is not None
+        else DEFAULTS["temperature_attacker"]
+    )
+    temperature_target = (
+        temperature_target
+        if temperature_target is not None
+        else DEFAULTS["temperature_target"]
+    )
+    target_model_name = (
+        target_model_name
+        if target_model_name is not None
+        else DEFAULTS["target_model_name"]
+    )
     jury_models = jury_models if jury_models is not None else DEFAULTS["jury_models"]
-    
+
     await attacks.over_refusal_test(
         ollama_host=os.getenv("OLLAMA_BASE_URL"),
         seed=seed,

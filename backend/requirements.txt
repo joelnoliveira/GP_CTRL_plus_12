@@ -58,3 +58,4 @@ PyYAML
 python-multipart
 semgrep
 magika
+slowapi==0.1.9

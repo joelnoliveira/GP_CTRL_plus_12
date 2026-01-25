@@ -6,8 +6,9 @@ from pyrit.prompt_converter import ConverterResult, PromptConverter
 
 
 class TextToHexConverter(PromptConverter):
-
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converts text to a hexadecimal encoded utf-8 string.
         """

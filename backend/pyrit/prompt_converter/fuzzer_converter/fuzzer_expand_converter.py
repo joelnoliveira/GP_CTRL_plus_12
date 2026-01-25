@@ -27,12 +27,19 @@ class FuzzerExpandConverter(FuzzerConverter):
             prompt_template
             if prompt_template
             else SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "fuzzer_converters" / "expand_converter.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "fuzzer_converters"
+                / "expand_converter.yaml"
             )
         )
-        super().__init__(converter_target=converter_target, prompt_template=prompt_template)
+        super().__init__(
+            converter_target=converter_target, prompt_template=prompt_template
+        )
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converter to generate versions of prompt with new, prepended sentences.
         """

@@ -68,7 +68,10 @@ class SkeletonKeyOrchestrator(Orchestrator):
             skeleton_key_prompt
             if skeleton_key_prompt
             else SeedPromptDataset.from_yaml_file(
-                Path(DATASETS_PATH) / "orchestrators" / "skeleton_key" / "skeleton_key.prompt"
+                Path(DATASETS_PATH)
+                / "orchestrators"
+                / "skeleton_key"
+                / "skeleton_key.prompt"
             )
             .prompts[0]
             .value
@@ -97,9 +100,13 @@ class SkeletonKeyOrchestrator(Orchestrator):
 
         conversation_id = str(uuid4())
 
-        skeleton_key_prompt = SeedPromptGroup(prompts=[SeedPrompt(value=self._skeleton_key_prompt, data_type="text")])
+        skeleton_key_prompt = SeedPromptGroup(
+            prompts=[SeedPrompt(value=self._skeleton_key_prompt, data_type="text")]
+        )
 
-        converter_configuration = PromptConverterConfiguration(converters=self._prompt_converters)
+        converter_configuration = PromptConverterConfiguration(
+            converters=self._prompt_converters
+        )
 
         await self._prompt_normalizer.send_prompt_async(
             seed_prompt_group=skeleton_key_prompt,
@@ -110,7 +117,9 @@ class SkeletonKeyOrchestrator(Orchestrator):
             orchestrator_identifier=self.get_identifier(),
         )
 
-        objective_prompt = SeedPromptGroup(prompts=[SeedPrompt(value=prompt, data_type="text")])
+        objective_prompt = SeedPromptGroup(
+            prompts=[SeedPrompt(value=prompt, data_type="text")]
+        )
 
         return await self._prompt_normalizer.send_prompt_async(
             seed_prompt_group=objective_prompt,
@@ -156,6 +165,10 @@ class SkeletonKeyOrchestrator(Orchestrator):
 
         for message in target_messages:
             if message.role == "user":
-                print(f"{Style.BRIGHT}{Fore.RED}{message.role}: {message.converted_value}\n")
+                print(
+                    f"{Style.BRIGHT}{Fore.RED}{message.role}: {message.converted_value}\n"
+                )
             else:
-                print(f"{Style.BRIGHT}{Fore.GREEN}{message.role}: {message.converted_value}\n")
+                print(
+                    f"{Style.BRIGHT}{Fore.GREEN}{message.role}: {message.converted_value}\n"
+                )

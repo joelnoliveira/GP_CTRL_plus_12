@@ -62,7 +62,9 @@ class QuestionAnsweringBenchmarkOrchestrator(Orchestrator):
         if evaluation_prompt:
             self.evaluation_system_prompt = evaluation_prompt
         else:
-            default_data_path = Path(DATASETS_PATH, "orchestrators", "benchmark", "question_answer.yaml")
+            default_data_path = Path(
+                DATASETS_PATH, "orchestrators", "benchmark", "question_answer.yaml"
+            )
             default_data = default_data_path.read_text(encoding="utf-8")
             yamp_data = yaml.safe_load(default_data)
             self.evaluation_system_prompt = yamp_data.get("content")
@@ -76,8 +78,9 @@ class QuestionAnsweringBenchmarkOrchestrator(Orchestrator):
             labels=self._global_memory_labels,
         )
 
-        for idx, (question_entry, question_prompt) in enumerate(self._scorer.get_next_question_prompt_pair()):
-
+        for idx, (question_entry, question_prompt) in enumerate(
+            self._scorer.get_next_question_prompt_pair()
+        ):
             seed_prompt_group = SeedPromptGroup(
                 prompts=[
                     SeedPrompt(
@@ -96,7 +99,9 @@ class QuestionAnsweringBenchmarkOrchestrator(Orchestrator):
             )
 
             answer = response.request_pieces[0].converted_value
-            curr_score = self._scorer.score_question(question=question_entry, answer=answer)
+            curr_score = self._scorer.score_question(
+                question=question_entry, answer=answer
+            )
 
             if self._verbose:
                 msg = textwrap.dedent(

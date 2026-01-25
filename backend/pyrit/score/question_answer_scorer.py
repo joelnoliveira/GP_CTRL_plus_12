@@ -77,7 +77,9 @@ class QuestionAnswerScorer:
             """
         )
 
-    def get_next_question_prompt_pair(self) -> Generator[Tuple[QuestionAnsweringEntry, str], None, None]:
+    def get_next_question_prompt_pair(
+        self,
+    ) -> Generator[Tuple[QuestionAnsweringEntry, str], None, None]:
         """
         Generates the next question-prompt pair from the dataset.
 
@@ -91,7 +93,9 @@ class QuestionAnswerScorer:
             prompt = self._construct_evaluation_prompt(entry=entry)
             yield entry, prompt
 
-    def score_question(self, question: QuestionAnsweringEntry, answer: str) -> TextScoreResult:
+    def score_question(
+        self, question: QuestionAnsweringEntry, answer: str
+    ) -> TextScoreResult:
         """Scores the provided answer for a given question.
 
         Args:
@@ -107,7 +111,9 @@ class QuestionAnswerScorer:
         try:
             # This is the case where the model response is an integer, which is the index of the answer.
             predicted_answer_index = int(answer)
-            predicted_answer_content_by_index = question.choices[predicted_answer_index].text
+            predicted_answer_content_by_index = question.choices[
+                predicted_answer_index
+            ].text
             valid_answer_found = True
         except ValueError:
             # If the model response is not an integer, then the model might have returned the answer as a string

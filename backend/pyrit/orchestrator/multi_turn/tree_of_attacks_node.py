@@ -49,7 +49,6 @@ class TreeOfAttacksNode:
         memory_labels: Optional[dict[str, str]] = None,
         parent_id: Optional[str] = None,
     ) -> None:
-
         self._objective_target = objective_target
         self._adversarial_chat = adversarial_chat
         self._objective_scorer = objective_scorer
@@ -90,18 +89,24 @@ class TreeOfAttacksNode:
             prompt = await self._generate_red_teaming_prompt_async(objective=objective)
         except InvalidJsonException as e:
             logger.error(f"Failed to generate a prompt for the prompt target: {e}")
-            logger.info("Pruning the branch since we can't proceed without red teaming prompt.")
+            logger.info(
+                "Pruning the branch since we can't proceed without red teaming prompt."
+            )
             return
 
         if self._on_topic_scorer:
-            on_topic_score = (await self._on_topic_scorer.score_text_async(text=prompt))[0]
+            on_topic_score = (
+                await self._on_topic_scorer.score_text_async(text=prompt)
+            )[0]
 
             # If the prompt is not on topic we prune the branch.
             if not on_topic_score.get_value():
                 self.off_topic = True
                 return
 
-        seed_prompt_group = SeedPromptGroup(prompts=[SeedPrompt(value=prompt, data_type="text")])
+        seed_prompt_group = SeedPromptGroup(
+            prompts=[SeedPrompt(value=prompt, data_type="text")]
+        )
         converters = PromptConverterConfiguration(converters=self._prompt_converters)
 
         response = (
@@ -146,29 +151,35 @@ class TreeOfAttacksNode:
             parent_id=self.node_id,
         )
 
-        duplicate_node.objective_target_conversation_id = self._memory.duplicate_conversation(
-            conversation_id=self.objective_target_conversation_id
+        duplicate_node.objective_target_conversation_id = (
+            self._memory.duplicate_conversation(
+                conversation_id=self.objective_target_conversation_id
+            )
         )
 
-        duplicate_node.adversarial_chat_conversation_id = self._memory.duplicate_conversation(
-            conversation_id=self.adversarial_chat_conversation_id,
+        duplicate_node.adversarial_chat_conversation_id = (
+            self._memory.duplicate_conversation(
+                conversation_id=self.adversarial_chat_conversation_id,
+            )
         )
 
         return duplicate_node
 
     @pyrit_json_retry
     async def _generate_red_teaming_prompt_async(self, objective) -> str:
-
         # Use the red teaming target to generate a prompt for the attack target.
         # The prompt for the red teaming target needs to include the latest message from the prompt target.
         # A special case is the very first message, in which case there are no prior messages
         # so we can use the initial red teaming prompt
-        target_messages = self._memory.get_conversation(conversation_id=self.objective_target_conversation_id)
+        target_messages = self._memory.get_conversation(
+            conversation_id=self.objective_target_conversation_id
+        )
 
         if not target_messages:
-
-            system_prompt = self._adversarial_chat_system_seed_prompt.render_template_value(
-                objective=objective, desired_prefix=self._desired_response_prefix
+            system_prompt = (
+                self._adversarial_chat_system_seed_prompt.render_template_value(
+                    objective=objective, desired_prefix=self._desired_response_prefix
+                )
             )
 
             self._adversarial_chat.set_system_prompt(
@@ -178,11 +189,17 @@ class TreeOfAttacksNode:
                 labels=self._global_memory_labels,
             )
 
-            logger.debug("Using the specified initial red teaming prompt for the first turn.")
-            prompt_text = self._adversarial_chat_seed_prompt.render_template_value(objective=objective)
+            logger.debug(
+                "Using the specified initial red teaming prompt for the first turn."
+            )
+            prompt_text = self._adversarial_chat_seed_prompt.render_template_value(
+                objective=objective
+            )
 
         else:
-            assistant_responses = [r for r in target_messages if r.request_pieces[0].role == "assistant"]
+            assistant_responses = [
+                r for r in target_messages if r.request_pieces[0].role == "assistant"
+            ]
             if not assistant_responses:
                 logger.error(
                     f"No assistant responses found in the conversation {self.objective_target_conversation_id}."
@@ -192,7 +209,9 @@ class TreeOfAttacksNode:
             target_response = assistant_responses[-1]
             target_response_piece = target_response.request_pieces[0]
             logger.debug(f"target_response_piece.id: {target_response_piece.id}")
-            scores = self._memory.get_scores_by_prompt_ids(prompt_request_response_ids=[str(target_response_piece.id)])
+            scores = self._memory.get_scores_by_prompt_ids(
+                prompt_request_response_ids=[str(target_response_piece.id)]
+            )
 
             if scores:
                 score = scores[0].get_value()
@@ -206,7 +225,11 @@ class TreeOfAttacksNode:
 
         prompt_metadata = {"response_format": "json"}
         seed_prompt_group = SeedPromptGroup(
-            prompts=[SeedPrompt(value=prompt_text, data_type="text", metadata=prompt_metadata)]
+            prompts=[
+                SeedPrompt(
+                    value=prompt_text, data_type="text", metadata=prompt_metadata
+                )
+            ]
         )
 
         adversarial_chat_response = (
@@ -234,14 +257,22 @@ class TreeOfAttacksNode:
         try:
             red_teaming_response_dict = json.loads(red_teaming_response)
         except json.JSONDecodeError:
-            logger.error(f"The response from the red teaming chat is not in JSON format: {red_teaming_response}")
-            raise InvalidJsonException(message="The response from the red teaming chat is not in JSON format.")
+            logger.error(
+                f"The response from the red teaming chat is not in JSON format: {red_teaming_response}"
+            )
+            raise InvalidJsonException(
+                message="The response from the red teaming chat is not in JSON format."
+            )
 
         try:
             return red_teaming_response_dict["prompt"]
         except KeyError:
-            logger.error(f"The response from the red teaming chat does not contain a prompt: {red_teaming_response}")
-            raise InvalidJsonException(message="The response from the red teaming chat does not contain a prompt.")
+            logger.error(
+                f"The response from the red teaming chat does not contain a prompt: {red_teaming_response}"
+            )
+            raise InvalidJsonException(
+                message="The response from the red teaming chat does not contain a prompt."
+            )
 
     def __str__(self) -> str:
         return (

@@ -62,7 +62,9 @@ class HuggingFaceChatTarget(PromptChatTarget):
         if not model_id and not model_path:
             raise ValueError("Either `model_id` or `model_path` must be provided.")
         if model_id and model_path:
-            raise ValueError("Provide only one of `model_id` or `model_path`, not both.")
+            raise ValueError(
+                "Provide only one of `model_id` or `model_path`, not both."
+            )
 
         self.model_id = model_id
         self.model_path = model_path
@@ -76,7 +78,8 @@ class HuggingFaceChatTarget(PromptChatTarget):
         # Only get the Hugging Face token if a model ID is provided
         if model_id:
             self.huggingface_token = default_values.get_required_value(
-                env_var_name=self.HUGGINGFACE_TOKEN_ENVIRONMENT_VARIABLE, passed_value=hf_access_token
+                env_var_name=self.HUGGINGFACE_TOKEN_ENVIRONMENT_VARIABLE,
+                passed_value=hf_access_token,
             )
         else:
             self.huggingface_token = None
@@ -84,7 +87,9 @@ class HuggingFaceChatTarget(PromptChatTarget):
         try:
             import torch
         except ModuleNotFoundError as e:
-            logger.error("Could not import torch. You may need to install it via 'pip install pyrit[all]'")
+            logger.error(
+                "Could not import torch. You may need to install it via 'pip install pyrit[all]'"
+            )
             raise e
 
         # Determine the device
@@ -103,15 +108,21 @@ class HuggingFaceChatTarget(PromptChatTarget):
         if self.use_cuda and not torch.cuda.is_available():
             raise RuntimeError("CUDA requested but not available.")
 
-        self.load_model_and_tokenizer_task = asyncio.create_task(self.load_model_and_tokenizer())
+        self.load_model_and_tokenizer_task = asyncio.create_task(
+            self.load_model_and_tokenizer()
+        )
 
     def _load_from_path(self, path: str, **kwargs):
         """
         Helper function to load the model and tokenizer from a given path.
         """
         logger.info(f"Loading model and tokenizer from path: {path}...")
-        self.tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=self.trust_remote_code)
-        self.model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=self.trust_remote_code, **kwargs)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            path, trust_remote_code=self.trust_remote_code
+        )
+        self.model = AutoModelForCausalLM.from_pretrained(
+            path, trust_remote_code=self.trust_remote_code, **kwargs
+        )
 
     def is_model_id_valid(self) -> bool:
         """
@@ -150,7 +161,10 @@ class HuggingFaceChatTarget(PromptChatTarget):
             }
 
             # Check if the model is already cached
-            if HuggingFaceChatTarget._cache_enabled and HuggingFaceChatTarget._cached_model_id == model_identifier:
+            if (
+                HuggingFaceChatTarget._cache_enabled
+                and HuggingFaceChatTarget._cached_model_id == model_identifier
+            ):
                 logger.info(f"Using cached model and tokenizer for {model_identifier}.")
                 self.model = HuggingFaceChatTarget._cached_model
                 self.tokenizer = HuggingFaceChatTarget._cached_tokenizer
@@ -173,18 +187,27 @@ class HuggingFaceChatTarget(PromptChatTarget):
                 if self.necessary_files is None:
                     # Download all files if no specific files are provided
                     logger.info(f"Downloading all files for {self.model_id}...")
-                    await download_specific_files(self.model_id, None, self.huggingface_token, cache_dir)
+                    await download_specific_files(
+                        self.model_id, None, self.huggingface_token, cache_dir
+                    )
                 else:
                     # Download only the necessary files
                     logger.info(f"Downloading specific files for {self.model_id}...")
                     await download_specific_files(
-                        self.model_id, self.necessary_files, self.huggingface_token, cache_dir
+                        self.model_id,
+                        self.necessary_files,
+                        self.huggingface_token,
+                        cache_dir,
                     )
 
                 # Load the tokenizer and model from the specified directory
-                logger.info(f"Loading model {self.model_id} from cache path: {cache_dir}...")
+                logger.info(
+                    f"Loading model {self.model_id} from cache path: {cache_dir}..."
+                )
                 self.tokenizer = AutoTokenizer.from_pretrained(
-                    self.model_id, cache_dir=cache_dir, trust_remote_code=self.trust_remote_code
+                    self.model_id,
+                    cache_dir=cache_dir,
+                    trust_remote_code=self.trust_remote_code,
                 )
                 self.model = AutoModelForCausalLM.from_pretrained(
                     self.model_id,
@@ -213,7 +236,9 @@ class HuggingFaceChatTarget(PromptChatTarget):
             raise
 
     @pyrit_target_retry
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         """
         Sends a normalized prompt asynchronously to the HuggingFace model.
         """
@@ -224,7 +249,9 @@ class HuggingFaceChatTarget(PromptChatTarget):
         request = prompt_request.request_pieces[0]
         prompt_template = request.converted_value
 
-        logger.info(f"Sending the following prompt to the HuggingFace model: {prompt_template}")
+        logger.info(
+            f"Sending the following prompt to the HuggingFace model: {prompt_template}"
+        )
 
         # Prepare the input messages using chat templates
         messages = [{"role": "user", "content": prompt_template}]
@@ -285,8 +312,13 @@ class HuggingFaceChatTarget(PromptChatTarget):
         A private method to apply the chat template to the input messages and tokenize them.
         """
         # Check if the tokenizer has a chat template
-        if hasattr(self.tokenizer, "chat_template") and self.tokenizer.chat_template is not None:
-            logger.info("Tokenizer has a chat template. Applying it to the input messages.")
+        if (
+            hasattr(self.tokenizer, "chat_template")
+            and self.tokenizer.chat_template is not None
+        ):
+            logger.info(
+                "Tokenizer has a chat template. Applying it to the input messages."
+            )
 
             # Apply the chat template to format and tokenize the messages
             tokenized_chat = self.tokenizer.apply_chat_template(

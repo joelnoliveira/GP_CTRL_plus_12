@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+from datetime import datetime
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -6,25 +8,37 @@ from contextlib import asynccontextmanager
 from .models import reflect_tables, Base
 from .database import get_db
 from .schemas import AttackRequest, AttackTemplateRequest, OverRefusalTestRequest
+import io
+import json
 import os
-import requests
-from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
 from .routers import auth, file_upload
-from orchestrator import launch_attack, constants, launch_attack_template, launch_over_refusal_test
-from .security import get_current_user
+from orchestrator import launch_attack, launch_attack_template, launch_over_refusal_test
+from sqlalchemy.orm import joinedload
+from .security import get_current_user, get_current_user_or_public
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
-from fastapi.middleware.cors import CORSMiddleware
-from app.schemas import Token
-from app.security import get_current_user
 
 # Load .env from workspace root
-dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
+dotenv_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env"
+)
 load_dotenv(dotenv_path)
 
-AVAILABLE_EXTERNAL_TARGET_MODELS = ["gpt-3.5-turbo", "gpt-5.2-codex", "gpt-4o-mini-tts-2025-12-15", "gpt-realtime-mini-2025-12-15"]
+AVAILABLE_EXTERNAL_TARGET_MODELS = [
+    "gpt-3.5-turbo",
+    "gpt-5.2-codex",
+    "gpt-4o-mini-tts-2025-12-15",
+    "gpt-realtime-mini-2025-12-15",
+]
+
+# Rate limiter: 900 requests per day per IP to prevent DoS
+limiter = Limiter(key_func=get_remote_address)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,17 +46,18 @@ async def lifespan(app: FastAPI):
     reflect_tables()
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, dependencies=[Depends(get_current_user_or_public)])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001"],  # or ["*"] for dev
+    allow_origins=["http://localhost:3001","http://10.17.0.162:3001","http://10.3.2.49:3001"],
     allow_credentials=True,
-    allow_methods=["*"],  # <-- THIS enables OPTIONS
+    allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 def _get_current_user_id(db: Session, current_user_email: str) -> int:
     User = Base.classes.users
     user = db.query(User).filter(User.email == current_user_email).first()
@@ -50,14 +65,28 @@ def _get_current_user_id(db: Session, current_user_email: str) -> int:
         raise HTTPException(status_code=401, detail="User not found")
     return user.id
 
-#Uses auth router
+
+def _model_to_dict(obj) -> dict:
+    return {column.name: getattr(obj, column.name) for column in obj.__table__.columns}
+
+
+def _get_model_class(name: str):
+    try:
+        return getattr(Base.classes, name)
+    except Exception:
+        return None
+
+
+# Uses auth router
 app.include_router(auth.router)
 app.include_router(file_upload.router)
+
 
 # liveness test, performed on container that depend on this one, do not delete!
 @app.get("/status/alive")
 async def check_alive():
     return {"alive": "It would seem so!"}
+
 
 @app.get("/")
 async def root():
@@ -182,6 +211,169 @@ def get_mock_history_runs(
 
     return [run for run in runs if matches(run)]
 
+@app.get("/gdpr/export")
+async def export_personal_data(
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
+):
+    """Export personal data for the authenticated user (GDPR)."""
+    try:
+        user_id = _get_current_user_id(db, current_user_email)
+
+        Users = _get_model_class("users")
+        RunsMetrics = _get_model_class("runs_metrics")
+        JuryVotes = _get_model_class("jury_votes")
+        RunsMetricsModels = _get_model_class("runs_metrics_models")
+        UsersTemplateDatasets = _get_model_class("users_template_datasets")
+        ScenariosUsers = _get_model_class("scenarios_users")
+        ApiKeyConfigs = _get_model_class("api_key_configs")
+        AuditLogs = _get_model_class("audit_logs")
+
+        if not Users:
+            raise HTTPException(status_code=500, detail="Users table not available")
+
+        user = db.query(Users).filter(Users.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        runs = []
+        if RunsMetrics:
+            runs = db.query(RunsMetrics).filter(RunsMetrics.users_id == user_id).all()
+        run_ids = [run.id for run in runs]
+
+        jury_votes = []
+        runs_models = []
+        if run_ids and JuryVotes:
+            jury_votes = (
+                db.query(JuryVotes).filter(JuryVotes.runs_metrics_id.in_(run_ids)).all()
+            )
+        if run_ids and RunsMetricsModels:
+            runs_models = (
+                db.query(RunsMetricsModels)
+                .filter(RunsMetricsModels.runs_metrics_id.in_(run_ids))
+                .all()
+            )
+
+        data = {
+            "runs_metrics": [_model_to_dict(run) for run in runs],
+            "jury_votes": [_model_to_dict(vote) for vote in jury_votes],
+            "runs_metrics_models": [_model_to_dict(item) for item in runs_models],
+            "users_template_datasets": [
+                _model_to_dict(row)
+                for row in db.query(UsersTemplateDatasets)
+                .filter(UsersTemplateDatasets.users_id == user_id)
+                .all()
+            ]
+            if UsersTemplateDatasets
+            else [],
+            "scenarios_users": [
+                _model_to_dict(row)
+                for row in db.query(ScenariosUsers)
+                .filter(ScenariosUsers.users_id == user_id)
+                .all()
+            ]
+            if ScenariosUsers
+            else [],
+            "api_key_configs": [
+                _model_to_dict(row)
+                for row in db.query(ApiKeyConfigs)
+                .filter(ApiKeyConfigs.user_id == user_id)
+                .all()
+            ]
+            if ApiKeyConfigs
+            else [],
+            "audit_logs": [
+                _model_to_dict(row)
+                for row in db.query(AuditLogs)
+                .filter(AuditLogs.user_id == user_id)
+                .all()
+            ]
+            if AuditLogs
+            else [],
+        }
+
+        payload = json.dumps(data, ensure_ascii=False, default=str, indent=2).encode(
+            "utf-8"
+        )
+        filename = f"gdpr_export_user_{user_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+        return StreamingResponse(
+            io.BytesIO(payload),
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao exportar dados: {str(e)}")
+
+
+@app.delete("/gdpr/delete")
+async def delete_personal_data(
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
+):
+    """Delete personal data for the authenticated user (GDPR)."""
+    try:
+        user_id = _get_current_user_id(db, current_user_email)
+
+        Users = _get_model_class("users")
+        RunsMetrics = _get_model_class("runs_metrics")
+        JuryVotes = _get_model_class("jury_votes")
+        RunsMetricsModels = _get_model_class("runs_metrics_models")
+        UsersTemplateDatasets = _get_model_class("users_template_datasets")
+        ScenariosUsers = _get_model_class("scenarios_users")
+        ApiKeyConfigs = _get_model_class("api_key_configs")
+        AuditLogs = _get_model_class("audit_logs")
+
+        if not Users:
+            raise HTTPException(status_code=500, detail="Users table not available")
+
+        runs = []
+        if RunsMetrics:
+            runs = db.query(RunsMetrics).filter(RunsMetrics.users_id == user_id).all()
+        run_ids = [run.id for run in runs]
+
+        if run_ids and JuryVotes:
+            db.query(JuryVotes).filter(JuryVotes.runs_metrics_id.in_(run_ids)).delete(
+                synchronize_session=False
+            )
+        if run_ids and RunsMetricsModels:
+            db.query(RunsMetricsModels).filter(
+                RunsMetricsModels.runs_metrics_id.in_(run_ids)
+            ).delete(synchronize_session=False)
+        if run_ids and RunsMetrics:
+            db.query(RunsMetrics).filter(RunsMetrics.id.in_(run_ids)).delete(
+                synchronize_session=False
+            )
+
+        if UsersTemplateDatasets:
+            db.query(UsersTemplateDatasets).filter(
+                UsersTemplateDatasets.users_id == user_id
+            ).delete(synchronize_session=False)
+        if ScenariosUsers:
+            db.query(ScenariosUsers).filter(ScenariosUsers.users_id == user_id).delete(
+                synchronize_session=False
+            )
+        if ApiKeyConfigs:
+            db.query(ApiKeyConfigs).filter(ApiKeyConfigs.user_id == user_id).delete(
+                synchronize_session=False
+            )
+        if AuditLogs:
+            db.query(AuditLogs).filter(AuditLogs.user_id == user_id).delete(
+                synchronize_session=False
+            )
+        db.query(Users).filter(Users.id == user_id).delete(synchronize_session=False)
+
+        db.commit()
+
+        return {"status": "success", "message": "User data deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao apagar dados: {str(e)}")
+
+
 # Example endpoints using reflected ORM models
 
 # @app.get("/users")
@@ -229,6 +421,7 @@ class ApiKeyConfigRequest(BaseModel):
     model_name: str = None
     api_key: str
 
+
 class ApiKeyConfigResponse(BaseModel):
     id: int
     name: str
@@ -236,22 +429,28 @@ class ApiKeyConfigResponse(BaseModel):
     model_name: str = None
     api_key: str = None
 
+
 class CreateDatasetRequest(BaseModel):
     name: str
     description: str = None
     metadata: dict = None
 
-# ==================== Endpoints ==================== 
+
+# ==================== Endpoints ====================
 @app.post("/datasets")
 async def create_dataset(request: CreateDatasetRequest):
     langfuse = get_client()
-    dataset = langfuse.create_dataset(name=request.name, description=request.description, metadata=request.metadata)
+    dataset = langfuse.create_dataset(
+        name=request.name, description=request.description, metadata=request.metadata
+    )
     return dataset
+
 
 @app.get("/datasets")
 async def get_datasets():
     langfuse = get_client()
     return langfuse.api.datasets.list()
+
 
 @app.get("/datasets/{dataset_name}")
 async def get_dataset(dataset_name: str):
@@ -264,6 +463,7 @@ async def get_dataset(dataset_name: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+
 # ==================== Endpoints Template Datasets (BD local) ====================
 @app.get("/template-datasets")
 async def get_template_datasets(
@@ -272,64 +472,69 @@ async def get_template_datasets(
 ):
     """
     Lista todos os template datasets da base de dados.
-    
+
     Filtros opcionais:
     - is_builtin: True (só default), False (só uploaded), None (todos)
     """
     try:
         TemplateDatasets = Base.classes.template_datasets
-        
+
         query = db.query(TemplateDatasets)
-        
+
         # Filtrar por is_builtin se especificado
         if is_builtin is not None:
             query = query.filter(TemplateDatasets.is_builtin == is_builtin)
-        
+
         # Filtrar por scenario se especificado
         datasets = query.all()
-        
+
         result = []
         for ds in datasets:
-            #scenario_obj = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
-            result.append({
-                "id": ds.id,
-                "name": ds.name,
-                "description": ds.description,
-                "storage_path": ds.storage_path,
-                "is_builtin": ds.is_builtin,
-                "created_at": ds.created_at.isoformat() if ds.created_at else None,
-            })
-        
-        return {
-            "total": len(result),
-            "datasets": result
-        }
+            # scenario_obj = db.query(Scenarios).filter(Scenarios.id == ds.scenarios_id).first()
+            result.append(
+                {
+                    "id": ds.id,
+                    "name": ds.name,
+                    "description": ds.description,
+                    "storage_path": ds.storage_path,
+                    "is_builtin": ds.is_builtin,
+                    "created_at": ds.created_at.isoformat() if ds.created_at else None,
+                }
+            )
+
+        return {"total": len(result), "datasets": result}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao listar datasets: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao listar datasets: {str(e)}"
+        )
+
 
 @app.get("/template-datasets/{dataset_id}")
 async def get_template_dataset(dataset_id: int, db: Session = Depends(get_db)):
     """Obtém um template dataset específico por ID."""
     try:
         TemplateDatasets = Base.classes.template_datasets
-        
-        ds = db.query(TemplateDatasets).filter(TemplateDatasets.id == dataset_id).first()
-        
+
+        ds = (
+            db.query(TemplateDatasets).filter(TemplateDatasets.id == dataset_id).first()
+        )
+
         if not ds:
             raise HTTPException(status_code=404, detail="Dataset não encontrado")
-        
+
         return {
             "id": ds.id,
             "name": ds.name,
             "description": ds.description,
             "storage_path": ds.storage_path,
             "is_builtin": ds.is_builtin,
-            "created_at": ds.created_at.isoformat() if ds.created_at else None
+            "created_at": ds.created_at.isoformat() if ds.created_at else None,
         }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao obter dataset: {str(e)}")
+
 
 @app.get("/scenarios")
 async def get_scenarios(db: Session = Depends(get_db)):
@@ -337,7 +542,7 @@ async def get_scenarios(db: Session = Depends(get_db)):
     try:
         Scenarios = Base.classes.scenarios
         scenarios = db.query(Scenarios).all()
-        
+
         return [
             {
                 "id": s.id,
@@ -345,131 +550,173 @@ async def get_scenarios(db: Session = Depends(get_db)):
                 "description": s.description,
                 "is_builtin": s.is_builtin,
                 "storage_path": s.storage_path,
-                "created_at": s.created_at.isoformat() if s.created_at else None
+                "created_at": s.created_at.isoformat() if s.created_at else None,
             }
             for s in scenarios
         ]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao listar scenarios: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao listar scenarios: {str(e)}"
+        )
+
 
 @app.post("/attack")
+@limiter.limit("900/day")
 async def attack(
-    request: AttackRequest,
+    request: Request,
+    attack_request: AttackRequest,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user),
 ):
     try:
+        Scenarios = Base.classes.scenarios
+        scenario = (
+            db.query(Scenarios)
+            .filter(Scenarios.id == attack_request.scenario_id)
+            .first()
+        )
         current_user_id = _get_current_user_id(db, current_user_email)
-        Scenario = Base.classes.scenarios
-        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
-        #goals_file_name = request.goals_file_name if request.goals_file_name is not None else f"{request.label.value}.json"
 
-        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+        role_play_option = None
+        if attack_request.role_play_option_id:
+            RolePlayOptions = Base.classes.role_play_options
+            role_play_option = (
+                db.query(RolePlayOptions)
+                .filter(RolePlayOptions.id == attack_request.role_play_option_id)
+                .first()
+            )
+
+        if (
+            attack_request.target_provider == "OPEN_AI"
+            and attack_request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS
+        ):
             raise Exception("The target model is not supported by the external API")
-        
+
         await launch_attack(
-            attack_option=request.attack_option.value,
-            label=request.label.value,
-            seed=request.seed,
-            temperature_judges=request.temperature_judges,
-            target_model_name=request.target_model_name,
-            attacker_model_name=request.attacker_model_name,
-            judge_model_name=request.judge_model_name,
-            jury_models=request.jury_models,
-            role_play_option=request.role_play_option.value if request.role_play_option else None,
-            goals_file_name=request.goals_file_name,
-            target_provider=request.target_provider,
-            api_key=request.api_key,
-            scenario_id=scenario_id,
+            attack_option=attack_request.attack_option.value,
+            label=scenario.name,
+            seed=attack_request.seed,
+            temperature_judges=attack_request.temperature_judges,
+            target_model_name=attack_request.target_model_name,
+            attacker_model_name=attack_request.attacker_model_name,
+            judge_model_name=attack_request.judge_model_name,
+            jury_models=attack_request.jury_models,
+            role_play_option=role_play_option if role_play_option.name else None,
+            target_provider=attack_request.target_provider,
+            api_key=attack_request.api_key,
+            scenario_id=scenario.id,
             db=db,
+            role_play_option_id=attack_request.role_play_option_id,
             user_id=current_user_id,
         )
+
+        # Audit log
+        AuditLog = Base.classes.audit_logs
+        request_data = attack_request.model_dump()
+        request_data.pop("api_key", None)  # Remove sensitive data
+        audit_entry = AuditLog(
+            user_id=current_user_id,
+            endpoint="/attack",
+            request_body=json.dumps(request_data, default=str),
+            created_at=datetime.now(),
+        )
+        db.add(audit_entry)
+        db.commit()
+
         return {"status": "success", "message": "Attack completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/attack-template")
+@limiter.limit("900/day")
 async def attack_template(
-    request: AttackTemplateRequest,
+    request: Request,
+    attack_template_request: AttackTemplateRequest,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user),
 ):
     try:
         current_user_id = _get_current_user_id(db, current_user_email)
-        template_path = None
-        if request.template_path:
-            # Procurar o dataset na tabela template_datasets
-            if not hasattr(Base.classes, 'template_datasets'):
-                reflect_tables()
-            
-            TemplateDatasets = Base.classes.template_datasets
-            # Procura na BD pelo storage_path
-            record = db.query(TemplateDatasets).filter(
-                TemplateDatasets.storage_path == request.template_path
-            ).first()
-            
-            if record:
-                template_path = record.storage_path
-            else:
-                # Se não encontrar na BD, usa o path enviado diretamente
-                template_path = request.template_path
-        
-        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
-            raise Exception("The target model is not supported by the external API")
-        
-        Scenario = Base.classes.scenarios
-        scenario_id = (db.query(Scenario).filter(Scenario.name == request.label.value).first()).id
+        Scenarios = Base.classes.scenarios
+        scenario = (
+            db.query(Scenarios)
+            .filter(Scenarios.id == attack_template_request.scenario_id)
+            .first()
+        )
 
         TemplateDatasets = Base.classes.template_datasets
-        template_dataset_id = (db.query(TemplateDatasets).filter(TemplateDatasets.storage_path == template_path).first()).id
-        
-
-        print("Template Dataset ID:", template_dataset_id)
-        await launch_attack_template(
-            label=request.label.value,
-            seed=request.seed,
-            temperature_judges=request.temperature_judges,
-            temperature_attacker=request.temperature_attacker,
-            temperature_target=request.temperature_target,
-            target_model_name=request.target_model_name,
-            jury_models=request.jury_models,
-            template_path=template_path,
-            target_provider=request.target_provider,
-            api_key=request.api_key,
-            db=db,
-            template_dataset_id=template_dataset_id,
-            scenario_id=scenario_id,            
-            user_id=current_user_id,
-            #langfuse,
-            #user
+        template_dataset = (
+            db.query(TemplateDatasets)
+            .filter(TemplateDatasets.id == attack_template_request.template_dataset_id)
+            .first()
         )
+
+        await launch_attack_template(
+            label=scenario.name,
+            seed=attack_template_request.seed,
+            temperature_judges=attack_template_request.temperature_judges,
+            temperature_attacker=attack_template_request.temperature_attacker,
+            temperature_target=attack_template_request.temperature_target,
+            target_model_name=attack_template_request.target_model_name,
+            jury_models=attack_template_request.jury_models,
+            template_path=template_dataset.storage_path,
+            target_provider=attack_template_request.target_provider,
+            api_key=attack_template_request.api_key,
+            db=db,
+            template_dataset_id=template_dataset.id,
+            scenario_id=scenario.id,
+            user_id=current_user_id,
+            # langfuse,
+            # user
+        )
+
+        # Audit log
+        AuditLog = Base.classes.audit_logs
+        request_data = attack_template_request.model_dump()
+        request_data.pop("api_key", None)  # Remove sensitive data
+        audit_entry = AuditLog(
+            user_id=current_user_id,
+            endpoint="/attack-template",
+            request_body=json.dumps(request_data, default=str),
+            created_at=datetime.now(),
+        )
+        db.add(audit_entry)
+        db.commit()
+
         return {"status": "success", "message": "Attack template completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 @app.post("/over-refusal-test")
+@limiter.limit("900/day")
 async def over_refusal_test(
-    request: OverRefusalTestRequest,
+    request: Request,
+    over_refusal_request: OverRefusalTestRequest,
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user),
 ):
     try:
         current_user_id = _get_current_user_id(db, current_user_email)
-        if request.target_provider == "OPEN_AI" and request.target_model_name not in AVAILABLE_EXTERNAL_TARGET_MODELS:
+        if (
+            over_refusal_request.target_provider == "OPEN_AI"
+            and over_refusal_request.target_model_name
+            not in AVAILABLE_EXTERNAL_TARGET_MODELS
+        ):
             raise Exception("The target model is not supported by the external API")
-        
+
         await launch_over_refusal_test(
-            seed=request.seed,
-            temperature_judges=request.temperature_judges,
-            temperature_attacker=request.temperature_attacker,
-            temperature_target=request.temperature_target,
-            target_model_name=request.target_model_name,
-            jury_models=request.jury_models,
-            target_provider=request.target_provider,
-            api_key=request.api_key,
+            seed=over_refusal_request.seed,
+            temperature_judges=over_refusal_request.temperature_judges,
+            temperature_attacker=over_refusal_request.temperature_attacker,
+            temperature_target=over_refusal_request.temperature_target,
+            target_model_name=over_refusal_request.target_model_name,
+            jury_models=over_refusal_request.jury_models,
+            target_provider=over_refusal_request.target_provider,
+            api_key=over_refusal_request.api_key,
             db=db,
             user_id=current_user_id,
-
         )
         return {"status": "success", "message": "Over-refusal test completed"}
     except Exception as e:
@@ -700,24 +947,67 @@ async def delete_api_key_config(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao deletar config: {str(e)}")
 
-@app.get("/runs-metrics/{run_id}")
-async def get_runs_metrics(
-    run_id: int,
-    db: Session = Depends(get_db)
+@app.get("/runs-metrics/me")
+async def get_my_runs_metrics(
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
 ):
+    user_id = _get_current_user_id(db, current_user_email)
     RunsMetrics = Base.classes.runs_metrics
-
-    run_metrics = (
+    return (
         db.query(RunsMetrics)
-        .filter(RunsMetrics.id == run_id)
+        .options(
+            joinedload(RunsMetrics.scenarios),
+            joinedload(RunsMetrics.template_datasets),
+            joinedload(RunsMetrics.users),
+            joinedload(RunsMetrics.role_play_options),
+        )
+        .filter(RunsMetrics.users_id == user_id)
         .all()
     )
 
-    return run_metrics
 
 @app.get("/runs-metrics")
 async def get_all_runs_metrics(
     db: Session = Depends(get_db)
 ):
     RunsMetrics = Base.classes.runs_metrics
-    return db.query(RunsMetrics).all()
+    return (
+        db.query(RunsMetrics)
+        .options(
+            joinedload(RunsMetrics.scenarios),
+            joinedload(RunsMetrics.template_datasets),
+            joinedload(RunsMetrics.users),
+            joinedload(RunsMetrics.role_play_options),
+        )
+        .all()
+    )
+
+
+@app.get("/runs-metrics/{run_id}")
+async def get_runs_metrics(
+    run_id: int,
+    db: Session = Depends(get_db),
+):
+    RunsMetrics = Base.classes.runs_metrics
+
+    run_metrics = (
+        db.query(RunsMetrics)
+        .options(
+            joinedload(RunsMetrics.scenarios),
+            joinedload(RunsMetrics.template_datasets),
+            joinedload(RunsMetrics.users),
+            joinedload(RunsMetrics.role_play_options),
+            joinedload(RunsMetrics.role_play_options),
+        )
+        .filter(RunsMetrics.id == run_id)
+        .one_or_none()
+    )
+
+    return run_metrics
+
+
+@app.get("/role-play-options")
+async def get_all_role_play_options(db: Session = Depends(get_db)):
+    RolePlayOptions = Base.classes.role_play_options
+    return db.query(RolePlayOptions).all()

@@ -34,13 +34,19 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
     """
 
     # Azure SQL configuration
-    SQL_COPT_SS_ACCESS_TOKEN = 1256  # Connection option for access tokens, as defined in msodbcsql.h
+    SQL_COPT_SS_ACCESS_TOKEN = (
+        1256  # Connection option for access tokens, as defined in msodbcsql.h
+    )
     TOKEN_URL = "https://database.windows.net/.default"  # The token URL for any Azure SQL database
     AZURE_SQL_DB_CONNECTION_STRING = "AZURE_SQL_DB_CONNECTION_STRING"
 
     # Azure Storage Account Container datasets and results environment variables
-    AZURE_STORAGE_ACCOUNT_DB_DATA_CONTAINER_URL: str = "AZURE_STORAGE_ACCOUNT_DB_DATA_CONTAINER_URL"
-    AZURE_STORAGE_ACCOUNT_DB_DATA_SAS_TOKEN: str = "AZURE_STORAGE_ACCOUNT_DB_DATA_SAS_TOKEN"
+    AZURE_STORAGE_ACCOUNT_DB_DATA_CONTAINER_URL: str = (
+        "AZURE_STORAGE_ACCOUNT_DB_DATA_CONTAINER_URL"
+    )
+    AZURE_STORAGE_ACCOUNT_DB_DATA_SAS_TOKEN: str = (
+        "AZURE_STORAGE_ACCOUNT_DB_DATA_SAS_TOKEN"
+    )
 
     def __init__(
         self,
@@ -51,11 +57,13 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
         verbose: bool = False,
     ):
         self._connection_string = default_values.get_required_value(
-            env_var_name=self.AZURE_SQL_DB_CONNECTION_STRING, passed_value=connection_string
+            env_var_name=self.AZURE_SQL_DB_CONNECTION_STRING,
+            passed_value=connection_string,
         )
 
         self._results_container_url: str = default_values.get_required_value(
-            env_var_name=self.AZURE_STORAGE_ACCOUNT_DB_DATA_CONTAINER_URL, passed_value=results_container_url
+            env_var_name=self.AZURE_STORAGE_ACCOUNT_DB_DATA_CONTAINER_URL,
+            passed_value=results_container_url,
         )
 
         self._results_container_sas_token: Optional[str] = self._resolve_sas_token(
@@ -80,7 +88,9 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
         super(AzureSQLMemory, self).__init__()
 
     @staticmethod
-    def _resolve_sas_token(env_var_name: str, passed_value: Optional[str]) -> Optional[str]:
+    def _resolve_sas_token(
+        env_var_name: str, passed_value: Optional[str]
+    ) -> Optional[str]:
         """
         Resolve the SAS token value, allowing a fallback to None for delegation SAS.
 
@@ -92,14 +102,17 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
             Optional[str]: Resolved SAS token or None if not provided.
         """
         try:
-            return default_values.get_required_value(env_var_name=env_var_name, passed_value=passed_value)
+            return default_values.get_required_value(
+                env_var_name=env_var_name, passed_value=passed_value
+            )
         except ValueError:
             return None
 
     def _init_storage_io(self):
         # Handle for Azure Blob Storage when using Azure SQL memory.
         self.results_storage_io = AzureBlobStorageIO(
-            container_url=self._results_container_url, sas_token=self._results_container_sas_token
+            container_url=self._results_container_url,
+            sas_token=self._results_container_sas_token,
         )
 
     def _create_auth_token(self):
@@ -116,9 +129,9 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
         """
         Refresh the access token if it is close to expiry (within 5 minutes).
         """
-        if datetime.now(timezone.utc) >= datetime.fromtimestamp(self._auth_token_expiry, tz=timezone.utc) - timedelta(
-            minutes=5
-        ):
+        if datetime.now(timezone.utc) >= datetime.fromtimestamp(
+            self._auth_token_expiry, tz=timezone.utc
+        ) - timedelta(minutes=5):
             logger.info("Refreshing Microsoft Entra ID access token...")
             self._create_auth_token()
 
@@ -138,7 +151,12 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
             # by testing and replacing stale connections.
             # Set pool_recycle to 1800 seconds to prevent connections from being closed due to server timeout.
 
-            engine = create_engine(self._connection_string, pool_recycle=1800, pool_pre_ping=True, echo=has_echo)
+            engine = create_engine(
+                self._connection_string,
+                pool_recycle=1800,
+                pool_pre_ping=True,
+                echo=has_echo,
+            )
             logger.info(f"Engine created successfully for database: {engine.name}")
             return engine
         except SQLAlchemyError as e:
@@ -168,10 +186,16 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
             # encode the token
             azure_token = self._auth_token.token
             azure_token_bytes = azure_token.encode("utf-16-le")
-            packed_azure_token = struct.pack(f"<I{len(azure_token_bytes)}s", len(azure_token_bytes), azure_token_bytes)
+            packed_azure_token = struct.pack(
+                f"<I{len(azure_token_bytes)}s",
+                len(azure_token_bytes),
+                azure_token_bytes,
+            )
 
             # add the encoded token
-            cparams["attrs_before"] = {self.SQL_COPT_SS_ACCESS_TOKEN: packed_azure_token}
+            cparams["attrs_before"] = {
+                self.SQL_COPT_SS_ACCESS_TOKEN: packed_azure_token
+            }
 
     def _create_tables_if_not_exist(self):
         """
@@ -186,33 +210,45 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
         except Exception as e:
             logger.error(f"Error during table creation: {e}")
 
-    def _add_embeddings_to_memory(self, *, embedding_data: list[EmbeddingDataEntry]) -> None:
+    def _add_embeddings_to_memory(
+        self, *, embedding_data: list[EmbeddingDataEntry]
+    ) -> None:
         """
         Inserts embedding data into memory storage
         """
         self._insert_entries(entries=embedding_data)
 
-    def _get_prompt_pieces_memory_label_conditions(self, *, memory_labels: dict[str, str]):
+    def _get_prompt_pieces_memory_label_conditions(
+        self, *, memory_labels: dict[str, str]
+    ):
         json_validation = "ISJSON(labels) = 1"
-        json_conditions = " AND ".join([f"JSON_VALUE(labels, '$.{key}') = :{key}" for key in memory_labels])
+        json_conditions = " AND ".join(
+            [f"JSON_VALUE(labels, '$.{key}') = :{key}" for key in memory_labels]
+        )
         # Combine both conditions
         conditions = f"{json_validation} AND {json_conditions}"
 
         # Create SQL condition using SQLAlchemy's text() with bindparams
         # for safe parameter passing, preventing SQL injection
-        return text(conditions).bindparams(**{key: str(value) for key, value in memory_labels.items()})
+        return text(conditions).bindparams(
+            **{key: str(value) for key, value in memory_labels.items()}
+        )
 
     def _get_prompt_pieces_orchestrator_conditions(self, *, orchestrator_id: str):
         return text(
             "ISJSON(orchestrator_identifier) = 1 AND JSON_VALUE(orchestrator_identifier, '$.id') = :json_id"
         ).bindparams(json_id=str(orchestrator_id))
 
-    def add_request_pieces_to_memory(self, *, request_pieces: Sequence[PromptRequestPiece]) -> None:
+    def add_request_pieces_to_memory(
+        self, *, request_pieces: Sequence[PromptRequestPiece]
+    ) -> None:
         """
         Inserts a list of prompt request pieces into the memory storage.
 
         """
-        self._insert_entries(entries=[PromptMemoryEntry(entry=piece) for piece in request_pieces])
+        self._insert_entries(
+            entries=[PromptMemoryEntry(entry=piece) for piece in request_pieces]
+        )
 
     def dispose_engine(self):
         """
@@ -255,7 +291,9 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
                 session.commit()
             except SQLAlchemyError as e:
                 session.rollback()
-                logger.exception(f"Error inserting multiple entries into the table: {e}")
+                logger.exception(
+                    f"Error inserting multiple entries into the table: {e}"
+                )
                 raise
 
     def get_session(self) -> Session:
@@ -265,7 +303,12 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
         return self.SessionFactory()
 
     def _query_entries(
-        self, model, *, conditions: Optional = None, distinct: bool = False, join_scores: bool = False  # type: ignore
+        self,
+        model,
+        *,
+        conditions: Optional = None,
+        distinct: bool = False,
+        join_scores: bool = False,  # type: ignore
     ) -> list[Base]:
         """
         Fetches data from the specified table model with optional conditions.
@@ -290,10 +333,14 @@ class AzureSQLMemory(MemoryInterface, metaclass=Singleton):
                     return query.distinct().all()
                 return query.all()
             except SQLAlchemyError as e:
-                logger.exception(f"Error fetching data from table {model.__tablename__}: {e}")
+                logger.exception(
+                    f"Error fetching data from table {model.__tablename__}: {e}"
+                )
                 return []
 
-    def _update_entries(self, *, entries: MutableSequence[Base], update_fields: dict) -> bool:  # type: ignore
+    def _update_entries(
+        self, *, entries: MutableSequence[Base], update_fields: dict
+    ) -> bool:  # type: ignore
         """
         Updates the given entries with the specified field values.
 

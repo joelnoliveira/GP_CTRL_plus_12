@@ -13,16 +13,18 @@ class SubStringScorer(Scorer):
     """
 
     def __init__(self, *, substring: str, category: str = None) -> None:
-
         self._substring = substring
         self._score_category = category
         self.scorer_type = "true_false"
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
-
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         self.validate(request_response, task=task)
 
-        expected_output_substring_present = self._substring in request_response.converted_value
+        expected_output_substring_present = (
+            self._substring in request_response.converted_value
+        )
 
         score = [
             Score(
@@ -41,6 +43,8 @@ class SubStringScorer(Scorer):
         self._memory.add_scores_to_memory(scores=score)
         return score
 
-    def validate(self, request_response: PromptRequestPiece, *, task: Optional[str] = None):
+    def validate(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ):
         if request_response.converted_value_data_type != "text":
             raise ValueError("Expected text data type")

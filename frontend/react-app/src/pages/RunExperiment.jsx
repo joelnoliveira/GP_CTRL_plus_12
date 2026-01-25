@@ -6,6 +6,10 @@ import DropdownMenu from '../components/DropdownMenu'
 import ToggleSwitch from '../components/ToggleSwitch'
 import AddIcon from '../components/AddIcon'
 import Button from "../components/Button"
+import Toast from "../components/Toast"
+import UploadModal from "../components/UploadModal";
+
+import { useExperimentData } from "../hooks/useExperimentData";
 
 const RunExperiment = (
 ) => {
@@ -14,15 +18,22 @@ const RunExperiment = (
       setIsPublic(newValue);
   }
 
-  const { isLoggedIn, login } = useAuth(); // From your AuthContext
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState(null);
+
+  const [toastConfig, setToastConfig] = useState(null);
+
+  const { isLoggedIn, token } = useAuth(); // From your AuthContext
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const attackTypeList = ['Attack','Attack Template'];
   const [attackType, setAttackType] = useState(attackTypeList[0]);
   const [selections, setSelections] = useState({
-    template_path: '',
-    scenario: '',
+    template_datasets: '',
+    scenarios: '',
     attack_option: '',
-    role_play_option: '',
+    role_play_options: '',
     attack_model_name: '',
     target_model_name: ''
   });
@@ -34,35 +45,87 @@ const RunExperiment = (
     }));
   };
 
-  /*
-  Adicioanr logica para ir buscar isto ao backend
-  */
-  const [fetchedModels, setFetchedModels] = useState([
-    {
-      key: '',
-      label: ''
-    }
-  ]);
-  const scenarioList = [
-    {
-      key: 'malicious_goals',
-      label: 'External Attacker (Malicious)'
-    },
-    {
-      key: 'vulnerable_goals',
-      label: 'Internal Threat Actor (Vulnerable)'
-    }
-  ];
-  const templateList = [
-    {
-      key: 'datasets/pliny_prompts_escaped.yaml',
-      label: 'L1B3RT4S'
-    },
-    {
-      key: 'datasets/JailBreakV_28K_clean.yaml',
-      label: 'JailBreakV-28K'
-    }
-  ];
+  const [scenarioExpectedFormat,setScenarioExpectedFormat] = useState([{}]);
+  const [templateExpectedFormat,setTemplateExpectedFormat] = useState([{}]);
+  const [rolePlayExpectedFormat,setRolePlayExpectedFormat] = useState([{}]);
+
+  useEffect(() => {
+    const fetchFormats = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/files/formats", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch file formats");
+        const data = await response.json();
+
+        const formats = data.formats;
+
+        
+        const normalize = ({ name, label, language, forceArray }) => {
+          const entry = formats.find(f => f.name === name);
+          if (!entry) return [];
+
+          return [
+            {
+              label,
+              language,
+              example: forceArray && !Array.isArray(entry.example)
+                ? [entry.example]
+                : entry.example
+            }
+          ];
+        };
+
+        setScenarioExpectedFormat(
+          normalize({
+            name: "scenarios",
+            label: "Scenario format",
+            language: "json",
+            forceArray: true
+          })
+        );
+
+        setTemplateExpectedFormat(
+          normalize({
+            name: "template_datasets",
+            label: "Template dataset format",
+            language: "yaml",
+            forceArray: false
+          })
+        );
+
+        setRolePlayExpectedFormat(
+          normalize({
+            name: "role_play_options",
+            label: "Role play option format",
+            language: "yaml",
+            forceArray: false
+          })
+        );
+
+              } catch (err) {
+                console.error("Error fetching models:", err);
+              }
+            };
+            fetchFormats();
+          }, []);
+
+  
+
+  const {
+    scenarios: scenarioList,
+    templates: templateList,
+    rolePlayOptions: rolePlayOptionList,
+    models: fetchedModels,
+    refetch
+  } = useExperimentData();
+
+  const [scenarioType, setScenarioType] = useState({});
+
   const attackOptionList = [
     {
       key: 'CRESCENDO_ATTACK',
@@ -73,139 +136,180 @@ const RunExperiment = (
       label: 'Role Playing'
     }
   ]
-  const rolePlayOptionList = [
-    {
-      key: 'VIDEO_GAME',
-      label: 'Video-game'
-    },
-    {
-      key: 'MR_ROBOT',
-      label: 'Mr. Robot'
-    } 
-  ]
 
   const attackFormFields = [
-    { id: 'scenario', placeholder: 'Scenario', options: scenarioList },
     { id: 'attack_option', placeholder: 'Attack LLM Type', options: attackOptionList },
-    { id: 'role_play_option', placeholder: 'Role Playing Type', options: rolePlayOptionList },
+    { id: 'role_play_options', placeholder: 'Role Playing Type', options: rolePlayOptionList },
     { id: 'attack_model_name', placeholder: 'Attack Model', options: fetchedModels },
     { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
-    { id: 'template_path', placeholder: 'Template', options: templateList },
   ]; 
   const attackTemplateFormFields = [
-    { id: 'scenario', placeholder: 'Scenario', options: scenarioList },
     { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
-    { id: 'template_path', placeholder: 'Template', options: templateList },
+    { id: 'template_datasets', placeholder: 'Template', options: templateList },
+  ];
+  const attackOverRefusalFields = [
+    { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
   ];
 
   const getFormFields = () => {
-    if (attackType == "Attack") { 
-      return attackFormFields
+    if (scenarioType.label === "Over Refusal Test"){
+      return attackOverRefusalFields;
     } else {
-      return attackTemplateFormFields
+      if (attackType === "Attack") { 
+        return attackFormFields
+      } else {
+        return attackTemplateFormFields
+      }
     }
   }
+  
+
+const handleUpload = (id) => () => {
+    setUploadTarget(id);
+    setIsModalOpen(true);
+  };
+
+const onUploadSuccess = (newData) => {
+    const newSuccess = { type: "success", message: "File uploaded and processed!" };
+    setToastConfig(newSuccess);
+    setIsModalOpen(false);
+    
+    refetch[uploadTarget]?.();
+  };
 
 const handleExecute = async () => {
-  // Validar que todos os campos obrigatórios foram preenchidos
-  if (!selections.scenario || !selections.target_model_name) {
-    alert("Por favor preenche todos os campos obrigatórios");
+  // Validar que todos os campos foram preenchidos
+  if (!selections.target_model_name) {
+    const newError = {type: "error", message: "Please select an option for all fields."};
+    setToastConfig(newError);
     return;
   }
 
+  setIsLoading(true);
   try {
     let endpoint = "";
     let payload = {};
 
-    if (attackType === "Attack") {
-      // Validação específica para Attack
-      if (!selections.template_path) {
-        alert("Por favor seleciona um template para o ataque");
-        return;
-      }
-
-      endpoint = "http://localhost:8000/attack"; 
+    if (scenarioType.label === "Over Refusal Test") {
+      endpoint = "http://localhost:8000/over-refusal-test"; 
       payload = {
-        attack_option: selections.attack_option,
-        label: selections.scenario,
-        target_model_name: selections.target_model_name,
-        attacker_model_name: selections.attack_model_name,        
-        role_play_option: selections.role_play_option
+        target_model_name: selections.target_model_name    
       };
-    } else if (attackType === "Attack Template") {
-      // Validação específica para Attack Template
-      if (!selections.template_path) {
-        alert("Por favor seleciona um template");
-        return;
-      }
 
-      endpoint = "http://localhost:8000/attack-template";
-      payload = {
-        label: selections.scenario,
-        target_model_name: selections.target_model_name,
-        template_path: selections.template_path
-      };
     } else {
-      alert("Por favor seleciona um tipo de ataque válido");
-      return;
+      if (attackType === "Attack") {
+        if (!selections.attack_model_name && selections.attack_option && ((selections.attack_option==="ROLE_PLAY_ATTACK") === selections.role_play_options)) {
+          const newError = {type: "error", message: "Please select an option for all fields."};
+          setToastConfig(newError);
+          return;
+        }
+
+        endpoint = "http://localhost:8000/attack"; 
+        payload = {
+          attack_option: selections.attack_option,
+          scenario_id: scenarioType.key,
+          target_model_name: selections.target_model_name,
+          attacker_model_name: selections.attack_model_name,        
+          role_play_options: selections.role_play_options
+        };
+      } else if (attackType === "Attack Template") {
+        if (!selections.template_datasets) {
+          const newError = {type: "error", message: "Please select an option for all fields."};
+          setToastConfig(newError);
+          return;
+        }
+
+        endpoint = "http://localhost:8000/attack-template";
+        payload = {
+          scenario_id: scenarioType.key,
+          target_model_name: selections.target_model_name,
+          template_dataset_id: selections.template_datasets 
+        };
+      } else {
+        const newError = {type: "error", message: "Please select a valid attack option."};
+        setToastConfig(newError);
+        return;
+      }
     }
 
-    // Fazer a chamada ao backend
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+    //Fazer a chamada ao backend
     const response = await fetch(endpoint, {
       method: "POST",
+      signal: controller.signal,
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(payload)
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Erro ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log("Ataque executado com sucesso:", data);
-    alert("Ataque iniciado com sucesso!");
 
+    const newSuccess = {type: "success", message: "Attack successfully executed!"};
+    setToastConfig(newSuccess);
   } catch (err) {
-    console.error("Erro ao executar ataque:", err);
-    alert(`Erro ao executar ataque: ${err.message}`);
+    if (err.name === 'AbortError') {
+      setToastConfig({ type: "caution", message: "Request timed out. The process will continue on the background." });
+    } else {
+      setToastConfig({ type: "error", message: err.message });
+    }
+  } finally {
+    setIsLoading(false); // 3. Stop loading regardless of success/fail
   }
 };
-
-  useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        console.log("teste")
-        const response = await fetch("http://10.3.1.241:8080/api/tags", {
-          method: "GET"
-        });
-        console.log(response)
-        if (!response.ok) throw new Error("Failed to fetch models");
-        const data = await response.json();
-        console.log(data)
-        if (data.models && Array.isArray(data.models)) {
-          const models = data.models.map(m => {
-            return {
-              key: m.name,
-              label: m.name
-            };
-          });
-          setFetchedModels(models);
-          console.log(models)
-        }
-      } catch (err) {
-        console.error("Error fetching models:", err);
-      }
-    };
-    fetchModels();
-  }, []);
 
   return (
     <div className="run_experiment"> 
       <Menu 
         currentPage={"Run Experiment"}
       />
+
+      {toastConfig && (
+				<Toast
+					icon_size="large"
+					type={toastConfig.type}
+					message={toastConfig.message}
+					onClose={() => setToastConfig(null)} 
+				/>
+			)}
+
+      {uploadTarget === "scenarios" && (
+        <UploadModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={onUploadSuccess}
+          targetType={uploadTarget}
+          expectedFormats={scenarioExpectedFormat}
+        />)
+      }
+      {uploadTarget === "template_datasets" && (
+        <UploadModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={onUploadSuccess}
+          targetType={uploadTarget}
+          expectedFormats={templateExpectedFormat}
+        />)
+      }
+
+      {uploadTarget === "role_play_options" && (
+        <UploadModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={onUploadSuccess}
+          targetType={uploadTarget}
+          expectedFormats={rolePlayExpectedFormat}
+        />)
+      }
 
       {/* Main Content Area */}
       <div className="run_experiment__main_area">
@@ -216,20 +320,41 @@ const handleExecute = async () => {
             <div className="run_experiment__dropdown-list">
               <div className="run_experiment__row">
                 <DropdownMenu
+                  placeholder='Scenario'
+                  items={scenarioList.map(opt => opt.label)}
+                  value={scenarioType.label}
+                  onSelect={(val) => 
+                    setScenarioType(
+                      scenarioList.find(opt => opt.label === val)
+                    )
+                  }
+                />
+
+                <AddIcon
+                  size='large'
+                  disabled={!isLoggedIn}
+                  onClick={handleUpload("scenarios")}
+                />
+
+                {/* <ToggleSwitch
+                  checked={isPublic}
+                  onChange={handleIsPublic}
+                /> */}
+              </div>
+            </div>
+            {scenarioType.label !== "Over Refusal Test" && <div className="run_experiment__dropdown-list">
+              <div className="run_experiment__row">
+                <DropdownMenu
                   placeholder='Attack type'
                   items={attackTypeList}
                   value={attackType}
                   onSelect={(val) => setAttackType(val)}
                 />
-                <ToggleSwitch
-                  checked={isPublic}
-                  onChange={handleIsPublic}
-                />
               </div>
-            </div>
+            </div>}
             
             {getFormFields().map((field) => {
-              if (field.id === "role_play_option" && selections.attack_option !== "ROLE_PLAY_ATTACK") {
+              if (field.id === "role_play_options" && selections.attack_option !== "ROLE_PLAY_ATTACK") {
                 return null;
               };
 
@@ -246,11 +371,13 @@ const handleExecute = async () => {
                       )
                     }
                   />
+                  {(field.id === "template_datasets" || field.id === "role_play_options") && (
                   <AddIcon
                     size='large'
                     disabled={!isLoggedIn}
-                    onClick={() => console.log('Add clicked!')}
-                  />
+                    onClick={handleUpload(field.id)}
+                  />)
+                  }
                 </div>
               );
             })}
@@ -261,9 +388,9 @@ const handleExecute = async () => {
             type="submit"
             variant="default"
             size="large"
-            text="Execute Attack"
             styles="w-full mt-6"
-            disabled={!isLoggedIn}
+            text={isLoading ? "Processing..." : "Execute Attack"} // Change text
+            disabled={!isLoggedIn || isLoading}
           />
         </div>
       </div>

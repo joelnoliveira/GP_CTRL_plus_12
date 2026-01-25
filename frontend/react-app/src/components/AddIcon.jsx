@@ -6,8 +6,8 @@ import "../styles/components/add_icon.css"
 
 const AddIcon = ({
   size = "small",
-  onClick,
   disabled = false,
+  onClick
 }) => {
   const icon_size =
     size === "small"

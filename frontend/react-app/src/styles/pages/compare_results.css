@@ -12,13 +12,16 @@
 
 /* ===== Charts ===== */
 .compare_results__charts {
-  @apply flex-1 bg-white rounded-xl p-6 grid gap-6;
+  @apply flex-1 bg-gray-100 rounded-xl p-6 grid gap-6;
 
-  grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
+  /* Force one chart card per line so each result is full-width */
+  grid-template-columns: 1fr;
 }
 
 .chart_card {
   @apply border rounded-lg p-4 flex flex-col;
+  /* Ensure all chart cards have consistent height */
+  min-height: 320px;
 }
 
 .chart_card--wide {

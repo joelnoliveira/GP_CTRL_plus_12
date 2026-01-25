@@ -17,7 +17,10 @@ from pyrit.common.initialization import (
     DUCK_DB,
     IN_MEMORY,
 )
-from pyrit.common.net_utility import get_httpx_client, make_request_and_raise_if_error_async
+from pyrit.common.net_utility import (
+    get_httpx_client,
+    make_request_and_raise_if_error_async,
+)
 from pyrit.common.notebook_utils import is_in_ipython_session
 from pyrit.common.print import print_chat_messages_with_color
 from pyrit.common.singleton import Singleton

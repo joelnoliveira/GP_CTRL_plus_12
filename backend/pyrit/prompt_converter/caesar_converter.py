@@ -30,7 +30,9 @@ class CaesarConverter(PromptConverter):
 
     def __init__(self, *, caesar_offset: int, append_description: bool = False) -> None:
         if caesar_offset < -25 or caesar_offset > 25:
-            raise ValueError("caesar offset value invalid, must be between -25 and 25 inclusive.")
+            raise ValueError(
+                "caesar offset value invalid, must be between -25 and 25 inclusive."
+            )
         self.caesar_offset = caesar_offset
         self.append_description = append_description
         self.example = (
@@ -39,7 +41,9 @@ class CaesarConverter(PromptConverter):
             "then use the chainsaw to cut down the stop sign."
         )
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Simple converter that caesar cipher encodes the prompt.
         """
@@ -48,10 +52,14 @@ class CaesarConverter(PromptConverter):
 
         if self.append_description:
             prompt_template = SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "caesar_description.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "caesar_description.yaml"
             )
             output_text = prompt_template.render_template_value(
-                prompt=self._caesar(prompt), example=self._caesar(self.example), offset=str(self.caesar_offset)
+                prompt=self._caesar(prompt),
+                example=self._caesar(self.example),
+                offset=str(self.caesar_offset),
             )
         else:
             output_text = self._caesar(prompt)

@@ -23,11 +23,15 @@ DOCS_PATH = pathlib.Path(PYRIT_PATH, "..", "doc").resolve()
 
 DOCS_CODE_PATH = pathlib.Path(PYRIT_PATH, "..", "doc", "code").resolve()
 DATASETS_PATH = pathlib.Path(PYRIT_PATH, "datasets").resolve()
-CONTENT_CLASSIFIERS_PATH = pathlib.Path(DATASETS_PATH, "score", "content_classifiers").resolve()
+CONTENT_CLASSIFIERS_PATH = pathlib.Path(
+    DATASETS_PATH, "score", "content_classifiers"
+).resolve()
 LIKERT_SCALES_PATH = pathlib.Path(DATASETS_PATH, "score", "likert_scales").resolve()
 SCALES_PATH = pathlib.Path(DATASETS_PATH, "score", "scales").resolve()
 
-RED_TEAM_ORCHESTRATOR_PATH = pathlib.Path(DATASETS_PATH, "orchestrators", "red_teaming").resolve()
+RED_TEAM_ORCHESTRATOR_PATH = pathlib.Path(
+    DATASETS_PATH, "orchestrators", "red_teaming"
+).resolve()
 
 # Points to the root of the project
 HOME_PATH = pathlib.Path(PYRIT_PATH, "..").resolve()

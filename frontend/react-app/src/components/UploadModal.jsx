@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Button from './Button';
+import { useAuth } from '../context/AuthContext';
 
 import '../styles/components/uploadmodal.css'; // Path to your CSS file
 
@@ -15,6 +16,7 @@ const UploadModal = ({
   targetType,
   expectedFormats = []
 }) => {
+  const {token} = useAuth();
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState('idle'); // idle | loading | error
   const isScenario = targetType === 'scenarios';
@@ -54,6 +56,9 @@ const UploadModal = ({
 
       const res = await fetch(`http://localhost:8000/files/upload/${targetType}`, {
         method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
         body: formData,
       });
 

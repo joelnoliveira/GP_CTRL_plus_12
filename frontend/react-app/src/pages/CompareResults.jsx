@@ -43,7 +43,7 @@ const CompareResults = (
   const get_results = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch("http://localhost:8000/runs-metrics", {
+        const response = await fetch("http://localhost:8000/runs-metrics/me", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

@@ -7,35 +7,71 @@ export const useExperimentData = () => {
   const [models, setModels] = useState([]);
 
   const fetchScenarios = useCallback(async () => {
-    const res = await fetch("http://localhost:8000/scenarios");
-    if (!res.ok) throw new Error("Failed to fetch scenarios");
-    const data = await res.json();
-    setScenarios(data.map(s => ({ key: s.id, label: s.description })));
+    try {
+      const res = await fetch("http://localhost:8000/scenarios");
+      if (!res.ok) throw new Error("Failed to fetch scenarios");
+
+      const data = await res.json();
+      setScenarios(
+        Array.isArray(data)
+          ? data.map(s => ({ key: s.id, label: s.description }))
+          : []
+      );
+    } catch (err) {
+      console.error("fetchScenarios failed:", err);
+      setScenarios([]);
+    }
   }, []);
 
   const fetchTemplates = useCallback(async () => {
-    const res = await fetch("http://localhost:8000/template-datasets");
-    if (!res.ok) throw new Error("Failed to fetch templates");
-    const data = await res.json();
-    setTemplates(data.datasets.map(t => ({ key: t.id, label: t.description })));
+    try {
+      const res = await fetch("http://localhost:8000/template-datasets");
+      if (!res.ok) throw new Error("Failed to fetch templates");
+
+      const data = await res.json();
+      setTemplates(
+        Array.isArray(data?.datasets)
+          ? data.datasets.map(t => ({ key: t.id, label: t.description }))
+          : []
+      );
+    } catch (err) {
+      console.error("fetchTemplates failed:", err);
+      setTemplates([]);
+    }
   }, []);
 
   const fetchRolePlayOptions = useCallback(async () => {
-    const res = await fetch("http://localhost:8000/role-play-options");
-    if (!res.ok) throw new Error("Failed to fetch role play options");
-    const data = await res.json();
-    setRolePlayOptions(data.map(r => ({ key: r.id, label: r.description })));
+    try {
+      const res = await fetch("http://localhost:8000/role-play-options");
+      if (!res.ok) throw new Error("Failed to fetch role play options");
+
+      const data = await res.json();
+      setRolePlayOptions(
+        Array.isArray(data)
+          ? data.map(r => ({ key: r.id, label: r.description }))
+          : []
+      );
+    } catch (err) {
+      console.error("fetchRolePlayOptions failed:", err);
+      setRolePlayOptions([]);
+    }
   }, []);
 
   const fetchModels = useCallback(async () => {
-    const res = await fetch("http://10.3.1.241:8080/api/tags");
-    if (!res.ok) throw new Error("Failed to fetch models");
-    const data = await res.json();
-	if (data.models && Array.isArray(data.models)) {
-    setModels(
-      (data.models || []).map(m => ({ key: m.name, label: m.name }))
-    );
-	}
+    try {
+      const res = await fetch("http://10.3.1.241:8080/api/tags");
+      if (!res.ok) throw new Error("Failed to fetch models");
+
+      const data = await res.json();
+      const modelsArray = Array.isArray(data?.models) ? data.models : [];
+
+      setModels(
+        modelsArray.map(m => ({ key: m.name, label: m.name }))
+      );
+    } catch (err) {
+      console.error("fetchModels failed:", err);
+      setModels([]);
+    }
   }, []);
 
   useEffect(() => {

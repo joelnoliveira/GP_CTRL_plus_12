@@ -233,9 +233,11 @@ const CompareResults = (
                       className="dot"
                       style={{ backgroundColor: experiment.color }}
                     />
+
                     <DropdownMenu
-                      placeholder={exp}
-                      items={Object.keys(experimentsMap)}
+                      placeholder="Select experiment"
+                      items={Object.keys(experimentsMap)} // all experiments shown, no filtering
+                      value={exp}                          // current selected experiment
                       onSelect={(value) => updateExperiment(index, value)}
                     />
 

@@ -10,13 +10,20 @@ import ExportIcon from '../components/ExportIcon';
 
 import useHistoryFilters from "../hooks/useHistoryFilters";
 import useHistoryRuns from "../hooks/useHistoryRuns";
+import { useExperimentData } from "../hooks/useExperimentData";
 
 import "../styles/pages/history.css"
 import RunModal from '../components/RunModal';
 
 const History = () => {
   const { isLoggedIn, user } = useAuth();
-  const { filters } = useHistoryFilters();
+  
+  const {
+    scenarios: scenarioList,
+    templates: templateList,
+    rolePlayOptions: rolePlayOptionList,
+    models: modelList
+  } = useExperimentData();
 
   const [selectedFilters, setSelectedFilters] = useState({});
   const { runs, loading, error } = useHistoryRuns(selectedFilters);
@@ -25,8 +32,6 @@ const History = () => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const [bulkSelectMode, setBulkSelectMode] = useState(null);
-  // null | "page" | "user"
-
   const [selectedRunIds, setSelectedRunIds] = useState(new Set());
 
   // MODAL CONTROL
@@ -35,6 +40,74 @@ const History = () => {
 
   const exportRef = useRef(null);
   const filtersRef = useRef(null);
+
+  const filters = [
+    {
+      key: "scenario",
+      placeholder: "Scenario",
+      items: [
+        ...scenarioList.map(s => s.label),
+        "Custom",
+      ],
+    },
+    {
+      key: "attack_type",
+      placeholder: "Attack Type",
+      items: ["TEMPLATE_ATTACK", "CRESCENDO_ATTACK", "ROLE_PLAY_ATTACK"],
+    },
+    {
+      key: "attack_model",
+      placeholder: "Attack Model",
+      items: modelList.map(m => m.label),
+    },
+    {
+      key: "target_model",
+      placeholder: "Target Model",
+      items: modelList.map(m => m.label),
+    },
+    {
+      key: "template",
+      placeholder: "Template",
+      items: [
+        ...templateList.map(t => t.label),
+        "Custom",
+      ],
+    },
+    {
+      key: "role_play",
+      placeholder: "Role Play",
+      items: [
+        ...rolePlayOptionList.map(r => r.label),
+        "Custom",
+      ],
+    },
+    {
+      key: "metric",
+      placeholder: "Metric",
+      items: ["metrics_aor", "metrics_orr", "metrics_asr", "static_metric"],
+      items_labels: [ "AOR", "ORR", "ASR", "Static Metric"],
+    },
+  ];
+
+  const formatDate = (isoString) => {
+    if (!isoString) return "-";
+    const date = new Date(isoString);
+    return date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const getUsernameFromEmail = (email) => {
+    if (!email) return "-";
+    return email.split("@")[0];
+  };
+
+  const statusParser = (status) => {
+    if (status.toLowerCase() === "completed") return "Finished";
+    return status; // fallback
+  };
 
   /* ───── UI toggles ───── */
 
@@ -68,59 +141,90 @@ const History = () => {
     });
   };
 
+  /* ───── Helper: build attack configuration ───── */
+
+  const buildAttackConfiguration = (run) => {
+    if (run.attack_type === "over_refusal_test") {
+      return {
+        type: run.attack_type,
+        target_model: run.target_model,
+      };
+    }
+    if (run.attack_template) {
+      return {
+        type: run.attack_type,
+        attack_template: {
+          id: run.attack_template.id,
+          name: run.attack_template.name,
+          description: run.attack_template.description ?? null,
+        },
+        target_model: run.target_model,
+      };
+    }
+    return {
+      type: run.attack_type,
+      attack_model: run.attack_model,
+      target_model: run.target_model,
+    };
+  };
+
   /* ───── Export Runs ───── */
 
   const exportSelectedRuns = () => {
     if (selectedRunIds.size === 0) return;
 
-    // 1️⃣ Collect full run objects
-    const selectedRuns = runs.filter(run =>
-      selectedRunIds.has(run.run_name_id)
-    );
+    // Collect only selected runs
+    const selectedRuns = runs.filter(run => selectedRunIds.has(run.id));
 
-    // 2️⃣ Convert to JSON
-    const json = JSON.stringify(
-      {
-        exportedAt: new Date().toISOString(),
-        totalRuns: selectedRuns.length,
-        runs: selectedRuns,
+    // Prepare runs with metrics and attack configuration
+    const exportedRuns = selectedRuns.map(run => ({
+      run_id: run.id,
+      run_name: `RUN-${run.id}`,
+      user: getUsernameFromEmail(run.users?.email),
+      scenario: run.scenarios?.name ?? null,
+      role_play: run.role_play_options?.name ?? null,
+      started_at: run.started_at,
+      ended_at: run.ended_at,
+      status: statusParser(run.status.trim()),
+      attack_configuration: buildAttackConfiguration(run),
+      metrics: {
+        ASR: run.metrics_asr,
+        ORR: run.metrics_orr,
+        AOR: run.metrics_aor,
+        majority_verdict: run.metrics_veridict_majority,
+        static_metric: run.static_metric,
       },
-      null,
-      2
-    );
+    }));
 
-    // 3️⃣ Create a downloadable blob
-    const blob = new Blob([json], { type: "application/json" });
+    // Export JSON
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      totalRuns: exportedRuns.length,
+      runs: exportedRuns,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-
-    // 4️⃣ Trigger download
     const link = document.createElement("a");
     link.href = url;
     link.download = `runs_export_${Date.now()}.json`;
     document.body.appendChild(link);
     link.click();
-
-    // 5️⃣ Cleanup
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
-  /* ───── Bulk selection logic (ONE EFFECT ONLY) ───── */
+  /* ───── Bulk selection logic ───── */
 
   useEffect(() => {
     if (bulkSelectMode === "page") {
-      setSelectedRunIds(new Set(runs.map(r => r.run_name_id)));
-    }
-
-    else if (bulkSelectMode === "user" && user) {
+      setSelectedRunIds(new Set(runs.map(r => r.id)));
+    } else if (bulkSelectMode === "user" && user) {
       const userRuns = runs
-        .filter(r => r.username === user.username)
-        .map(r => r.run_name_id);
-
+        .filter(r => r.users?.email === user.email)
+        .map(r => r.id);
       setSelectedRunIds(new Set(userRuns));
-    }
-
-    else if (bulkSelectMode === null) {
+    } else if (bulkSelectMode === null) {
       setSelectedRunIds(new Set());
     }
   }, [bulkSelectMode, runs, user]);
@@ -129,18 +233,16 @@ const History = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (exportRef.current && !exportRef.current.contains(event.target)) {
-        setShowExportDropdown(false);
-      }
-
-      if (filtersRef.current && !filtersRef.current.contains(event.target)) {
-        setShowFilters(false);
-      }
+      if (exportRef.current && !exportRef.current.contains(event.target)) setShowExportDropdown(false);
+      if (filtersRef.current && !filtersRef.current.contains(event.target)) setShowFilters(false);
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    console.log("Fetching runs data with filters:", runs);
+  }, [runs]);
 
   return (
     <div className="history-page">
@@ -154,31 +256,19 @@ const History = () => {
 
             {/* EXPORT */}
             <div className="relative" ref={exportRef}>
-              <Button
-                size="small"
-                variant="alternative"
-                text="Export"
-                onClick={handleExportClick}
-              />
+              <Button size="small" variant="alternative" text="Export" onClick={handleExportClick} />
 
               <div className={`dropdown-panel wide-export ${showExportDropdown ? "open" : "closed"}`}>
-
                 <Checkbox
-                  label="Select all current user's runs"
+                  label="Select all user's runs"
                   checked={bulkSelectMode === "user"}
-                  onChange={(checked) =>
-                    setBulkSelectMode(checked ? "user" : null)
-                  }
+                  onChange={(checked) => setBulkSelectMode(checked ? "user" : null)}
                 />
-
                 <Checkbox
-                  label="Select all runs in page"
+                  label="Select all runs"
                   checked={bulkSelectMode === "page"}
-                  onChange={(checked) =>
-                    setBulkSelectMode(checked ? "page" : null)
-                  }
+                  onChange={(checked) => setBulkSelectMode(checked ? "page" : null)}
                 />
-
                 <Button
                   size="small"
                   variant="default"
@@ -193,23 +283,16 @@ const History = () => {
 
             {/* FILTERS */}
             <div className="relative" ref={filtersRef}>
-              <Button
-                size="small"
-                variant="alternative"
-                text="Filter"
-                onClick={handleShowFilters}
-              />
-
+              <Button size="small" variant="alternative" text="Filter" onClick={handleShowFilters} />
               <div className={`dropdown-panel wide-filters ${showFilters ? "open" : "closed"}`}>
                 {loading && <p>Loading filters...</p>}
                 {error && <p className="text-red-500">{error}</p>}
-
                 {!loading && !error &&
                   filters.map((filter, index) => (
                     <DropdownMenu
                       key={index}
                       placeholder={filter.placeholder}
-                      items={filter.items}
+                      items={filter.items_labels ?? filter.items}
                       value={selectedFilters[filter.key]}
                       onSelect={(value) =>
                         setSelectedFilters(prev => ({
@@ -217,6 +300,7 @@ const History = () => {
                           [filter.key]: value,
                         }))
                       }
+                      hasDefault={true}
                     />
                   ))}
               </div>
@@ -227,33 +311,27 @@ const History = () => {
 
         {/* RUNS */}
         <div className="history-page__runs-container">
-          {runs.map((run, index) => (
-            <>
+          {runs.map((run) => (
+            <React.Fragment key={run.id}>
               <RunCard
-                key={index}
-                run_name_id={run.run_name_id}
-                username={run.username}
+                run_name_id={`RUN-${run.id}`}
+                username={getUsernameFromEmail(run.users?.email)}
                 attack_type={run.attack_type}
-                date={run.date}
-                status={run.status.charAt(0).toUpperCase() + run.status.slice(1)}
+                date={formatDate(run.started_at)}
+                status={statusParser(run.status.trim())}
                 attack_model={run.attack_model}
                 target_model={run.target_model}
-                isPublicValue={run.isPublicValue}
+                isPublicValue={run.visibility === "public"}
                 exportMode={true}
-                isSelected={selectedRunIds.has(run.run_name_id)}
-                onSelect={() => toggleRunSelection(run.run_name_id)}
+                isSelected={selectedRunIds.has(run.id)}
+                onSelect={() => toggleRunSelection(run.id)}
                 onClick={() => handleRunModalOpen(run)}
-                canChangeStatus={isLoggedIn && user?.username === run.username}
+                canChangeStatus={isLoggedIn && user?.email === run.users?.email}
               />
-            
               {selectedRun && (
-                <RunModal
-                  run_data={selectedRun}
-                  isOpen={isRunModalOpen}
-                  handleOnOpen={handleRunModalClose}
-                />
+                <RunModal run_data={selectedRun} isOpen={isRunModalOpen} handleOnOpen={handleRunModalClose} />
               )}
-            </>
+            </React.Fragment>
           ))}
         </div>
 

@@ -40,10 +40,13 @@ const RunCard = (
     return (
         <div className="flex items-start" onClick={onClick}>
             {exportMode && (
-                <div className="run-card__checkbox">
-                    <Checkbox checked={isSelected} onChange={onSelect} />
+                <div className="run-card__checkbox" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox 
+                    checked={isSelected} 
+                    onChange={onSelect} 
+                    />
                 </div>
-            )}
+                )}
         
             <div className="run-card__container">
                 <div className="run-card__content__wrapper">
@@ -51,10 +54,10 @@ const RunCard = (
                         <div className="run-card__header-top">
                             <p className="run-card__header__title">{run_name_id}</p>
 
-                            <ToggleSwitch 
+                            {/*<ToggleSwitch 
                                 checked={isPublic}
                                 onChange={handleIsPublic}
-                            />
+                            />*/}
                         </div>
                         <div className="run-card__header-info">
 

@@ -22,7 +22,6 @@ export default function App() {
             <Route path="/run_experiment" element={<RunExperiments />} />
             <Route path="/compare" element={<CompareResults />} />
             <Route path="/history" element={<History />} />
-            <Route path="/demo" element={<Demo />} />
           </Route>
           <Route element={<LoginRegisterLayout />}>
             <Route 

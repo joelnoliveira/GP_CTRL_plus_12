@@ -164,108 +164,108 @@ const RunExperiment = (
   }
   
 
-const handleUpload = (id) => () => {
-    setUploadTarget(id);
-    setIsModalOpen(true);
-  };
+  const handleUpload = (id) => () => {
+      setUploadTarget(id);
+      setIsModalOpen(true);
+    };
 
-const onUploadSuccess = (newData) => {
-    const newSuccess = { type: "success", message: "File uploaded and processed!" };
-    setToastConfig(newSuccess);
-    setIsModalOpen(false);
-    
-    refetch[uploadTarget]?.();
-  };
+  const onUploadSuccess = (newData) => {
+      const newSuccess = { type: "success", message: "File uploaded and processed!" };
+      setToastConfig(newSuccess);
+      setIsModalOpen(false);
+      
+      refetch[uploadTarget]?.();
+    };
 
-const handleExecute = async () => {
-  // Validar que todos os campos foram preenchidos
-  if (!selections.target_model_name) {
-    const newError = {type: "error", message: "Please select an option for all fields."};
-    setToastConfig(newError);
-    return;
-  }
+  const handleExecute = async () => {
+    // Validar que todos os campos foram preenchidos
+    if (!selections.target_model_name) {
+      const newError = {type: "error", message: "Please select an option for all fields."};
+      setToastConfig(newError);
+      return;
+    }
 
-  setIsLoading(true);
-  try {
-    let endpoint = "";
-    let payload = {};
+    setIsLoading(true);
+    try {
+      let endpoint = "";
+      let payload = {};
 
-    if (scenarioType.label === "Over Refusal Test") {
-      endpoint = "http://localhost:8000/over-refusal-test"; 
-      payload = {
-        target_model_name: selections.target_model_name    
-      };
-
-    } else {
-      if (attackType === "Attack") {
-        if (!selections.attack_model_name && selections.attack_option && ((selections.attack_option==="ROLE_PLAY_ATTACK") === selections.role_play_options)) {
-          const newError = {type: "error", message: "Please select an option for all fields."};
-          setToastConfig(newError);
-          return;
-        }
-
-        endpoint = "http://localhost:8000/attack"; 
+      if (scenarioType.label === "Over Refusal Test") {
+        endpoint = "http://localhost:8000/over-refusal-test"; 
         payload = {
-          attack_option: selections.attack_option,
-          scenario_id: scenarioType.key,
-          target_model_name: selections.target_model_name,
-          attacker_model_name: selections.attack_model_name,        
-          role_play_options: selections.role_play_options
+          target_model_name: selections.target_model_name    
         };
-      } else if (attackType === "Attack Template") {
-        if (!selections.template_datasets) {
-          const newError = {type: "error", message: "Please select an option for all fields."};
-          setToastConfig(newError);
-          return;
-        }
 
-        endpoint = "http://localhost:8000/attack-template";
-        payload = {
-          scenario_id: scenarioType.key,
-          target_model_name: selections.target_model_name,
-          template_dataset_id: selections.template_datasets 
-        };
       } else {
-        const newError = {type: "error", message: "Please select a valid attack option."};
-        setToastConfig(newError);
-        return;
+        if (attackType === "Attack") {
+          if (!selections.attack_model_name && selections.attack_option && ((selections.attack_option==="ROLE_PLAY_ATTACK") === selections.role_play_options)) {
+            const newError = {type: "error", message: "Please select an option for all fields."};
+            setToastConfig(newError);
+            return;
+          }
+
+          endpoint = "http://localhost:8000/attack"; 
+          payload = {
+            attack_option: selections.attack_option,
+            scenario_id: scenarioType.key,
+            target_model_name: selections.target_model_name,
+            attacker_model_name: selections.attack_model_name,        
+            role_play_options: selections.role_play_options
+          };
+        } else if (attackType === "Attack Template") {
+          if (!selections.template_datasets) {
+            const newError = {type: "error", message: "Please select an option for all fields."};
+            setToastConfig(newError);
+            return;
+          }
+
+          endpoint = "http://localhost:8000/attack-template";
+          payload = {
+            scenario_id: scenarioType.key,
+            target_model_name: selections.target_model_name,
+            template_dataset_id: selections.template_datasets 
+          };
+        } else {
+          const newError = {type: "error", message: "Please select a valid attack option."};
+          setToastConfig(newError);
+          return;
+        }
       }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+      //Fazer a chamada ao backend
+      const response = await fetch(endpoint, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      const newSuccess = {type: "success", message: "Attack successfully executed!"};
+      setToastConfig(newSuccess);
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        setToastConfig({ type: "caution", message: "Request timed out. The process will continue on the background." });
+      } else {
+        setToastConfig({ type: "error", message: err.message });
+      }
+    } finally {
+      setIsLoading(false); // 3. Stop loading regardless of success/fail
     }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
-
-    //Fazer a chamada ao backend
-    const response = await fetch(endpoint, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`Erro ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    const newSuccess = {type: "success", message: "Attack successfully executed!"};
-    setToastConfig(newSuccess);
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      setToastConfig({ type: "caution", message: "Request timed out. The process will continue on the background." });
-    } else {
-      setToastConfig({ type: "error", message: err.message });
-    }
-  } finally {
-    setIsLoading(false); // 3. Stop loading regardless of success/fail
-  }
-};
+  };
 
   return (
     <div className="run_experiment"> 

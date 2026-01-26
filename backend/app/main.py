@@ -21,6 +21,7 @@ from .security import get_current_user, get_current_user_or_public
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from sqlalchemy import or_
 
 
 # Load .env from workspace root
@@ -966,13 +967,64 @@ async def get_my_runs_metrics(
         .all()
     )
 
+@app.get("/runs-filters-mock")
+def get_mock_history_filters():
+    return [
+        {
+            "key": "attack_type",
+            "placeholder": "Attack Type",
+            "items": ["FGSM", "PGD", "CW"]
+        },
+        {
+            "key": "attack_model",
+            "placeholder": "Attack Model",
+            "items": ["ResNet50", "ConvNeXt", "EfficientNet-B3", "MobileNetV3", "ResNet18"]
+        },
+        {
+            "key": "target_model",
+            "placeholder": "Target Model",
+            "items": ["qwen2.5-coder:1.5b", "EfficientNet-B0", "ViT-B16", "ResNet101", "DenseNet121", "EfficientNet-B1"]
+        },
+        {
+            "key": "jury_model",
+            "placeholder": "Jury Model",
+            "items": ["EfficientNet-B0", "ViT-B16", "ResNet101", "DenseNet121", "EfficientNet-B1"]
+        },
+        {
+            "key": "workload",
+            "placeholder": "Workload",
+            "items": ["Workload A", "Workload B", "Workload C"]
+        },
+        {
+            "key": "scenario",
+            "placeholder": "Scenario",
+            "items": ["Scenario A", "Scenario B", "Scenario C"]
+        },
+        {
+            "key": "status",
+            "placeholder": "Status",
+            "items": ["Ongoing", "Loading", "Finished"]
+        }
+    ]
 
 @app.get("/runs-metrics")
 async def get_all_runs_metrics(
-    db: Session = Depends(get_db)
+    attack_type: Optional[List[str]] = Query(None),
+    attack_model: Optional[List[str]] = Query(None),
+    target_model: Optional[List[str]] = Query(None),
+    scenario: Optional[List[str]] = Query(None),
+    template: Optional[List[str]] = Query(None),
+    metric: Optional[List[str]] = Query(None),
+    role_play: Optional[List[str]] = Query(None),
+    db: Session = Depends(get_db),
 ):
     RunsMetrics = Base.classes.runs_metrics
-    return (
+
+    Scenarios = Base.classes.scenarios
+    Templates = Base.classes.template_datasets
+    RolePlays = Base.classes.role_play_options
+
+    query = (
         db.query(RunsMetrics)
         .options(
             joinedload(RunsMetrics.scenarios),
@@ -980,8 +1032,130 @@ async def get_all_runs_metrics(
             joinedload(RunsMetrics.users),
             joinedload(RunsMetrics.role_play_options),
         )
-        .all()
     )
+
+    # Helper to normalize user input to DB format
+    def normalize_name_list(names: List[str]) -> List[str]:
+        return [name.strip().lower().replace(" ", "_") for name in names]
+
+    # Dynamic filters
+    if attack_type:
+        query = query.filter(RunsMetrics.attack_type.in_(attack_type))
+    if attack_model:
+        query = query.filter(RunsMetrics.attack_model.in_(attack_model))
+    if target_model:
+        query = query.filter(RunsMetrics.target_model.in_(target_model))
+    if scenario:
+        normalized = normalize_name_list(scenario)
+        has_custom = "custom" in normalized
+        selected = [s for s in normalized if s != "custom"]
+
+        query = query.join(RunsMetrics.scenarios)
+
+        conditions = []
+        if selected:
+            conditions.append(Scenarios.name.in_(selected))
+        if has_custom:
+            conditions.append(Scenarios.is_builtin.is_(False))
+
+        query = query.filter(or_(*conditions))
+    if template:
+        #normalized = normalize_name_list(template)
+        has_custom = "custom" in template
+        selected = [t for t in template if t != "custom"]
+
+        query = query.join(RunsMetrics.template_datasets)
+
+        conditions = []
+        if selected:
+            conditions.append(Templates.description.in_(selected))
+        if has_custom:
+            conditions.append(Templates.is_builtin.is_(False))
+
+        query = query.filter(or_(*conditions))
+    if role_play:
+        has_custom = "custom" in role_play
+        selected = [r for r in role_play if r != "custom"]
+
+        query = query.join(RunsMetrics.role_play_options)
+
+        conditions = []
+        if selected:
+            conditions.append(RolePlays.description.in_(selected))
+        if has_custom:
+            conditions.append(RolePlays.is_builtin.is_(False))
+
+        query = query.filter(or_(*conditions))
+
+    if metric:  # metric is the list from query, e.g., ['AOR', 'SM']
+        metric_column_map = {
+            "AOR": RunsMetrics.metrics_aor,
+            "ORR": RunsMetrics.metrics_orr,
+            "ASR": RunsMetrics.metrics_asr,
+            "Static Metric": RunsMetrics.static_metric,  # match frontend 'SM' to DB column
+        }
+
+        metric_filters = []
+
+        for m in metric:
+            col = metric_column_map.get(m)
+            if col is not None:
+                metric_filters.append(col.isnot(None))
+
+        if metric_filters:
+            query = query.filter(or_(*metric_filters))
+
+    results = query.all()
+
+    """
+    mock_run = {
+        "id": 999,
+        "attack_type": "ROLE_PLAY_ATTACK",
+        "attack_model": "qwen2.5-coder:1.5b",
+        "target_model": "qwen2.5:1.5b",
+        "scenarios": {
+            "id": 999,
+            "name": "custom_scenario",
+            "is_builtin": False,
+            "created_at": "2026-01-25T12:00:00",
+            "storage_path": "/backend/datasets/custom_scenario.json",
+        },
+        "template_datasets": {
+            "id": 999,
+            "name": "custom_template",
+            "description": "Custom template",
+            "is_builtin": False,
+            "created_at": "2026-01-25T12:00:00",
+            "storage_path": "/backend/datasets/custom_template.json",
+        },
+        "role_play_options": {
+            "id": 999,
+            "name": "CUSTOM_ROLE_PLAY",
+            "description": "Custom role play",
+            "is_builtin": False,
+            "created_at": "2026-01-25T12:00:00",
+            "storage_path": "/backend/datasets/custom_role_play.yaml",
+        },
+        "users": {
+            "id": 1,
+            "email": "joao.carvalho@gmail.com",
+        },
+        "started_at": "2026-01-25T23:08:58",
+        "ended_at": "2026-01-25T23:12:10",
+        "status": "completed",
+        "metrics_aor": None,
+        "metrics_orr": None,
+        "metrics_asr": None,
+        "static_metric": 0.1,
+    }
+
+        # Append mock to results
+    results.append(mock_run)
+    """
+    
+    # Return raw ORM objects with relationships loaded
+    return results
+    
 
 
 @app.get("/runs-metrics/{run_id}")

@@ -1,5 +1,5 @@
 .run-card__container{
-    @apply w-[32rem] flex flex-col p-6 rounded-lg shadow-md overflow-hidden;
+    @apply min-w-[36rem] w-full flex flex-col p-6 rounded-lg shadow-md overflow-hidden;
 }
 
 .run-card__content__wrapper {

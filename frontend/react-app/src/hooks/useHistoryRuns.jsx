@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import useFetchData from "./useFetchData";
 
-//const API_URL = "http://localhost:8000/history/mock_runs";
-const API_URL = "http://localhost:8000/run-metrics";
+const API_URL = "http://localhost:8000/runs-metrics";
 
 export default function useHistoryRuns(filters = {}) {
   const queryParams = new URLSearchParams(
@@ -11,11 +10,19 @@ export default function useHistoryRuns(filters = {}) {
 
   const url = queryParams ? `${API_URL}?${queryParams}` : API_URL;
 
-  const { data, loading, error } = useFetchData(url, {}, [url]);
+  const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    console.log("Fetching runs data with filters:", filters);
-  }, []);
+  const { data, loading, error } = useFetchData(
+    url,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+    [url]
+  );
 
   return {
     runs: data ?? [],
@@ -23,3 +30,6 @@ export default function useHistoryRuns(filters = {}) {
     error,
   };
 }
+
+
+//const API_URL = "http://localhost:8000/history/mock_runs";

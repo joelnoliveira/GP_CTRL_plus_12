@@ -1,6 +1,6 @@
 
 .modal-backdrop {
-	@apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm;
+	@apply fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm;
 }
 
 .modal-container {

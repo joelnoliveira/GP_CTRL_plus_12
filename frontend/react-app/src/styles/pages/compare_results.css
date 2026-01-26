@@ -83,5 +83,5 @@
 /* ===== ToggleSwitch Message ===== */
 
 .toggle_switch_text {
-  @apply inline-block w-16 text-left text-white
+  @apply inline-block w-16 text-left text-white;
 }

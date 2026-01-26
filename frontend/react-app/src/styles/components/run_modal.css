@@ -1,9 +1,9 @@
 .run-modal__overlay {
-  @apply fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50;
+  @apply fixed inset-0 bg-black/45 backdrop-blur-sm flex items-center justify-center z-[65];
 }
 
 .run-modal{
-    @apply w-[100px] h-[100px] flex flex-col p-6 rounded-lg shadow-md overflow-hidden;
+    @apply w-[100px] h-[100px] flex flex-col p-6 rounded-lg shadow-sm overflow-hidden;
 }
 
 .run-modal--open{
@@ -11,7 +11,7 @@
 }
 
 .run-modal__container {
-  @apply relative w-[32rem] bg-white flex flex-col p-6 rounded-lg shadow-xl;
+  @apply relative w-[32rem] bg-white flex flex-col p-6 rounded-lg shadow-md;
 }
 
 .run-modal__close {

@@ -7,6 +7,7 @@ import RunCard from '../components/RunCard'
 import Button from '../components/Button'
 import Checkbox from '../components/Checkbox';
 import ExportIcon from '../components/ExportIcon';
+import Toast from '../components/Toast';
 
 import useHistoryFilters from "../hooks/useHistoryFilters";
 import useHistoryRuns from "../hooks/useHistoryRuns";
@@ -16,7 +17,7 @@ import "../styles/pages/history.css"
 import RunModal from '../components/RunModal';
 
 const History = () => {
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, user, token} = useAuth();
   
   const {
     scenarios: scenarioList,
@@ -24,6 +25,8 @@ const History = () => {
     rolePlayOptions: rolePlayOptionList,
     models: modelList
   } = useExperimentData();
+
+  const [toastConfig, setToastConfig] = useState(null);
 
   const [selectedFilters, setSelectedFilters] = useState({});
   const { runs, loading, error } = useHistoryRuns(selectedFilters);
@@ -40,6 +43,7 @@ const History = () => {
 
   const exportRef = useRef(null);
   const filtersRef = useRef(null);
+  const deleteRef = useRef(null);
 
   const filters = [
     {
@@ -110,6 +114,19 @@ const History = () => {
   };
 
   /* ───── UI toggles ───── */
+
+  const handleDelete = async () => {
+    const response = await fetch("http://localhost:8000/gdpr/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+    
+      const newSuccess = { type: "success", message: "Information successfully deleted!" };
+      setToastConfig(newSuccess);
+  };
 
   const handleShowFilters = () => {
     setShowFilters(prev => !prev);
@@ -240,19 +257,29 @@ const History = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    console.log("Fetching runs data with filters:", runs);
-  }, [runs]);
 
   return (
     <div className="history-page">
-      <Menu currentPage="History" />
+      <Menu currentPage={"History"} />
 
       <div className="history-page__content">
+        {toastConfig && (
+          <Toast
+            icon_size="large"
+            type={toastConfig.type}
+            message={toastConfig.message}
+            onClose={() => setToastConfig(null)} 
+          />
+        )}
 
         {/* TOP BAR */}
         <div className="history-page__top-bar">
           <div className="history-page__top-actions">
+
+            {/* DELETE */}
+            <div className="relative" ref={deleteRef}>
+              <Button size="small" variant="alternative" text="Delete all information" onClick={handleDelete} />
+            </div>
 
             {/* EXPORT */}
             <div className="relative" ref={exportRef}>

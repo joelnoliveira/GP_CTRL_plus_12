@@ -13,7 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class TenseConverter(LLMGenericTextConverter):
-    def __init__(self, *, converter_target: PromptChatTarget, tense: str, prompt_template: SeedPrompt = None):
+    def __init__(
+        self,
+        *,
+        converter_target: PromptChatTarget,
+        tense: str,
+        prompt_template: SeedPrompt = None,
+    ):
         """
         Converts a conversation to a different tense
 
@@ -29,7 +35,11 @@ class TenseConverter(LLMGenericTextConverter):
         prompt_template = (
             prompt_template
             if prompt_template
-            else SeedPrompt.from_yaml_file(pathlib.Path(DATASETS_PATH) / "prompt_converters" / "tense_converter.yaml")
+            else SeedPrompt.from_yaml_file(
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "tense_converter.yaml"
+            )
         )
 
         super().__init__(

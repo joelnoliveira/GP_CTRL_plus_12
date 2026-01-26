@@ -49,7 +49,9 @@ class HuggingFaceEndpointTarget(PromptTarget):
         self.temperature = temperature
         self.top_p = top_p
 
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         """
         Sends a normalized prompt asynchronously to a cloud-based HuggingFace model endpoint.
 
@@ -78,7 +80,9 @@ class HuggingFaceEndpointTarget(PromptTarget):
             },
         }
 
-        logger.info(f"Sending the following prompt to the cloud endpoint: {request.converted_value}")
+        logger.info(
+            f"Sending the following prompt to the cloud endpoint: {request.converted_value}"
+        )
 
         try:
             # Use the utility method to make the request
@@ -107,7 +111,9 @@ class HuggingFaceEndpointTarget(PromptTarget):
             return prompt_response
 
         except Exception as e:
-            logger.error(f"Error occurred during HTTP request to the Hugging Face endpoint: {e}")
+            logger.error(
+                f"Error occurred during HTTP request to the Hugging Face endpoint: {e}"
+            )
             raise
 
     def _validate_request(self, *, prompt_request: PromptRequestResponse) -> None:

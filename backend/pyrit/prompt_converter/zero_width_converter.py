@@ -11,7 +11,7 @@ class ZeroWidthConverter(PromptConverter):
     in the provided text to bypass content safety mechanisms.
     """
 
-    ZERO_WIDTH_SPACE = "\u200B"
+    ZERO_WIDTH_SPACE = "\u200b"
 
     def input_supported(self, input_type: PromptDataType) -> bool:
         """
@@ -26,7 +26,9 @@ class ZeroWidthConverter(PromptConverter):
         """
         return input_type == "text"
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Converts the given prompt by injecting zero-width spaces between each character.
 

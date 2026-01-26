@@ -40,16 +40,24 @@ class SelfAskLikertScorer(Scorer):
         if likert_scale["category"]:
             self._score_category = likert_scale["category"]
         else:
-            raise ValueError(f"Improperly formatted likert scale yaml file. Missing category in {likert_scale_path}.")
+            raise ValueError(
+                f"Improperly formatted likert scale yaml file. Missing category in {likert_scale_path}."
+            )
 
-        likert_scale = self._likert_scale_description_to_string(likert_scale["scale_descriptions"])
+        likert_scale = self._likert_scale_description_to_string(
+            likert_scale["scale_descriptions"]
+        )
 
-        scoring_instructions_template = SeedPrompt.from_yaml_file(LIKERT_SCALES_PATH / "likert_system_prompt.yaml")
+        scoring_instructions_template = SeedPrompt.from_yaml_file(
+            LIKERT_SCALES_PATH / "likert_system_prompt.yaml"
+        )
         self._system_prompt = scoring_instructions_template.render_template_value(
             likert_scale=likert_scale, category=self._score_category
         )
 
-    def _likert_scale_description_to_string(self, descriptions: list[Dict[str, str]]) -> str:
+    def _likert_scale_description_to_string(
+        self, descriptions: list[Dict[str, str]]
+    ) -> str:
         """
         Converts the Likert scales to a string representation to be put in a system prompt.
 
@@ -60,7 +68,9 @@ class SelfAskLikertScorer(Scorer):
             str: The string representation of the Likert scale.
         """
         if not descriptions:
-            raise ValueError("Impropoerly formated Likert scale yaml file. No likert scale_descriptions provided")
+            raise ValueError(
+                "Impropoerly formated Likert scale yaml file. No likert scale_descriptions provided"
+            )
 
         likert_scale_description = ""
 
@@ -77,7 +87,9 @@ class SelfAskLikertScorer(Scorer):
 
         return likert_scale_description
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         """
         Scores the given request_response using "self-ask" for the chat target and adds score to memory.
 
@@ -104,13 +116,19 @@ class SelfAskLikertScorer(Scorer):
         )
 
         score = unvalidated_score.to_score(
-            score_value=str(self.scale_value_float(float(unvalidated_score.raw_score_value), 1, 5)),
+            score_value=str(
+                self.scale_value_float(float(unvalidated_score.raw_score_value), 1, 5)
+            ),
         )
 
-        score.score_metadata = str({"likert_value": str(unvalidated_score.raw_score_value)})
+        score.score_metadata = str(
+            {"likert_value": str(unvalidated_score.raw_score_value)}
+        )
 
         self._memory.add_scores_to_memory(scores=[score])
         return [score]
 
-    def validate(self, request_response: PromptRequestPiece, *, task: Optional[str] = None):
+    def validate(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ):
         pass

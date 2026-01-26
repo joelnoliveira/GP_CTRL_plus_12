@@ -25,10 +25,22 @@ logger = logging.getLogger(__name__)
 
 
 class RolePlayPaths(enum.Enum):
-    VIDEO_GAME = pathlib.Path(DATASETS_PATH) / "orchestrators" / "role_play" / "video_game.yaml"
-    MOVIE_SCRIPT = pathlib.Path(DATASETS_PATH) / "orchestrators" / "role_play" / "movie_script.yaml"
-    TRIVIA_GAME = pathlib.Path(DATASETS_PATH) / "orchestrators" / "role_play" / "trivia_game.yaml"
-    MR_ROBOT = pathlib.Path(DATASETS_PATH) / "orchestrators" / "role_play" / "mr_robot.yaml"
+    VIDEO_GAME = (
+        pathlib.Path(DATASETS_PATH) / "orchestrators" / "role_play" / "video_game.yaml"
+    )
+    MOVIE_SCRIPT = (
+        pathlib.Path(DATASETS_PATH)
+        / "orchestrators"
+        / "role_play"
+        / "movie_script.yaml"
+    )
+    TRIVIA_GAME = (
+        pathlib.Path(DATASETS_PATH) / "orchestrators" / "role_play" / "trivia_game.yaml"
+    )
+    MR_ROBOT = (
+        pathlib.Path(DATASETS_PATH) / "orchestrators" / "role_play" / "mr_robot.yaml"
+    )
+
 
 class RolePlayOrchestrator(PromptSendingOrchestrator):
     """
@@ -68,7 +80,9 @@ class RolePlayOrchestrator(PromptSendingOrchestrator):
 
         self._adversarial_chat = adversarial_chat
 
-        role_play_definition: SeedPromptDataset = SeedPromptDataset.from_yaml_file(role_play_definition_path)
+        role_play_definition: SeedPromptDataset = SeedPromptDataset.from_yaml_file(
+            role_play_definition_path
+        )
 
         self._rephrase_instructions = role_play_definition.prompts[0]
         self._user_start_turn = role_play_definition.prompts[1]
@@ -100,31 +114,38 @@ class RolePlayOrchestrator(PromptSendingOrchestrator):
         role_playing_prompts = await self._get_role_playing_prompts_async(prompt_list)
 
         return await super().send_prompts_async(
-            prompt_list=role_playing_prompts, prompt_type="text", memory_labels=memory_labels, metadata=metadata
+            prompt_list=role_playing_prompts,
+            prompt_type="text",
+            memory_labels=memory_labels,
+            metadata=metadata,
         )
-    
+
     async def send_as_normalizer_requests_async(self, *, goals_list: list[str]):
         """
         Sends the prompts as normalizer requests.
         """
         role_playing_prompts = await self._get_role_playing_prompts_async(goals_list)
 
-        #create normalizer requests
+        # create normalizer requests
         requests: list[NormalizerRequest] = []
         for prompt in range(len(role_playing_prompts)):
             requests.append(
                 self._create_normalizer_request(
-                prompt_text=role_playing_prompts[prompt],
-                prompt_type="text",
-                converters=self._prompt_converters,
-                metadata={"task": goals_list[prompt]},
-                conversation_id=str(uuid.uuid4()),
-        )
+                    prompt_text=role_playing_prompts[prompt],
+                    prompt_type="text",
+                    converters=self._prompt_converters,
+                    metadata={"task": goals_list[prompt]},
+                    conversation_id=str(uuid.uuid4()),
+                )
+            )
+
+        return await super().send_normalizer_requests_async(
+            prompt_request_list=requests
         )
 
-        return await super().send_normalizer_requests_async(prompt_request_list=requests)
-
-    async def _get_role_playing_prompts_async(self, objective_list: list[str]) -> list[str]:
+    async def _get_role_playing_prompts_async(
+        self, objective_list: list[str]
+    ) -> list[str]:
         """
         Returns the role playing prompts for the given list of prompts.
 
@@ -141,9 +162,11 @@ class RolePlayOrchestrator(PromptSendingOrchestrator):
                 seed_prompt_group=SeedPromptGroup(
                     prompts=[
                         SeedPrompt(
-                            value=self._rephrase_instructions.render_template_value(objective=objective),
+                            value=self._rephrase_instructions.render_template_value(
+                                objective=objective
+                            ),
                             data_type="text",
-                            metadata={"task": objective}
+                            metadata={"task": objective},
                         )
                     ]
                 )
@@ -151,18 +174,20 @@ class RolePlayOrchestrator(PromptSendingOrchestrator):
 
             requests.append(normalizer_request)
 
-        role_playing_prompts: list[PromptRequestResponse] = (
-            await self._prompt_normalizer.send_prompt_batch_to_target_async(
-                requests=requests,
-                target=self._adversarial_chat,
-                batch_size=self._batch_size,
-            )
+        role_playing_prompts: list[
+            PromptRequestResponse
+        ] = await self._prompt_normalizer.send_prompt_batch_to_target_async(
+            requests=requests,
+            target=self._adversarial_chat,
+            batch_size=self._batch_size,
         )
 
-        return [role_playing_prompt.request_pieces[0].original_value for role_playing_prompt in role_playing_prompts]
+        return [
+            role_playing_prompt.request_pieces[0].original_value
+            for role_playing_prompt in role_playing_prompts
+        ]
 
     def _set_default_conversation_start(self):
-
         prepended_conversation = [
             PromptRequestResponse(
                 request_pieces=[

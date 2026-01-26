@@ -36,7 +36,9 @@ class PromptChatTarget(PromptTarget):
         messages = self._memory.get_conversation(conversation_id=conversation_id)
 
         if messages:
-            raise RuntimeError("Conversation already exists, system prompt needs to be set at the beginning")
+            raise RuntimeError(
+                "Conversation already exists, system prompt needs to be set at the beginning"
+            )
 
         self._memory.add_request_response_to_memory(
             request=PromptRequestPiece(
@@ -79,6 +81,8 @@ class PromptChatTarget(PromptTarget):
             if response_format == "json":
                 if not self.is_json_response_supported():
                     target_name = self.get_identifier()["__type__"]
-                    raise ValueError(f"This target {target_name} does not support JSON response format.")
+                    raise ValueError(
+                        f"This target {target_name} does not support JSON response format."
+                    )
                 return True
         return False

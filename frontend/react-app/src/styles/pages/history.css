@@ -1,0 +1,58 @@
+.history-page {
+  @apply w-full flex flex-row justify-start items-start flex-1;
+}
+
+.history-page__content {
+  @apply w-full flex flex-col pt-8 gap-6 px-6;
+}
+
+/* ───── TOP BAR ───── */
+.history-page__top-bar {
+  @apply w-full flex justify-end items-center;
+}
+
+.history-page__top-actions {
+  @apply flex items-center gap-4;
+}
+
+/* ───── DROPDOWN PANELS ───── */
+.dropdown-panel {
+  @apply absolute right-0 mt-2
+    bg-white/70 backdrop-blur-xl
+    border border-black
+    rounded-xl shadow-xl
+    p-4
+    flex flex-col gap-3
+    z-50
+    overflow-hidden
+    transition-all duration-300 ease-in-out;
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+
+  overflow: visible;
+}
+
+.dropdown-panel.wide-filters {
+  min-width: 280px;
+}
+
+.dropdown-panel.wide-export {
+  min-width: 220px;
+}
+
+.dropdown-panel.open {
+  max-height: 500px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dropdown-panel.closed {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* ───── RUNS ───── */
+.history-page__runs-container {
+  @apply flex flex-wrap items-center justify-center gap-4;
+}

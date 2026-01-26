@@ -1,5 +1,5 @@
 .home{
-    @apply relative px-20 py-28 min-h-[calc(100vh-112px)];
+    @apply relative px-20 py-28 min-h-[calc(100vh-112px)] w-full;
 }
 
 .home__gray-polygon{

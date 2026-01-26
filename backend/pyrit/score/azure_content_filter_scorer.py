@@ -37,7 +37,6 @@ AZURE_CONTENT_FILTER_SCORER_SUPPORTED_IMAGE_FORMATS = [
 
 
 class AzureContentFilterScorer(Scorer):
-
     API_KEY_ENVIRONMENT_VARIABLE: str = "AZURE_CONTENT_SAFETY_API_KEY"
     ENDPOINT_URI_ENVIRONMENT_VARIABLE: str = "AZURE_CONTENT_SAFETY_API_ENDPOINT"
 
@@ -83,13 +82,19 @@ class AzureContentFilterScorer(Scorer):
                 self._api_key = None
 
         if self._api_key is not None and self._endpoint is not None:
-            self._azure_cf_client = ContentSafetyClient(self._endpoint, AzureKeyCredential(self._api_key))
+            self._azure_cf_client = ContentSafetyClient(
+                self._endpoint, AzureKeyCredential(self._api_key)
+            )
         elif use_aad_auth and self._endpoint is not None:
-            self._azure_cf_client = ContentSafetyClient(self._endpoint, credential=DefaultAzureCredential())
+            self._azure_cf_client = ContentSafetyClient(
+                self._endpoint, credential=DefaultAzureCredential()
+            )
         else:
             raise ValueError("Please provide the Azure Content Safety endpoint")
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         """Evaluating the input text or image using the Azure Content Filter API
 
         Args:
@@ -126,14 +131,15 @@ class AzureContentFilterScorer(Scorer):
             base64_encoded_data = await self._get_base64_image_data(request_response)
             image_data = ImageData(content=base64_encoded_data)
             image_request_options = AnalyzeImageOptions(
-                image=image_data, categories=self._score_categories, output_type="FourSeverityLevels"
+                image=image_data,
+                categories=self._score_categories,
+                output_type="FourSeverityLevels",
             )
             filter_result = self._azure_cf_client.analyze_image(image_request_options)  # type: ignore
 
         scores = []
 
         for score in filter_result["categoriesAnalysis"]:
-
             value = score["severity"]
             category = score["category"]
             normalized_value = self.scale_value_float(float(value), 0, 7)
@@ -162,17 +168,24 @@ class AzureContentFilterScorer(Scorer):
         image_path = request_response.converted_value
         ext = DataTypeSerializer.get_extension(image_path)
         image_serializer = data_serializer_factory(
-            category="prompt-memory-entries", value=image_path, data_type="image_path", extension=ext
+            category="prompt-memory-entries",
+            value=image_path,
+            data_type="image_path",
+            extension=ext,
         )
         base64_encoded_data = await image_serializer.read_data_base64()
         return base64_encoded_data
 
-    def validate(self, request_response: PromptRequestPiece, *, task: Optional[str] = None):
+    def validate(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ):
         if (
             request_response.converted_value_data_type != "text"
             and request_response.converted_value_data_type != "image_path"
         ):
-            raise ValueError("Azure Content Filter Scorer only supports text and image_path data type")
+            raise ValueError(
+                "Azure Content Filter Scorer only supports text and image_path data type"
+            )
         if request_response.converted_value_data_type == "image_path":
             ext = DataTypeSerializer.get_extension(request_response.converted_value)
             if ext.lower() not in AZURE_CONTENT_FILTER_SCORER_SUPPORTED_IMAGE_FORMATS:

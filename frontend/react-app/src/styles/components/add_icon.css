@@ -1,5 +1,5 @@
 .add_icon__wrapper{
-    @apply bg-red-600 rounded-full flex items-center justify-center px-1 py-1 hover:cursor-pointer;
+    @apply bg-red-600 rounded-full flex items-center justify-center px-1 py-1 hover:cursor-pointer disabled:bg-opacity-40 disabled:cursor-not-allowed;
 }
 
 .add_icon--small{
@@ -12,4 +12,10 @@
 
 .add_icon--large{
     @apply w-9 h-9;
+}
+
+.add_icon--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
 }

@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAICompletionTarget(OpenAITarget):
-
     def __init__(
         self,
         max_tokens: Optional[int] | NotGiven = NOT_GIVEN,
@@ -50,7 +49,9 @@ class OpenAICompletionTarget(OpenAITarget):
         self.api_key_environment_variable = "AZURE_OPENAI_COMPLETION_KEY"
 
     @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         """
         Sends a normalized prompt async to the prompt target.
         """
@@ -93,7 +94,9 @@ class OpenAICompletionTarget(OpenAITarget):
             raise ValueError("This target only supports text prompt input.")
 
         request = prompt_request.request_pieces[0]
-        messages = self._memory.get_chat_messages_with_conversation_id(conversation_id=request.conversation_id)
+        messages = self._memory.get_chat_messages_with_conversation_id(
+            conversation_id=request.conversation_id
+        )
 
         if len(messages) > 0:
             raise ValueError("This target only supports a single turn conversation.")

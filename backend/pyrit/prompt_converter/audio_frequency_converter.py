@@ -38,7 +38,9 @@ class AudioFrequencyConverter(PromptConverter):
     def input_supported(self, input_type: PromptDataType) -> bool:
         return input_type == "audio_path"
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "audio_path") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "audio_path"
+    ) -> ConverterResult:
         """Convert an audio file by shifting its frequency.
 
         Args:
@@ -56,14 +58,19 @@ class AudioFrequencyConverter(PromptConverter):
         try:
             # Create serializer to read audio data
             audio_serializer = data_serializer_factory(
-                category="prompt-memory-entries", data_type="audio_path", extension=self._output_format, value=prompt
+                category="prompt-memory-entries",
+                data_type="audio_path",
+                extension=self._output_format,
+                value=prompt,
             )
             audio_bytes = await audio_serializer.read_data()
 
             # Read the audio file bytes and process the data
             bytes_io = io.BytesIO(audio_bytes)
             sample_rate, data = wavfile.read(bytes_io)
-            shifted_data = data * np.exp(1j * 2 * np.pi * self._shift_value * np.arange(len(data)) / sample_rate)
+            shifted_data = data * np.exp(
+                1j * 2 * np.pi * self._shift_value * np.arange(len(data)) / sample_rate
+            )
 
             # Convert the real part of the shifted data to int16
             shifted_data_int16 = shifted_data.real.astype(np.int16)
@@ -85,4 +92,6 @@ class AudioFrequencyConverter(PromptConverter):
         except Exception as e:
             logger.error("Failed to convert prompt to audio: %s", str(e))
             raise
-        return ConverterResult(output_text=audio_serializer_file, output_type=input_type)
+        return ConverterResult(
+            output_text=audio_serializer_file, output_type=input_type
+        )

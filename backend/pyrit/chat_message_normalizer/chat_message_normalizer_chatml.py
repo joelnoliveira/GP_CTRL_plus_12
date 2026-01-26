@@ -9,7 +9,6 @@ from pyrit.models import ALLOWED_CHAT_MESSAGE_ROLES, ChatMessage, ChatMessageRol
 
 
 class ChatMessageNormalizerChatML(ChatMessageNormalizer[str]):
-
     def normalize(self, messages: list[ChatMessage]) -> str:
         """Convert a string of text to a ChatML string.
         This is compliant with the ChatML specified in
@@ -25,7 +24,11 @@ class ChatMessageNormalizerChatML(ChatMessageNormalizer[str]):
     def from_chatml(content: str) -> list[ChatMessage]:
         """Convert a chatML string to a list of chat messages"""
         messages: list[ChatMessage] = []
-        matches = list(re.finditer(r"<\|im_start\|>(.*?)<\|im_end\|>", content, re.DOTALL | re.MULTILINE))
+        matches = list(
+            re.finditer(
+                r"<\|im_start\|>(.*?)<\|im_end\|>", content, re.DOTALL | re.MULTILINE
+            )
+        )
         if not matches:
             raise ValueError("No chat messages found in the chatML string")
         for match in matches:
@@ -37,5 +40,9 @@ class ChatMessageNormalizerChatML(ChatMessageNormalizer[str]):
             if role not in ALLOWED_CHAT_MESSAGE_ROLES:
                 raise ValueError(f"Role {role} is not allowed in chatML")
             content = lines[1].strip()
-            messages.append(ChatMessage(role=cast(ChatMessageRole, role), content=content, name=name))
+            messages.append(
+                ChatMessage(
+                    role=cast(ChatMessageRole, role), content=content, name=name
+                )
+            )
         return messages

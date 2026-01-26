@@ -103,7 +103,8 @@ export const useExperimentData = () => {
     fetchScenarios,
     fetchTemplates,
     fetchRolePlayOptions,
-    fetchModels
+    fetchModels,
+    token
   ]);
 
   return {

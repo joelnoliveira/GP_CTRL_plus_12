@@ -7,6 +7,8 @@ import RunCard from '../components/RunCard'
 import Button from '../components/Button'
 import Checkbox from '../components/Checkbox';
 import ExportIcon from '../components/ExportIcon';
+import Toast from '../components/Toast';
+import Logo from '../components/Logo';
 
 import useHistoryFilters from "../hooks/useHistoryFilters";
 import useHistoryRuns from "../hooks/useHistoryRuns";
@@ -16,14 +18,16 @@ import "../styles/pages/history.css"
 import RunModal from '../components/RunModal';
 
 const History = () => {
-  const { isLoggedIn, user } = useAuth();
-  
+  const { isLoggedIn, user, token, logout} = useAuth();
+
   const {
     scenarios: scenarioList,
     templates: templateList,
     rolePlayOptions: rolePlayOptionList,
     models: modelList
   } = useExperimentData();
+
+  const [toastConfig, setToastConfig] = useState(null);
 
   const [selectedFilters, setSelectedFilters] = useState({});
   const { runs, loading, error } = useHistoryRuns(selectedFilters);
@@ -40,6 +44,7 @@ const History = () => {
 
   const exportRef = useRef(null);
   const filtersRef = useRef(null);
+  const deleteRef = useRef(null);
 
   const filters = [
     {
@@ -111,6 +116,20 @@ const History = () => {
 
   /* ───── UI toggles ───── */
 
+  const handleDelete = async () => {
+    const response = await fetch("http://localhost:8000/gdpr/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+    
+      const newSuccess = { type: "success", message: "Information successfully deleted!" };
+      setToastConfig(newSuccess);
+      logout();
+  };
+
   const handleShowFilters = () => {
     setShowFilters(prev => !prev);
     setShowExportDropdown(false);
@@ -134,6 +153,10 @@ const History = () => {
   /* ───── Manual selection ───── */
 
   const toggleRunSelection = (runId) => {
+    if (bulkSelectMode !== null) {
+      setBulkSelectMode(null);
+    }
+
     setSelectedRunIds(prev => {
       const next = new Set(prev);
       next.has(runId) ? next.delete(runId) : next.add(runId);
@@ -217,18 +240,25 @@ const History = () => {
   /* ───── Bulk selection logic ───── */
 
   useEffect(() => {
-    if (bulkSelectMode === "page") {
-      setSelectedRunIds(new Set(runs.map(r => r.id)));
-    } else if (bulkSelectMode === "user" && user) {
-      const userRuns = runs
-        .filter(r => r.users?.email === user.email)
-        .map(r => r.id);
-      setSelectedRunIds(new Set(userRuns));
-    } else if (bulkSelectMode === null) {
+    if (bulkSelectMode !== "page") return;
+
+    const nextSet = new Set(runs.map(r => r.id));
+
+    setSelectedRunIds(prev => {
+      const isSame =
+        prev.size === nextSet.size &&
+        [...prev].every(id => nextSet.has(id));
+
+      return isSame ? prev : nextSet;
+    });
+  }, [bulkSelectMode, runs]);
+
+
+  useEffect(() => {
+    if (bulkSelectMode === null) {
       setSelectedRunIds(new Set());
     }
-  }, [bulkSelectMode, runs, user]);
-
+  }, [bulkSelectMode]);
   /* ───── Click outside ───── */
 
   useEffect(() => {
@@ -240,30 +270,36 @@ const History = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    console.log("Fetching runs data with filters:", runs);
-  }, [runs]);
 
   return (
     <div className="history-page">
-      <Menu currentPage="History" />
+      <Menu currentPage={"History"} />
 
+      {isLoggedIn ? (
       <div className="history-page__content">
+        {toastConfig && (
+          <Toast
+            icon_size="large"
+            type={toastConfig.type}
+            message={toastConfig.message}
+            onClose={() => setToastConfig(null)} 
+          />
+        )}
 
         {/* TOP BAR */}
         <div className="history-page__top-bar">
           <div className="history-page__top-actions">
+
+            {/* DELETE */}
+            <div className="relative" ref={deleteRef}>
+              <Button size="small" variant="alternative" text="Delete all information" onClick={handleDelete} />
+            </div>
 
             {/* EXPORT */}
             <div className="relative" ref={exportRef}>
               <Button size="small" variant="alternative" text="Export" onClick={handleExportClick} />
 
               <div className={`dropdown-panel wide-export ${showExportDropdown ? "open" : "closed"}`}>
-                <Checkbox
-                  label="Select all user's runs"
-                  checked={bulkSelectMode === "user"}
-                  onChange={(checked) => setBulkSelectMode(checked ? "user" : null)}
-                />
                 <Checkbox
                   label="Select all runs"
                   checked={bulkSelectMode === "page"}
@@ -336,6 +372,14 @@ const History = () => {
         </div>
 
       </div>
+      ):(
+          <div className="flex flex-col items-center justify-center h-full w-full">
+            <Logo 
+              size="large"
+            />
+            <h2 className="text-xl text-black">Please log in to view history</h2>
+          </div>
+        )}
     </div>
   )
 }

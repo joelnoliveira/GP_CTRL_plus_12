@@ -130,6 +130,9 @@ const ApiConfigModal = ({
                             value={formData.api_key}
                             onChange={handleChange('api_key')}
                         />
+                        <div className="api_config_modal__warning">
+                            ⚠️ Warning: Executing attacks with your own API Key carries a risk of your account being banned by the provider.
+                        </div>
                     </div>
 
                     {error && <div className="api_config_modal__error">{error}</div>}

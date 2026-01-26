@@ -45,3 +45,7 @@
 .api_config_modal__error {
     @apply text-red-400 text-sm mt-2;
 }
+
+.api_config_modal__warning {
+    @apply text-yellow-500 text-xs mt-2 p-2 bg-yellow-500/10 rounded border border-yellow-500/20;
+}

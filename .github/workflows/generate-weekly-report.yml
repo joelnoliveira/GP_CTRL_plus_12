@@ -28,7 +28,7 @@ jobs:
           gh api -X GET repos/$REPO/issues \
             --paginate \
             -f state=all \
-            --jq '.' > reports/issues.json
+            --jq '.' | jq -s 'add' > reports/issues.json
 
       - name: Fetch user real names
         env:

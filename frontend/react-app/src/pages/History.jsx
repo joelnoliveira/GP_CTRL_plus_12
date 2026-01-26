@@ -234,17 +234,36 @@ const History = () => {
   /* ───── Bulk selection logic ───── */
 
   useEffect(() => {
+    if (!bulkSelectMode) {
+      if (selectedRunIds.size !== 0) {
+        setSelectedRunIds(new Set());
+      }
+      return;
+    }
+
+    let nextIds = [];
+
     if (bulkSelectMode === "page") {
-      setSelectedRunIds(new Set(runs.map(r => r.id)));
-    } else if (bulkSelectMode === "user" && user) {
-      const userRuns = runs
+      nextIds = runs.map(r => r.id);
+    }
+
+    if (bulkSelectMode === "user" && user) {
+      nextIds = runs
         .filter(r => r.users?.email === user.email)
         .map(r => r.id);
-      setSelectedRunIds(new Set(userRuns));
-    } else if (bulkSelectMode === null) {
-      setSelectedRunIds(new Set());
     }
-  }, [bulkSelectMode, runs, user]);
+
+    const nextSet = new Set(nextIds);
+
+    // ✅ Prevent infinite loop
+    const isSame =
+      nextSet.size === selectedRunIds.size &&
+      [...nextSet].every(id => selectedRunIds.has(id));
+
+    if (!isSame) {
+      setSelectedRunIds(nextSet);
+    }
+  }, [bulkSelectMode, runs, user, selectedRunIds]);
 
   /* ───── Click outside ───── */
 

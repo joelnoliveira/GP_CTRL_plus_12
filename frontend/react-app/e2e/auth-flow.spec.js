@@ -1,4 +1,5 @@
 // @ts-check
+/* eslint-disable testing-library/prefer-screen-queries */
 const { test, expect } = require('@playwright/test');
 const { 
   testUsers, 
@@ -7,8 +8,7 @@ const {
   mockSuccessfulLogin,
   mockSuccessfulRegister,
   mockFailedLogin,
-  mockFailedRegister,
-  clearAuthState 
+  mockFailedRegister
 } = require('./helpers/auth.helpers');
 
 /**

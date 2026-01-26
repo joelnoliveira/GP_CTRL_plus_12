@@ -1,4 +1,5 @@
 // @ts-check
+/* eslint-disable testing-library/prefer-screen-queries */
 const { test, expect } = require('@playwright/test');
 
 /**
@@ -99,11 +100,10 @@ test.describe('Login Page', () => {
   test('deve navegar para home ao clicar no logo', async ({ page }) => {
     // Assumindo que o logo tem um link para home
     const logoLink = page.locator('a').filter({ has: page.locator('img, svg') }).first();
-    
-    if (await logoLink.isVisible()) {
-      await logoLink.click();
-      await expect(page).toHaveURL('/');
-    }
+
+    await expect(logoLink).toBeVisible();
+    await logoLink.click();
+    await expect(page).toHaveURL('/');
   });
 });
 

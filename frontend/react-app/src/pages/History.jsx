@@ -8,6 +8,7 @@ import Button from '../components/Button'
 import Checkbox from '../components/Checkbox';
 import ExportIcon from '../components/ExportIcon';
 import Toast from '../components/Toast';
+import Logo from '../components/Logo';
 
 import useHistoryFilters from "../hooks/useHistoryFilters";
 import useHistoryRuns from "../hooks/useHistoryRuns";
@@ -17,8 +18,8 @@ import "../styles/pages/history.css"
 import RunModal from '../components/RunModal';
 
 const History = () => {
-  const { isLoggedIn, user, token} = useAuth();
-  
+  const { isLoggedIn, user, token, logout} = useAuth();
+
   const {
     scenarios: scenarioList,
     templates: templateList,
@@ -126,6 +127,7 @@ const History = () => {
     
       const newSuccess = { type: "success", message: "Information successfully deleted!" };
       setToastConfig(newSuccess);
+      logout();
   };
 
   const handleShowFilters = () => {
@@ -281,6 +283,7 @@ const History = () => {
     <div className="history-page">
       <Menu currentPage={"History"} />
 
+      {isLoggedIn ? (
       <div className="history-page__content">
         {toastConfig && (
           <Toast
@@ -382,6 +385,14 @@ const History = () => {
         </div>
 
       </div>
+      ):(
+          <div className="flex flex-col items-center justify-center h-64">
+            <Logo 
+              size="large"
+            />
+            <h2 className="text-xl text-black">Please log in to view history</h2>
+          </div>
+        )}
     </div>
   )
 }

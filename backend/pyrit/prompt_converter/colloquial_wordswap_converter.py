@@ -13,7 +13,9 @@ class ColloquialWordswapConverter(PromptConverter):
     """Converts a string to a Singaporean colloquial version"""
 
     def __init__(
-        self, deterministic: bool = False, custom_substitutions: Optional[Dict[str, List[str]]] = None
+        self,
+        deterministic: bool = False,
+        custom_substitutions: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         """
         Initialize the converter with optional deterministic mode and custom substitutions.
@@ -43,10 +45,14 @@ class ColloquialWordswapConverter(PromptConverter):
         }
 
         # Use custom substitutions if provided, otherwise default to the standard ones
-        self._colloquial_substitutions = custom_substitutions if custom_substitutions else default_substitutions
+        self._colloquial_substitutions = (
+            custom_substitutions if custom_substitutions else default_substitutions
+        )
         self._deterministic = deterministic
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Convert the given prompt to colloquial Singaporean context.
 
@@ -69,10 +75,14 @@ class ColloquialWordswapConverter(PromptConverter):
             if lower_word in self._colloquial_substitutions:
                 if self._deterministic:
                     # Use the first substitution for deterministic mode
-                    converted_prompt.append(self._colloquial_substitutions[lower_word][0])
+                    converted_prompt.append(
+                        self._colloquial_substitutions[lower_word][0]
+                    )
                 else:
                     # Randomly select a substitution for each wordswap
-                    converted_prompt.append(random.choice(self._colloquial_substitutions[lower_word]))
+                    converted_prompt.append(
+                        random.choice(self._colloquial_substitutions[lower_word])
+                    )
             else:
                 # If word not in substitutions, keep it as is
                 converted_prompt.append(word)

@@ -7,7 +7,17 @@ import time
 import mlflow
 
 
-def log_params(params, param_keys=["model_name", "transfer", "n_train_data", "n_test_data", "n_steps", "batch_size"]):
+def log_params(
+    params,
+    param_keys=[
+        "model_name",
+        "transfer",
+        "n_train_data",
+        "n_test_data",
+        "n_steps",
+        "batch_size",
+    ],
+):
     mlflow_params = {key: params.to_dict()[key] for key in param_keys}
     mlflow.log_params(mlflow_params)
 
@@ -20,8 +30,13 @@ def log_train_goals(train_goals):
 
 def get_gpu_memory():
     command = "nvidia-smi --query-gpu=memory.free --format=csv"
-    memory_free_info = sp.check_output(command.split()).decode("ascii").split("\n")[:-1][1:]
-    memory_free_values = {f"gpu{i+1}_free_memory": int(val.split()[0]) for i, val in enumerate(memory_free_info)}
+    memory_free_info = (
+        sp.check_output(command.split()).decode("ascii").split("\n")[:-1][1:]
+    )
+    memory_free_values = {
+        f"gpu{i + 1}_free_memory": int(val.split()[0])
+        for i, val in enumerate(memory_free_info)
+    }
     memory_free_string = ", ".join(f"{val} MiB" for val in memory_free_values.values())
     print(f"Free GPU memory:\n{memory_free_string}")
     return memory_free_values

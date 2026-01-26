@@ -18,12 +18,13 @@ class HumanInTheLoopScorer(Scorer):
         re_scorers (list[Scorer]): The scorers to use for re-scoring.
     """
 
-    def __init__(self, *, scorer: Scorer = None, re_scorers: list[Scorer] = None) -> None:
+    def __init__(
+        self, *, scorer: Scorer = None, re_scorers: list[Scorer] = None
+    ) -> None:
         self._scorer = scorer
         self._re_scorers = re_scorers
 
     def import_scores_from_csv(self, csv_file_path: Path | str) -> list[Score]:
-
         scores = []
 
         with open(csv_file_path, newline="") as csvfile:
@@ -46,7 +47,9 @@ class HumanInTheLoopScorer(Scorer):
         self._memory.add_scores_to_memory(scores=scores)
         return scores
 
-    def score_prompt_manually(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    def score_prompt_manually(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         """
         Manually score the prompt
 
@@ -63,7 +66,9 @@ class HumanInTheLoopScorer(Scorer):
         score_category = ""
         while not score_value or not score_category:
             if not score_category:
-                score_category = self._get_user_input("Please enter score category (e.g., 'hate' or 'violence').")
+                score_category = self._get_user_input(
+                    "Please enter score category (e.g., 'hate' or 'violence')."
+                )
 
             if not score_value:
                 message = f"""This prompt has not been scored yet, please manually score the prompt.
@@ -76,8 +81,12 @@ class HumanInTheLoopScorer(Scorer):
         score_value_description = self._get_user_input(
             "Enter score value description (optional, press 'Enter' to skip): "
         )
-        score_rationale = self._get_user_input("Enter score rationale (optional, press 'Enter' to skip): ")
-        score_metadata = self._get_user_input("Enter score metadata (optional, press 'Enter' to skip): ")
+        score_rationale = self._get_user_input(
+            "Enter score rationale (optional, press 'Enter' to skip): "
+        )
+        score_metadata = self._get_user_input(
+            "Enter score metadata (optional, press 'Enter' to skip): "
+        )
 
         score = Score(
             score_value=score_value,
@@ -93,7 +102,9 @@ class HumanInTheLoopScorer(Scorer):
 
         return [score]
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         """
         Score the prompt with a human in the loop.
 
@@ -126,7 +137,9 @@ class HumanInTheLoopScorer(Scorer):
         if self._scorer:
             user_input = ""
             # Score the response using provided scorer
-            scores = await self._scorer.score_async(request_response=request_response, task=task)
+            scores = await self._scorer.score_async(
+                request_response=request_response, task=task
+            )
 
             if not self._re_scorers:
                 user_choice_list = ["1", "2"]
@@ -172,7 +185,9 @@ class HumanInTheLoopScorer(Scorer):
                 new_scores.append(existing_score)
 
             elif user_input == "2":  # manually modify the score
-                score = self.edit_score(existing_score, original_prompt, request_response, task)
+                score = self.edit_score(
+                    existing_score, original_prompt, request_response, task
+                )
                 new_scores.append(score)
 
             elif user_input == "3":
@@ -212,11 +227,17 @@ class HumanInTheLoopScorer(Scorer):
             # This will throw an exception if the score is not a float
             value = float(score_value)
             if value < 0 or value > 1:
-                raise ValueError("Score value must be between 0 and 1 for float_scale scores")
+                raise ValueError(
+                    "Score value must be between 0 and 1 for float_scale scores"
+                )
         return "float_scale"
 
     def edit_score(
-        self, existing_score: Score, original_prompt: str, request_response: PromptRequestPiece, task: Optional[str]
+        self,
+        existing_score: Score,
+        original_prompt: str,
+        request_response: PromptRequestPiece,
+        task: Optional[str],
     ) -> Score:
         """
         Edit an existing score.
@@ -255,11 +276,15 @@ class HumanInTheLoopScorer(Scorer):
         )
 
         score_rationale = self.get_modified_value(
-            original_prompt=original_prompt, score_value=existing_score.score_rationale, field_name="score rationale"
+            original_prompt=original_prompt,
+            score_value=existing_score.score_rationale,
+            field_name="score rationale",
         )
 
         score_metadata = self.get_modified_value(
-            original_prompt=original_prompt, score_value=existing_score.score_metadata, field_name="score metadata"
+            original_prompt=original_prompt,
+            score_value=existing_score.score_metadata,
+            field_name="score metadata",
         )
 
         score = Score(
@@ -302,20 +327,26 @@ class HumanInTheLoopScorer(Scorer):
             user_change_message = f"Enter modified {field_name.capitalize()}\n\
             {extra_value_description}\nOr press Enter to skip and keep old value: "
         else:
-            user_change_message = (
-                f"Enter modified {field_name.capitalize()} \n Or press Enter to skip and keep old value: "
-            )
-        return score_value if change_value_input == "2" else self._get_user_input(user_change_message)
+            user_change_message = f"Enter modified {field_name.capitalize()} \n Or press Enter to skip and keep old value: "
+        return (
+            score_value
+            if change_value_input == "2"
+            else self._get_user_input(user_change_message)
+        )
 
-    async def rescore(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    async def rescore(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         scorers_str = str([scorer.__class__.__name__ for scorer in self._re_scorers])
         scorer_index = -1
         message = f"""The available scorers are {scorers_str}. \
-            Enter the index of the scorer you would like to run on the input (0 to {len(self._re_scorers)-1})"""
+            Enter the index of the scorer you would like to run on the input (0 to {len(self._re_scorers) - 1})"""
         while not 0 <= scorer_index < len(self._re_scorers):
             scorer_index = int(self._get_user_input(message))
         re_scorer = self._re_scorers[scorer_index]
         return await re_scorer.score_async(request_response=request_response, task=task)
 
-    def validate(self, request_response: PromptRequestPiece, *, task: Optional[str] = None):
+    def validate(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ):
         pass

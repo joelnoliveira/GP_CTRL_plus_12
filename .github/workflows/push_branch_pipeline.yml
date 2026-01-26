@@ -1,0 +1,70 @@
+name: Feature Branches Pipeline
+
+on:
+  push:
+    branches-ignore:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  lint-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+
+  lint-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+        working-directory: frontend/react-app
+      - run: npm run lint
+        working-directory: frontend/react-app
+
+  # test-backend:
+  #   needs: [lint-backend]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.13" # match dockerfile version
+  #     - name: Install dependencies
+  #       run: pip install -r backend/requirements.txt
+  #     - name: Run tests
+  #       env:
+  #         DATABASE_NAME: test_db
+  #         DATABASE_USERNAME: test_user
+  #         DATABASE_PASSWORD: test_password
+  #         DATABASE_HOST: localhost
+  #         DATABASE_PORT: 5432
+  #       run: |
+  #         cd backend
+  #         python manage.py test
+
+  # test-frontend:
+  #   needs: [lint-frontend]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "22"
+  #         cache: "npm"
+  #         cache-dependency-path: frontend/react-app/package-lock.json
+  #     - run: npm ci
+  #       working-directory: frontend/react-app
+  #     - name: Run frontend tests
+  #       run: npm run test -- --run # --run executes once (no watch mode)
+  #       working-directory: frontend/react-app
+  #     - name: Build frontend
+  #       run: npm run build # Validates production build compiles correctly
+  #       working-directory: frontend/react-app

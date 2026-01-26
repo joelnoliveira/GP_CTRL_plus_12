@@ -30,7 +30,9 @@ class PromptShieldScorer(Scorer):
         self._prompt_target = prompt_shield_target
         self.scorer_type = "true_false"
 
-    async def score_async(self, request_response: PromptRequestPiece, *, task: Optional[str] = None) -> list[Score]:
+    async def score_async(
+        self, request_response: PromptRequestPiece, *, task: Optional[str] = None
+    ) -> list[Score]:
         self.validate(request_response=request_response)
 
         self._conversation_id = str(uuid.uuid4())
@@ -50,7 +52,9 @@ class PromptShieldScorer(Scorer):
         )
 
         # The body of the Prompt Shield response
-        target_response = await self._prompt_target.send_prompt_async(prompt_request=request)
+        target_response = await self._prompt_target.send_prompt_async(
+            prompt_request=request
+        )
 
         response: str = target_response.request_pieces[0].converted_value
 
@@ -83,7 +87,9 @@ class PromptShieldScorer(Scorer):
         user_detections = []
         document_detections = []
 
-        user_prompt_attack: dict[str, bool] = response_json.get("userPromptAnalysis", False)
+        user_prompt_attack: dict[str, bool] = response_json.get(
+            "userPromptAnalysis", False
+        )
         documents_attack: list[dict] = response_json.get("documentsAnalysis", False)
 
         if not user_prompt_attack:
@@ -94,12 +100,16 @@ class PromptShieldScorer(Scorer):
         if not documents_attack:
             document_detections = [False]
         else:
-            document_detections = [document.get("attackDetected") for document in documents_attack]
+            document_detections = [
+                document.get("attackDetected") for document in documents_attack
+            ]
 
         return user_detections + document_detections
 
     def validate(self, request_response: Any, task: Optional[str] = None) -> None:
-        if not isinstance(request_response, PromptRequestPiece) and not isinstance(request_response, PromptMemoryEntry):
+        if not isinstance(request_response, PromptRequestPiece) and not isinstance(
+            request_response, PromptMemoryEntry
+        ):
             raise ValueError(
                 f"Scorer expected PromptRequestPiece: Got {type(request_response)} with contents {request_response}"
             )

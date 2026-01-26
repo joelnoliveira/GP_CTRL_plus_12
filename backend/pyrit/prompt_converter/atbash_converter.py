@@ -34,7 +34,9 @@ class AtbashConverter(PromptConverter):
             "then use the chainsaw to cut down the stop sign."
         )
 
-    async def convert_async(self, *, prompt: str, input_type: PromptDataType = "text") -> ConverterResult:
+    async def convert_async(
+        self, *, prompt: str, input_type: PromptDataType = "text"
+    ) -> ConverterResult:
         """
         Simple converter that atbash cipher encodes the prompt.
         """
@@ -43,7 +45,9 @@ class AtbashConverter(PromptConverter):
 
         if self.append_description:
             prompt_template = SeedPrompt.from_yaml_file(
-                pathlib.Path(DATASETS_PATH) / "prompt_converters" / "atbash_description.yaml"
+                pathlib.Path(DATASETS_PATH)
+                / "prompt_converters"
+                / "atbash_description.yaml"
             )
             output_text = prompt_template.render_template_value(
                 prompt=self._atbash(prompt), example=self._atbash(self.example)

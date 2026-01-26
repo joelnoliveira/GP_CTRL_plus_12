@@ -39,4 +39,6 @@ class NormalizerRequest(abc.ABC):
             raise ValueError("Seed prompt group must be provided.")
 
         if not self.seed_prompt_group.is_single_request():
-            raise ValueError("Sequence must be equal for every piece of a single normalizer request.")
+            raise ValueError(
+                "Sequence must be equal for every piece of a single normalizer request."
+            )

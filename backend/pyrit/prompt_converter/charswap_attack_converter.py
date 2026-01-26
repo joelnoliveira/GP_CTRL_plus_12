@@ -108,5 +108,7 @@ class CharSwapGenerator(PromptConverter):
         try:
             result = random.sample(range(low, high), n)
         except ValueError:
-            logger.debug(f"[CharSwapConverter] Sample size of {n} exceeds population size of {high - low}")
+            logger.debug(
+                f"[CharSwapConverter] Sample size of {n} exceeds population size of {high - low}"
+            )
         return result

@@ -22,7 +22,9 @@ class MemoryEmbedding:
             raise ValueError("embedding_model must be set.")
         self.embedding_model = embedding_model
 
-    def generate_embedding_memory_data(self, *, prompt_request_piece: PromptRequestPiece) -> EmbeddingDataEntry:
+    def generate_embedding_memory_data(
+        self, *, prompt_request_piece: PromptRequestPiece
+    ) -> EmbeddingDataEntry:
         """
         Generates metadata for a chat memory entry.
 
@@ -34,7 +36,9 @@ class MemoryEmbedding:
         """
         if prompt_request_piece.converted_value_data_type == "text":
             embedding_data = EmbeddingDataEntry(
-                embedding=self.embedding_model.generate_text_embedding(text=prompt_request_piece.converted_value)
+                embedding=self.embedding_model.generate_text_embedding(
+                    text=prompt_request_piece.converted_value
+                )
                 .data[0]
                 .embedding,
                 embedding_type_name=self.embedding_model.__class__.__name__,
@@ -45,7 +49,9 @@ class MemoryEmbedding:
         raise ValueError("Only text data is supported for embedding.")
 
 
-def default_memory_embedding_factory(embedding_model: Optional[EmbeddingSupport] = None) -> MemoryEmbedding | None:
+def default_memory_embedding_factory(
+    embedding_model: Optional[EmbeddingSupport] = None,
+) -> MemoryEmbedding | None:
     if embedding_model:
         return MemoryEmbedding(embedding_model=embedding_model)
 
@@ -53,7 +59,9 @@ def default_memory_embedding_factory(embedding_model: Optional[EmbeddingSupport]
     api_base = os.environ.get("AZURE_OPENAI_EMBEDDING_ENDPOINT")
     deployment = os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT")
     if api_key and api_base and deployment:
-        model = AzureTextEmbedding(api_key=api_key, endpoint=api_base, deployment=deployment)
+        model = AzureTextEmbedding(
+            api_key=api_key, endpoint=api_base, deployment=deployment
+        )
         return MemoryEmbedding(embedding_model=model)
     else:
         raise ValueError(

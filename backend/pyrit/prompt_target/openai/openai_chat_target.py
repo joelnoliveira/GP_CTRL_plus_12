@@ -27,7 +27,15 @@ logger = logging.getLogger(__name__)
 
 # Supported image formats for Azure OpenAI GPT-4o,
 # https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/use-your-image-data
-AZURE_OPENAI_GPT4O_SUPPORTED_IMAGE_FORMATS = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", "tif"]
+AZURE_OPENAI_GPT4O_SUPPORTED_IMAGE_FORMATS = [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".tiff",
+    "tif",
+]
 
 
 class OpenAIChatTarget(OpenAITarget):
@@ -76,7 +84,9 @@ class OpenAIChatTarget(OpenAITarget):
         super().__init__(*args, **kwargs)
 
         if max_completion_tokens is not NOT_GIVEN and max_tokens is not NOT_GIVEN:
-            raise ValueError("Cannot provide both max_tokens and max_completion_tokens.")
+            raise ValueError(
+                "Cannot provide both max_tokens and max_completion_tokens."
+            )
 
         self._max_completion_tokens = max_completion_tokens
         self._max_tokens = max_tokens
@@ -92,7 +102,9 @@ class OpenAIChatTarget(OpenAITarget):
         self.api_key_environment_variable = "AZURE_OPENAI_CHAT_KEY"
 
     @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         """Asynchronously sends a prompt request and handles the response within a managed conversation context.
 
         Args:
@@ -106,20 +118,32 @@ class OpenAIChatTarget(OpenAITarget):
 
         is_json_response = self.is_response_format_json(request_piece)
 
-        prompt_req_res_entries = self._memory.get_conversation(conversation_id=request_piece.conversation_id)
+        prompt_req_res_entries = self._memory.get_conversation(
+            conversation_id=request_piece.conversation_id
+        )
         prompt_req_res_entries.append(prompt_request)
 
-        logger.info(f"Sending the following prompt to the prompt target: {prompt_request}")
+        logger.info(
+            f"Sending the following prompt to the prompt target: {prompt_request}"
+        )
 
         messages = await self._build_chat_messages(prompt_req_res_entries)
         try:
-            resp_text = await self._complete_chat_async(messages=messages, is_json_response=is_json_response)
+            resp_text = await self._complete_chat_async(
+                messages=messages, is_json_response=is_json_response
+            )
 
-            logger.info(f'Received the following response from the prompt target "{resp_text}"')
+            logger.info(
+                f'Received the following response from the prompt target "{resp_text}"'
+            )
 
-            response_entry = construct_response_from_request(request=request_piece, response_text_pieces=[resp_text])
+            response_entry = construct_response_from_request(
+                request=request_piece, response_text_pieces=[resp_text]
+            )
         except BadRequestError as bre:
-            response_entry = handle_bad_request_exception(response_text=bre.message, request=request_piece)
+            response_entry = handle_bad_request_exception(
+                response_text=bre.message, request=request_piece
+            )
 
         return response_entry
 
@@ -147,7 +171,10 @@ class OpenAIChatTarget(OpenAITarget):
             mime_type = "application/octet-stream"
 
         image_serializer = data_serializer_factory(
-            category="prompt-memory-entries", value=image_path, data_type="image_path", extension=ext
+            category="prompt-memory-entries",
+            value=image_path,
+            data_type="image_path",
+            extension=ext,
         )
         base64_encoded_data = await image_serializer.read_data_base64()
         # Azure OpenAI GPT-4o documentation doesn't specify the local image upload format for API.
@@ -178,11 +205,16 @@ class OpenAIChatTarget(OpenAITarget):
             for prompt_request_piece in prompt_request_pieces:
                 role = prompt_request_piece.role
                 if prompt_request_piece.converted_value_data_type == "text":
-                    entry = {"type": "text", "text": prompt_request_piece.converted_value}
+                    entry = {
+                        "type": "text",
+                        "text": prompt_request_piece.converted_value,
+                    }
                     content.append(entry)
                 elif prompt_request_piece.converted_value_data_type == "image_path":
-                    data_base64_encoded_url = await self._convert_local_image_to_data_url(
-                        prompt_request_piece.converted_value
+                    data_base64_encoded_url = (
+                        await self._convert_local_image_to_data_url(
+                            prompt_request_piece.converted_value
+                        )
                     )
                     image_url_entry = {"url": data_base64_encoded_url}
                     entry = {"type": "image_url", "image_url": image_url_entry}  # type: ignore
@@ -193,7 +225,9 @@ class OpenAIChatTarget(OpenAITarget):
                     )
 
             if not role:
-                raise ValueError("No role could be determined from the prompt request pieces.")
+                raise ValueError(
+                    "No role could be determined from the prompt request pieces."
+                )
 
             chat_message = ChatMessageListDictContent(role=role, content=content)  # type: ignore
             chat_messages.append(chat_message)
@@ -213,7 +247,9 @@ class OpenAIChatTarget(OpenAITarget):
         return response_message
 
     @pyrit_target_retry
-    async def _complete_chat_async(self, messages: list[ChatMessageListDictContent], is_json_response: bool) -> str:
+    async def _complete_chat_async(
+        self, messages: list[ChatMessageListDictContent], is_json_response: bool
+    ) -> str:
         """
         Completes asynchronous chat request.
 
@@ -249,7 +285,9 @@ class OpenAIChatTarget(OpenAITarget):
             # Handle empty response
             if not extracted_response:
                 logger.log(logging.ERROR, "The chat returned an empty response.")
-                raise EmptyResponseException(message="The chat returned an empty response.")
+                raise EmptyResponseException(
+                    message="The chat returned an empty response."
+                )
         else:
             raise PyritException(message=f"Unknown finish_reason {finish_reason}")
 
@@ -267,7 +305,8 @@ class OpenAIChatTarget(OpenAITarget):
         """
 
         converted_prompt_data_types = [
-            request_piece.converted_value_data_type for request_piece in prompt_request.request_pieces
+            request_piece.converted_value_data_type
+            for request_piece in prompt_request.request_pieces
         ]
 
         # Some models may not support all of these

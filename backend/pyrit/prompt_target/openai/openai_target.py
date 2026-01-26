@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAITarget(PromptChatTarget):
-
     ADDITIONAL_REQUEST_HEADERS: str = "OPENAI_ADDITIONAL_REQUEST_HEADERS"
 
     deployment_environment_variable: str
@@ -76,26 +75,35 @@ class OpenAITarget(PromptChatTarget):
         self._is_azure_target = is_azure_target
 
         if self._is_azure_target:
-            self._initialize_azure_vars(deployment_name, endpoint, api_key, use_aad_auth)
+            self._initialize_azure_vars(
+                deployment_name, endpoint, api_key, use_aad_auth
+            )
         else:
             # Initialize for non-Azure OpenAI
             self._initialize_non_azure_vars(deployment_name, endpoint, api_key)
             if not self._deployment_name:
                 # OpenAI deployments listed here: https://platform.openai.com/docs/models
-                raise ValueError("The deployment name must be provided for non-Azure OpenAI targets. e.g. gpt-4o")
+                raise ValueError(
+                    "The deployment name must be provided for non-Azure OpenAI targets. e.g. gpt-4o"
+                )
 
-    def _initialize_azure_vars(self, deployment_name: str, endpoint: str, api_key: str, use_aad_auth: bool):
+    def _initialize_azure_vars(
+        self, deployment_name: str, endpoint: str, api_key: str, use_aad_auth: bool
+    ):
         self._set_azure_openai_env_configuration_vars()
 
         self._deployment_name = default_values.get_required_value(
-            env_var_name=self.deployment_environment_variable, passed_value=deployment_name
+            env_var_name=self.deployment_environment_variable,
+            passed_value=deployment_name,
         )
         self._endpoint = default_values.get_required_value(
             env_var_name=self.endpoint_uri_environment_variable, passed_value=endpoint
         ).rstrip("/")
 
         if use_aad_auth:
-            logger.info("Authenticating with DefaultAzureCredential() for Azure Cognitive Services")
+            logger.info(
+                "Authenticating with DefaultAzureCredential() for Azure Cognitive Services"
+            )
             token_provider = get_token_provider_from_default_azure_credential()
 
             self._async_client = AsyncAzureOpenAI(
@@ -116,13 +124,19 @@ class OpenAITarget(PromptChatTarget):
                 default_headers=self._extra_headers,
             )
 
-    def _initialize_non_azure_vars(self, deployment_name: str, endpoint: str, api_key: str):
+    def _initialize_non_azure_vars(
+        self, deployment_name: str, endpoint: str, api_key: str
+    ):
         """
         Initializes variables to communicate with the (non-Azure) OpenAI API
         """
-        self._api_key = default_values.get_required_value(env_var_name="OPENAI_KEY", passed_value=api_key)
+        self._api_key = default_values.get_required_value(
+            env_var_name="OPENAI_KEY", passed_value=api_key
+        )
         if not self._api_key:
-            raise ValueError("API key for OpenAI is missing. Ensure OPENAI_KEY is set in the environment.")
+            raise ValueError(
+                "API key for OpenAI is missing. Ensure OPENAI_KEY is set in the environment."
+            )
 
         # Any available model. See https://platform.openai.com/docs/models
         self._deployment_name = default_values.get_required_value(
@@ -133,7 +147,9 @@ class OpenAITarget(PromptChatTarget):
                 "Deployment name for OpenAI is missing. Ensure OPENAI_DEPLOYMENT is set in the environment."
             )
 
-        endpoint = endpoint if endpoint else "https://api.openai.com/v1/chat/completions"
+        endpoint = (
+            endpoint if endpoint else "https://api.openai.com/v1/chat/completions"
+        )
 
         # Ignoring mypy type error. The OpenAI client and Azure OpenAI client have the same private base class
         self._async_client = AsyncOpenAI(  # type: ignore

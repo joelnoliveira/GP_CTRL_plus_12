@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import WarningIcon from "../components/WarningIcon";
 import CautionIcon from "../components/CautionIcon";
 import CloseIcon from "../components/CloseIcon";
+import SuccessIcon from "../components/SuccessIcon";
 
 import "../styles/components/toast.css"
 
@@ -11,23 +12,24 @@ const Toast = (
         icon_size = "medium",
         message,
         duration = 10000,
+        onClose,
     }
 ) => {
 
-    const [visible, setVisible] = useState(true);
     const [closing, setClosing] = useState(false);
 
     // Handle auto-dismiss
-    useEffect(() => {
-        const timer = setTimeout(() => handleClose(), duration);
-        return () => clearTimeout(timer);
-    }, [duration]);
+    const handleClose = useCallback(() => {
+        setClosing(true);
+        setTimeout(() => {
+            if (onClose) onClose();
+        }, 300);
+    }, [onClose]); // Only changes if onClose changes
 
-    const handleClose = () => {
-        setClosing(true); // Start fade-out
-        // Remove from DOM after animation
-        setTimeout(() => setVisible(false), 300); // match CSS transition duration
-    };
+    useEffect(() => {
+        const timer = setTimeout(handleClose, duration);
+        return () => clearTimeout(timer);
+    }, [duration, handleClose]);
 
     const icon_size_type = 
         icon_size === "small"
@@ -54,6 +56,8 @@ const Toast = (
                         ? <WarningIcon size={icon_size_type} />
                         : type === "caution"
                         ? <CautionIcon size={icon_size_type} />
+                        : type === "success"
+                        ? <SuccessIcon size={icon_size_type} />
                         : <></>
                     }
                     {
@@ -61,6 +65,8 @@ const Toast = (
                         ? <span className="toast__header__text">Error</span>
                         : type === "caution" 
                         ? <span className="toast__header__text">Warning</span>
+                        : type === "success" 
+                        ? <span className="toast__header__text">Success</span>
                         : <></>
                     }
                 </div>

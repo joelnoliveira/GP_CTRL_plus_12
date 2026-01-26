@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 class OllamaChatTarget(PromptChatTarget):
-
     ENDPOINT_URI_ENVIRONMENT_VARIABLE = "OLLAMA_ENDPOINT"
     MODEL_NAME_ENVIRONMENT_VARIABLE = "OLLAMA_MODEL_NAME"
 
@@ -43,16 +42,22 @@ class OllamaChatTarget(PromptChatTarget):
         self.chat_message_normalizer = chat_message_normalizer
         self.httpx_client_kwargs = httpx_client_kwargs or {}
         self.options = options or {}
-    @limit_requests_per_minute
-    async def send_prompt_async(self, *, prompt_request: PromptRequestResponse) -> PromptRequestResponse:
 
+    @limit_requests_per_minute
+    async def send_prompt_async(
+        self, *, prompt_request: PromptRequestResponse
+    ) -> PromptRequestResponse:
         self._validate_request(prompt_request=prompt_request)
         request: PromptRequestPiece = prompt_request.request_pieces[0]
 
-        messages = self._memory.get_chat_messages_with_conversation_id(conversation_id=request.conversation_id)
+        messages = self._memory.get_chat_messages_with_conversation_id(
+            conversation_id=request.conversation_id
+        )
         messages.append(request.to_chat_message())
 
-        logger.info(f"Sending the following prompt to the prompt target: {self} {request}")
+        logger.info(
+            f"Sending the following prompt to the prompt target: {self} {request}"
+        )
 
         resp = await self._complete_chat_async(messages=messages)
 
@@ -61,7 +66,9 @@ class OllamaChatTarget(PromptChatTarget):
 
         logger.info(f'Received the following response from the prompt target "{resp}"')
 
-        return construct_response_from_request(request=request, response_text_pieces=[resp])
+        return construct_response_from_request(
+            request=request, response_text_pieces=[resp]
+        )
 
     async def _complete_chat_async(
         self,
@@ -71,7 +78,11 @@ class OllamaChatTarget(PromptChatTarget):
         payload = self._construct_http_body(messages)
 
         response = await net_utility.make_request_and_raise_if_error_async(
-            endpoint_uri=self.endpoint, method="POST", request_body=payload, headers=headers, **self.httpx_client_kwargs
+            endpoint_uri=self.endpoint,
+            method="POST",
+            request_body=payload,
+            headers=headers,
+            **self.httpx_client_kwargs,
         )
 
         return response.json()["message"]["content"]
@@ -81,7 +92,9 @@ class OllamaChatTarget(PromptChatTarget):
         messages: list[ChatMessage],
     ) -> dict:
         squashed_messages = self.chat_message_normalizer.normalize(messages)
-        messages_list = [message.model_dump(exclude_none=True) for message in squashed_messages]
+        messages_list = [
+            message.model_dump(exclude_none=True) for message in squashed_messages
+        ]
         data = {
             "model": self.model_name,
             "messages": messages_list,

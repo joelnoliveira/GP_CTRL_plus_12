@@ -94,7 +94,9 @@ class SeedPrompt(YamlLoadable):
         """
 
         if self.data_type != "text":
-            raise ValueError(f"Cannot render non-text values as templates {self.data_type}")
+            raise ValueError(
+                f"Cannot render non-text values as templates {self.data_type}"
+            )
 
         jinja_template = Template(self.value, undefined=StrictUndefined)
 
@@ -160,7 +162,11 @@ class SeedPromptGroup(YamlLoadable):
         Raises:
             ValueError: If multiple different group IDs exist among the prompts.
         """
-        existing_group_ids = {prompt.prompt_group_id for prompt in self.prompts if prompt.prompt_group_id is not None}
+        existing_group_ids = {
+            prompt.prompt_group_id
+            for prompt in self.prompts
+            if prompt.prompt_group_id is not None
+        }
 
         if len(existing_group_ids) > 1:
             # More than one distinct group ID found among prompts.
@@ -253,7 +259,9 @@ class SeedPromptDataset(YamlLoadable):
             elif isinstance(p, SeedPrompt):
                 self.prompts.append(p)
             else:
-                raise ValueError("Prompts should be either dicts or SeedPrompt objects. Got something else.")
+                raise ValueError(
+                    "Prompts should be either dicts or SeedPrompt objects. Got something else."
+                )
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "SeedPromptDataset":
@@ -293,7 +301,9 @@ class SeedPromptDataset(YamlLoadable):
             if "prompt_group_id" in prompt:
                 raise ValueError("prompt_group_id should not be set in prompt data")
 
-        SeedPromptDataset._set_seed_prompt_group_id_by_alias(seed_prompts=merged_prompts)
+        SeedPromptDataset._set_seed_prompt_group_id_by_alias(
+            seed_prompts=merged_prompts
+        )
 
         # Now create the dataset with the newly merged prompt dicts
         return cls(prompts=merged_prompts, **dataset_defaults)
@@ -317,7 +327,9 @@ class SeedPromptDataset(YamlLoadable):
                 prompt["prompt_group_id"] = uuid.uuid4()
 
     @staticmethod
-    def group_seed_prompts_by_prompt_group_id(seed_prompts: List[SeedPrompt]) -> List[SeedPromptGroup]:
+    def group_seed_prompts_by_prompt_group_id(
+        seed_prompts: List[SeedPrompt],
+    ) -> List[SeedPromptGroup]:
         """
         Groups the given list of SeedPrompts by their prompt_group_id and creates
         SeedPromptGroup instances.

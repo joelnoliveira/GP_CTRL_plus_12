@@ -75,7 +75,9 @@ async def batch_task_async(
         raise ValueError("No items to batch.")
 
     if len(items_to_batch) != len(task_arguments):
-        raise ValueError("Number of lists of items to batch must match number of task arguments.")
+        raise ValueError(
+            "Number of lists of items to batch must match number of task arguments."
+        )
 
     for task_args in _get_chunks(*items_to_batch, batch_size=batch_size):
         tasks = []

@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 
 import MenuItem from './MenuItem'
 import "../styles/components/menu.css"
@@ -12,7 +12,8 @@ const Menu = ({
         { text: 'Home', link_to: '/' },
         { text: 'Run Experiment', link_to: '/run_experiment' },
         { text: 'History', link_to: '/history' },
-        { text: 'Compare Results', link_to: '/compare' }
+        { text: 'Compare Results', link_to: '/compare' },
+        { text: 'External APIs', link_to: '/external-apis' }
     ]
 
     const [itemSelected, setItemSelected] = useState(currentPage || menuItemsList[0].text)
@@ -27,7 +28,7 @@ const Menu = ({
 
             <div className="menu__item-list">
                 {menuItemsList.map((item, index) => (
-                    <MenuItem 
+                    <MenuItem
                         key={index}
                         text={item.text}
                         itemSelected={itemSelected}
@@ -36,7 +37,7 @@ const Menu = ({
                     />
                 ))}
             </div>
-            
+
         </div>
     )
 }

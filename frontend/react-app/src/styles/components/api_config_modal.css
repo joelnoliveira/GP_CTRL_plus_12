@@ -1,0 +1,51 @@
+.api_config_modal__backdrop {
+    @apply fixed inset-0 bg-black/60 flex items-center justify-center z-50;
+}
+
+.api_config_modal__container {
+    @apply bg-[#2a2a2a] rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl;
+}
+
+.api_config_modal__header {
+    @apply flex justify-between items-center mb-6;
+}
+
+.api_config_modal__title {
+    @apply text-white text-xl font-bold;
+}
+
+.api_config_modal__close {
+    @apply text-gray-400 hover:text-white text-2xl font-bold cursor-pointer bg-transparent border-none;
+}
+
+.api_config_modal__form {
+    @apply flex flex-col gap-4;
+}
+
+.api_config_modal__field {
+    @apply flex flex-col gap-2;
+}
+
+.api_config_modal__label {
+    @apply text-gray-300 text-sm font-medium;
+}
+
+.api_config_modal__input {
+    @apply bg-[#444444] text-white border-none rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.api_config_modal__select {
+    @apply bg-[#444444] text-white border-none rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer;
+}
+
+.api_config_modal__footer {
+    @apply flex justify-end gap-3 mt-6;
+}
+
+.api_config_modal__error {
+    @apply text-red-400 text-sm mt-2;
+}
+
+.api_config_modal__warning {
+    @apply text-yellow-500 text-xs mt-2 p-2 bg-yellow-500/10 rounded border border-yellow-500/20;
+}

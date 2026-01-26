@@ -10,12 +10,20 @@ import Toast from "../components/Toast"
 import UploadModal from "../components/UploadModal";
 
 import { useExperimentData } from "../hooks/useExperimentData";
+import { useApiConfigs } from "../hooks/useApiConfigs";
 
 const RunExperiment = (
 ) => {
+  // Hardcoded list of available external models
+  const AVAILABLE_EXTERNAL_MODELS = [
+    { key: "gpt-3.5-turbo", label: "gpt-3.5-turbo" },
+    { key: "gpt-5.2-codex", label: "gpt-5.2-codex" },
+    { key: "gpt-4o-mini-tts-2025-12-15", label: "gpt-4o-mini-tts-2025-12-15" },
+    { key: "gpt-realtime-mini-2025-12-15", label: "gpt-realtime-mini-2025-12-15" },
+  ];
   const [isPublic, setIsPublic] = useState(false);
   const handleIsPublic = (newValue) => {
-      setIsPublic(newValue);
+    setIsPublic(newValue);
   }
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,7 +35,7 @@ const RunExperiment = (
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const attackTypeList = ['Attack','Attack Template'];
+  const attackTypeList = ['Attack', 'Attack Template'];
   const [attackType, setAttackType] = useState(attackTypeList[0]);
   const [selections, setSelections] = useState({
     template_datasets: '',
@@ -38,6 +46,17 @@ const RunExperiment = (
     target_model_name: ''
   });
 
+  // Provider selection: 'DEFAULT' uses 10.17.0.162:3001, 'EXTERNAL' uses external API
+  const providerOptions = [
+    { key: 'DEFAULT', label: 'Provider LLM (Default)' },
+    { key: 'EXTERNAL', label: 'External API' }
+  ];
+  const [provider, setProvider] = useState('DEFAULT');
+  const [selectedApiConfig, setSelectedApiConfig] = useState(null);
+
+  // Get API configs from hook
+  const { apiConfigs } = useApiConfigs();
+
   const handleSelect = (fieldId, value) => {
     setSelections(prev => ({
       ...prev,
@@ -45,9 +64,17 @@ const RunExperiment = (
     }));
   };
 
-  const [scenarioExpectedFormat,setScenarioExpectedFormat] = useState([{}]);
-  const [templateExpectedFormat,setTemplateExpectedFormat] = useState([{}]);
-  const [rolePlayExpectedFormat,setRolePlayExpectedFormat] = useState([{}]);
+  // Reset target model when provider changes
+  useEffect(() => {
+    setSelections(prev => ({ ...prev, target_model_name: '' }));
+    if (provider === 'DEFAULT') {
+      setSelectedApiConfig(null);
+    }
+  }, [provider]);
+
+  const [scenarioExpectedFormat, setScenarioExpectedFormat] = useState([{}]);
+  const [templateExpectedFormat, setTemplateExpectedFormat] = useState([{}]);
+  const [rolePlayExpectedFormat, setRolePlayExpectedFormat] = useState([{}]);
 
   useEffect(() => {
     const fetchFormats = async () => {
@@ -64,7 +91,7 @@ const RunExperiment = (
 
         const formats = data.formats;
 
-        
+
         const normalize = ({ name, label, language, forceArray }) => {
           const entry = formats.find(f => f.name === name);
           if (!entry) return [];
@@ -107,14 +134,14 @@ const RunExperiment = (
           })
         );
 
-              } catch (err) {
-                console.error("Error fetching models:", err);
-              }
-            };
-            fetchFormats();
-          }, []);
+      } catch (err) {
+        console.error("Error fetching models:", err);
+      }
+    };
+    fetchFormats();
+  }, []);
 
-  
+
 
   const {
     scenarios: scenarioList,
@@ -137,50 +164,65 @@ const RunExperiment = (
     }
   ]
 
+  // Get target models based on provider selection
+  const getTargetModels = () => {
+    if (provider === 'EXTERNAL') {
+      return AVAILABLE_EXTERNAL_MODELS;
+    }
+    return fetchedModels;
+  };
+
   const attackFormFields = [
     { id: 'attack_option', placeholder: 'Attack LLM Type', options: attackOptionList },
     { id: 'role_play_options', placeholder: 'Role Playing Type', options: rolePlayOptionList },
     { id: 'attack_model_name', placeholder: 'Attack Model', options: fetchedModels },
-    { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
-  ]; 
+    { id: 'target_model_name', placeholder: 'Target Model', options: getTargetModels() },
+  ];
   const attackTemplateFormFields = [
-    { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
+    { id: 'target_model_name', placeholder: 'Target Model', options: getTargetModels() },
     { id: 'template_datasets', placeholder: 'Template', options: templateList },
   ];
   const attackOverRefusalFields = [
-    { id: 'target_model_name', placeholder: 'Target Model', options: fetchedModels },
+    { id: 'target_model_name', placeholder: 'Target Model', options: getTargetModels() },
   ];
 
   const getFormFields = () => {
-    if (scenarioType.label === "Over Refusal Test"){
+    if (scenarioType.label === "Over Refusal Test") {
       return attackOverRefusalFields;
     } else {
-      if (attackType === "Attack") { 
+      if (attackType === "Attack") {
         return attackFormFields
       } else {
         return attackTemplateFormFields
       }
     }
   }
-  
+
 
   const handleUpload = (id) => () => {
-      setUploadTarget(id);
-      setIsModalOpen(true);
-    };
+    setUploadTarget(id);
+    setIsModalOpen(true);
+  };
 
   const onUploadSuccess = (newData) => {
-      const newSuccess = { type: "success", message: "File uploaded and processed!" };
-      setToastConfig(newSuccess);
-      setIsModalOpen(false);
-      
-      refetch[uploadTarget]?.();
-    };
+    const newSuccess = { type: "success", message: "File uploaded and processed!" };
+    setToastConfig(newSuccess);
+    setIsModalOpen(false);
+
+    refetch[uploadTarget]?.();
+  };
 
   const handleExecute = async () => {
     // Validar que todos os campos foram preenchidos
     if (!selections.target_model_name) {
-      const newError = {type: "error", message: "Please select an option for all fields."};
+      const newError = { type: "error", message: "Please select an option for all fields." };
+      setToastConfig(newError);
+      return;
+    }
+
+    // Validate External API Config selection
+    if (provider === 'EXTERNAL' && !selectedApiConfig) {
+      const newError = { type: "error", message: "Please select an External API Configuration." };
       setToastConfig(newError);
       return;
     }
@@ -190,31 +232,39 @@ const RunExperiment = (
       let endpoint = "";
       let payload = {};
 
+      // Determine target_provider and api_key based on selection
+      const target_provider = provider === 'EXTERNAL' ? 'OPEN_AI' : 'OLLAMA';
+      const api_key = provider === 'EXTERNAL' && selectedApiConfig ? selectedApiConfig.api_key : null;
+
       if (scenarioType.label === "Over Refusal Test") {
-        endpoint = "http://localhost:8000/over-refusal-test"; 
+        endpoint = "http://localhost:8000/over-refusal-test";
         payload = {
-          target_model_name: selections.target_model_name    
+          target_model_name: selections.target_model_name,
+          target_provider: target_provider,
+          ...(api_key && { api_key })
         };
 
       } else {
         if (attackType === "Attack") {
-          if (!selections.attack_model_name && selections.attack_option && ((selections.attack_option==="ROLE_PLAY_ATTACK") === selections.role_play_options)) {
-            const newError = {type: "error", message: "Please select an option for all fields."};
+          if (!selections.attack_model_name && selections.attack_option && ((selections.attack_option === "ROLE_PLAY_ATTACK") === selections.role_play_options)) {
+            const newError = { type: "error", message: "Please select an option for all fields." };
             setToastConfig(newError);
             return;
           }
 
-          endpoint = "http://localhost:8000/attack"; 
+          endpoint = "http://localhost:8000/attack";
           payload = {
             attack_option: selections.attack_option,
             scenario_id: scenarioType.key,
             target_model_name: selections.target_model_name,
-            attacker_model_name: selections.attack_model_name,        
-            role_play_options: selections.role_play_options
+            attacker_model_name: selections.attack_model_name,
+            role_play_options: selections.role_play_options,
+            target_provider: target_provider,
+            ...(api_key && { api_key })
           };
         } else if (attackType === "Attack Template") {
           if (!selections.template_datasets) {
-            const newError = {type: "error", message: "Please select an option for all fields."};
+            const newError = { type: "error", message: "Please select an option for all fields." };
             setToastConfig(newError);
             return;
           }
@@ -223,10 +273,12 @@ const RunExperiment = (
           payload = {
             scenario_id: scenarioType.key,
             target_model_name: selections.target_model_name,
-            template_dataset_id: selections.template_datasets 
+            template_dataset_id: selections.template_datasets,
+            target_provider: target_provider,
+            ...(api_key && { api_key })
           };
         } else {
-          const newError = {type: "error", message: "Please select a valid attack option."};
+          const newError = { type: "error", message: "Please select a valid attack option." };
           setToastConfig(newError);
           return;
         }
@@ -254,7 +306,7 @@ const RunExperiment = (
 
       const data = await response.json();
 
-      const newSuccess = {type: "success", message: "Attack successfully executed!"};
+      const newSuccess = { type: "success", message: "Attack successfully executed!" };
       setToastConfig(newSuccess);
     } catch (err) {
       if (err.name === 'AbortError') {
@@ -268,23 +320,23 @@ const RunExperiment = (
   };
 
   return (
-    <div className="run_experiment"> 
-      <Menu 
+    <div className="run_experiment">
+      <Menu
         currentPage={"Run Experiment"}
       />
 
       {toastConfig && (
-				<Toast
-					icon_size="large"
-					type={toastConfig.type}
-					message={toastConfig.message}
-					onClose={() => setToastConfig(null)} 
-				/>
-			)}
+        <Toast
+          icon_size="large"
+          type={toastConfig.type}
+          message={toastConfig.message}
+          onClose={() => setToastConfig(null)}
+        />
+      )}
 
       {uploadTarget === "scenarios" && (
-        <UploadModal 
-          isOpen={isModalOpen} 
+        <UploadModal
+          isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSuccess={onUploadSuccess}
           targetType={uploadTarget}
@@ -292,8 +344,8 @@ const RunExperiment = (
         />)
       }
       {uploadTarget === "template_datasets" && (
-        <UploadModal 
-          isOpen={isModalOpen} 
+        <UploadModal
+          isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSuccess={onUploadSuccess}
           targetType={uploadTarget}
@@ -302,8 +354,8 @@ const RunExperiment = (
       }
 
       {uploadTarget === "role_play_options" && (
-        <UploadModal 
-          isOpen={isModalOpen} 
+        <UploadModal
+          isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSuccess={onUploadSuccess}
           targetType={uploadTarget}
@@ -323,7 +375,7 @@ const RunExperiment = (
                   placeholder='Scenario'
                   items={scenarioList.map(opt => opt.label)}
                   value={scenarioType.label}
-                  onSelect={(val) => 
+                  onSelect={(val) =>
                     setScenarioType(
                       scenarioList.find(opt => opt.label === val)
                     )
@@ -352,7 +404,33 @@ const RunExperiment = (
                 />
               </div>
             </div>}
-            
+
+            {/* Provider Selection */}
+            <div className="run_experiment__dropdown-list">
+              <div className="run_experiment__row">
+                <DropdownMenu
+                  placeholder='Target Provider'
+                  items={providerOptions.map(opt => opt.label)}
+                  value={providerOptions.find(opt => opt.key === provider)?.label}
+                  onSelect={(val) => setProvider(providerOptions.find(opt => opt.label === val)?.key)}
+                />
+              </div>
+            </div>
+
+            {/* External API Config Selection (only when EXTERNAL is selected) */}
+            {provider === 'EXTERNAL' && (
+              <div className="run_experiment__dropdown-list">
+                <div className="run_experiment__row">
+                  <DropdownMenu
+                    placeholder='Select API Configuration'
+                    items={apiConfigs.map(cfg => cfg.name)}
+                    value={selectedApiConfig?.name}
+                    onSelect={(val) => setSelectedApiConfig(apiConfigs.find(cfg => cfg.name === val))}
+                  />
+                </div>
+              </div>
+            )}
+
             {getFormFields().map((field) => {
               if (field.id === "role_play_options" && selections.attack_option !== "ROLE_PLAY_ATTACK") {
                 return null;
@@ -372,11 +450,11 @@ const RunExperiment = (
                     }
                   />
                   {(field.id === "template_datasets" || field.id === "role_play_options") && (
-                  <AddIcon
-                    size='large'
-                    disabled={!isLoggedIn}
-                    onClick={handleUpload(field.id)}
-                  />)
+                    <AddIcon
+                      size='large'
+                      disabled={!isLoggedIn}
+                      onClick={handleUpload(field.id)}
+                    />)
                   }
                 </div>
               );
@@ -399,7 +477,7 @@ const RunExperiment = (
         className="home__gray-polygon -z-5"
         style={{ clipPath: "polygon(0% 100%, 100% 0%, 100% 100%)" }}
       ></div>
-      
+
     </div>
   )
 }

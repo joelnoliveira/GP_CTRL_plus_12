@@ -927,7 +927,7 @@ async def get_my_runs_metrics(
             "AOR": RunsMetrics.metrics_aor,
             "ORR": RunsMetrics.metrics_orr,
             "ASR": RunsMetrics.metrics_asr,
-            "SM": RunsMetrics.static_metric,  # frontend sends "SM"
+            "Static Metric": RunsMetrics.static_metric,  # frontend sends "SM"
         }
 
         metric_filters = []

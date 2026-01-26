@@ -153,6 +153,10 @@ const History = () => {
   /* ───── Manual selection ───── */
 
   const toggleRunSelection = (runId) => {
+    if (bulkSelectMode !== null) {
+      setBulkSelectMode(null);
+    }
+
     setSelectedRunIds(prev => {
       const next = new Set(prev);
       next.has(runId) ? next.delete(runId) : next.add(runId);
@@ -236,37 +240,25 @@ const History = () => {
   /* ───── Bulk selection logic ───── */
 
   useEffect(() => {
-    if (!bulkSelectMode) {
-      if (selectedRunIds.size !== 0) {
-        setSelectedRunIds(new Set());
-      }
-      return;
+    if (bulkSelectMode !== "page") return;
+
+    const nextSet = new Set(runs.map(r => r.id));
+
+    setSelectedRunIds(prev => {
+      const isSame =
+        prev.size === nextSet.size &&
+        [...prev].every(id => nextSet.has(id));
+
+      return isSame ? prev : nextSet;
+    });
+  }, [bulkSelectMode, runs]);
+
+
+  useEffect(() => {
+    if (bulkSelectMode === null) {
+      setSelectedRunIds(new Set());
     }
-
-    let nextIds = [];
-
-    if (bulkSelectMode === "page") {
-      nextIds = runs.map(r => r.id);
-    }
-
-    if (bulkSelectMode === "user" && user) {
-      nextIds = runs
-        .filter(r => r.users?.email === user.email)
-        .map(r => r.id);
-    }
-
-    const nextSet = new Set(nextIds);
-
-    // ✅ Prevent infinite loop
-    const isSame =
-      nextSet.size === selectedRunIds.size &&
-      [...nextSet].every(id => selectedRunIds.has(id));
-
-    if (!isSame) {
-      setSelectedRunIds(nextSet);
-    }
-  }, [bulkSelectMode, runs, user, selectedRunIds]);
-
+  }, [bulkSelectMode]);
   /* ───── Click outside ───── */
 
   useEffect(() => {
@@ -308,11 +300,6 @@ const History = () => {
               <Button size="small" variant="alternative" text="Export" onClick={handleExportClick} />
 
               <div className={`dropdown-panel wide-export ${showExportDropdown ? "open" : "closed"}`}>
-                <Checkbox
-                  label="Select all user's runs"
-                  checked={bulkSelectMode === "user"}
-                  onChange={(checked) => setBulkSelectMode(checked ? "user" : null)}
-                />
                 <Checkbox
                   label="Select all runs"
                   checked={bulkSelectMode === "page"}
@@ -386,7 +373,7 @@ const History = () => {
 
       </div>
       ):(
-          <div className="flex flex-col items-center justify-center h-64">
+          <div className="flex flex-col items-center justify-center h-full w-full">
             <Logo 
               size="large"
             />

@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
     reflect_tables()
     yield
 
+
 app = FastAPI(lifespan=lifespan, dependencies=[Depends(get_current_user_or_public)])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -56,11 +57,17 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001","http://10.17.0.162:3001","http://10.3.2.49:3001"],
+    allow_origins=[
+        "http://localhost:3001",
+        "http://10.17.0.162:3001",
+        "http://10.3.2.49:3001",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 def _get_current_user_id(db: Session, current_user_email: str) -> int:
     User = Base.classes.users
     user = db.query(User).filter(User.email == current_user_email).first()
@@ -94,6 +101,7 @@ async def check_alive():
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
 
 @app.get("/gdpr/export")
 async def export_personal_data(
@@ -301,8 +309,8 @@ async def delete_personal_data(
 # ==================== API Key Configs ====================
 class ApiKeyConfigRequest(BaseModel):
     name: str
-    provider: str = "OPEN_AI"
-    model_name: str = None
+    provider: str
+    model_name: Optional[str] = None
     api_key: str
 
 
@@ -606,22 +614,16 @@ async def over_refusal_test(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/api-key-configs")
 async def create_api_key_config(
     request: ApiKeyConfigRequest,
     db: Session = Depends(get_db),
-    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+    current_user_email: str = Depends(get_current_user),
 ):
     """Create a new API key configuration for the current user."""
     try:
-        # TODO: Uncomment for JWT auth
-        # User = Base.classes.users
-        # user = db.query(User).filter(User.email == current_user_email).first()
-        # if not user:
-        #     raise HTTPException(status_code=401, detail="User not found")
-        # current_user_id = user.id
-
-        current_user_id = 1  # Hardcoded for testing - remove when enabling JWT auth
+        current_user_id = _get_current_user_id(db, current_user_email)
 
         ApiKeyConfigs = Base.classes.api_key_configs
 
@@ -650,19 +652,14 @@ async def create_api_key_config(
         raise HTTPException(status_code=500, detail=f"Erro ao criar config: {str(e)}")
 
 
-@app.get("/api-key-configs/{user_id}")
+@app.get("/api-key-configs/me")
 async def get_user_api_key_configs(
-    user_id: int,
     db: Session = Depends(get_db),
-    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+    current_user_email: str = Depends(get_current_user),
 ):
-    """Get all API key configurations for a specific user."""
+    """Get all API key configurations for the current user."""
     try:
-        # TODO: Uncomment for JWT auth
-        # User = Base.classes.users
-        # user = db.query(User).filter(User.email == current_user_email).first()
-        # if not user or user.id != user_id:
-        #     raise HTTPException(status_code=403, detail="Access denied")
+        user_id = _get_current_user_id(db, current_user_email)
 
         ApiKeyConfigs = Base.classes.api_key_configs
 
@@ -691,20 +688,15 @@ async def get_user_api_key_configs(
         raise HTTPException(status_code=500, detail=f"Erro ao listar configs: {str(e)}")
 
 
-@app.get("/api-key-configs/{user_id}/{config_id}")
+@app.get("/api-key-configs/{config_id}")
 async def get_api_key_config_by_id(
-    user_id: int,
     config_id: int,
     db: Session = Depends(get_db),
-    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+    current_user_email: str = Depends(get_current_user),
 ):
     """Get a specific API key configuration by ID (must belong to user)."""
     try:
-        # TODO: Uncomment for JWT auth
-        # User = Base.classes.users
-        # user = db.query(User).filter(User.email == current_user_email).first()
-        # if not user or user.id != user_id:
-        #     raise HTTPException(status_code=403, detail="Access denied")
+        user_id = _get_current_user_id(db, current_user_email)
 
         ApiKeyConfigs = Base.classes.api_key_configs
 
@@ -735,21 +727,16 @@ async def get_api_key_config_by_id(
         raise HTTPException(status_code=500, detail=f"Erro ao obter config: {str(e)}")
 
 
-@app.put("/api-key-configs/{user_id}/{config_id}")
+@app.put("/api-key-configs/{config_id}")
 async def update_api_key_config(
-    user_id: int,
     config_id: int,
     request: ApiKeyConfigRequest,
     db: Session = Depends(get_db),
-    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+    current_user_email: str = Depends(get_current_user),
 ):
     """Update an API key configuration (must belong to user)."""
     try:
-        # TODO: Uncomment for JWT auth
-        # User = Base.classes.users
-        # user = db.query(User).filter(User.email == current_user_email).first()
-        # if not user or user.id != user_id:
-        #     raise HTTPException(status_code=403, detail="Access denied")
+        user_id = _get_current_user_id(db, current_user_email)
 
         ApiKeyConfigs = Base.classes.api_key_configs
 
@@ -789,20 +776,15 @@ async def update_api_key_config(
         )
 
 
-@app.delete("/api-key-configs/{user_id}/{config_id}")
+@app.delete("/api-key-configs/{config_id}")
 async def delete_api_key_config(
-    user_id: int,
     config_id: int,
     db: Session = Depends(get_db),
-    # current_user_email: str = Depends(get_current_user),  # TODO: Uncomment for JWT auth
+    current_user_email: str = Depends(get_current_user),
 ):
     """Delete an API key configuration (must belong to user)."""
     try:
-        # TODO: Uncomment for JWT auth
-        # User = Base.classes.users
-        # user = db.query(User).filter(User.email == current_user_email).first()
-        # if not user or user.id != user_id:
-        #     raise HTTPException(status_code=403, detail="Access denied")
+        user_id = _get_current_user_id(db, current_user_email)
 
         ApiKeyConfigs = Base.classes.api_key_configs
 
@@ -830,6 +812,7 @@ async def delete_api_key_config(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao deletar config: {str(e)}")
+
 
 @app.get("/runs-metrics/me")
 async def get_my_runs_metrics(
@@ -941,10 +924,9 @@ async def get_my_runs_metrics(
 
     return query.all()
 
+
 @app.get("/runs-metrics")
-async def get_all_runs_metrics(
-    db: Session = Depends(get_db)
-):
+async def get_all_runs_metrics(db: Session = Depends(get_db)):
     RunsMetrics = Base.classes.runs_metrics
     return (
         db.query(RunsMetrics)
@@ -956,6 +938,7 @@ async def get_all_runs_metrics(
         )
         .all()
     )
+
 
 @app.get("/runs-metrics/{run_id}")
 async def get_runs_metrics(

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import userIcon from "../icons/user.svg"
 import { useAuth } from '../context/AuthContext';
 
@@ -9,14 +10,15 @@ const UserIcon = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
   const icon_size =
     size === "small"
       ? "user_icon--small"
       : size === "medium"
-      ? "user_icon--medium"
-      : size === "large"
-      ? "user_icon--large"
-      : ""
+        ? "user_icon--medium"
+        : size === "large"
+          ? "user_icon--large"
+          : ""
 
   const { logout } = useAuth();
 
@@ -29,6 +31,8 @@ const UserIcon = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+
 
   return (
     <div className="user_icon__container" ref={dropdownRef}>

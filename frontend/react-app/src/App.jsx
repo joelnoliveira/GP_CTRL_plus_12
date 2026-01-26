@@ -8,8 +8,9 @@ import Register from "./pages/Register";
 import CompareResults from "./pages/CompareResults";
 import RunExperiments from "./pages/RunExperiment";
 import History from "./pages/History";
-import Demo from "./pages/Demo";
+import ExternalApis from "./pages/ExternalApis";
 import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from "./context/ProtectedRoute";
 import PublicRoute from "./context/PublicRoute";
 
 export default function App() {
@@ -22,23 +23,31 @@ export default function App() {
             <Route path="/run_experiment" element={<RunExperiments />} />
             <Route path="/compare" element={<CompareResults />} />
             <Route path="/history" element={<History />} />
+            <Route
+              path="/external-apis"
+              element={
+                <ProtectedRoute>
+                  <ExternalApis />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route element={<LoginRegisterLayout />}>
-            <Route 
+            <Route
               path="/login"
               element={
                 <PublicRoute>
-                  <Login /> 
+                  <Login />
                 </PublicRoute>}
-             />
-            <Route 
-              path="/register" 
+            />
+            <Route
+              path="/register"
               element={
                 <PublicRoute>
-                  <Register /> 
+                  <Register />
                 </PublicRoute>
-                } 
-              />
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>

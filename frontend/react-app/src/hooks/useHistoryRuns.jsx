@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import useFetchData from "./useFetchData";
 
-const API_URL = "http://localhost:8000/runs-metrics";
+const API_URL = "http://localhost:8000/runs-metrics/me";
 
 export default function useHistoryRuns(filters = {}) {
   const queryParams = new URLSearchParams(

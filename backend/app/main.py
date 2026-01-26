@@ -833,25 +833,6 @@ async def delete_api_key_config(
 
 @app.get("/runs-metrics/me")
 async def get_my_runs_metrics(
-    db: Session = Depends(get_db),
-    current_user_email: str = Depends(get_current_user),
-):
-    user_id = _get_current_user_id(db, current_user_email)
-    RunsMetrics = Base.classes.runs_metrics
-    return (
-        db.query(RunsMetrics)
-        .options(
-            joinedload(RunsMetrics.scenarios),
-            joinedload(RunsMetrics.template_datasets),
-            joinedload(RunsMetrics.users),
-            joinedload(RunsMetrics.role_play_options),
-        )
-        .filter(RunsMetrics.users_id == user_id)
-        .all()
-    )
-
-@app.get("/runs-metrics")
-async def get_all_runs_metrics(
     attack_type: Optional[List[str]] = Query(None),
     attack_model: Optional[List[str]] = Query(None),
     target_model: Optional[List[str]] = Query(None),
@@ -860,9 +841,11 @@ async def get_all_runs_metrics(
     metric: Optional[List[str]] = Query(None),
     role_play: Optional[List[str]] = Query(None),
     db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
 ):
-    RunsMetrics = Base.classes.runs_metrics
+    user_id = _get_current_user_id(db, current_user_email)
 
+    RunsMetrics = Base.classes.runs_metrics
     Scenarios = Base.classes.scenarios
     Templates = Base.classes.template_datasets
     RolePlays = Base.classes.role_play_options
@@ -875,19 +858,24 @@ async def get_all_runs_metrics(
             joinedload(RunsMetrics.users),
             joinedload(RunsMetrics.role_play_options),
         )
+        .filter(RunsMetrics.users_id == user_id)  # 👈 only MY runs
     )
 
-    # Helper to normalize user input to DB format
+    # Helper to normalize scenario names
     def normalize_name_list(names: List[str]) -> List[str]:
         return [name.strip().lower().replace(" ", "_") for name in names]
 
-    # Dynamic filters
+    # ---------- Basic filters ----------
     if attack_type:
         query = query.filter(RunsMetrics.attack_type.in_(attack_type))
+
     if attack_model:
         query = query.filter(RunsMetrics.attack_model.in_(attack_model))
+
     if target_model:
         query = query.filter(RunsMetrics.target_model.in_(target_model))
+
+    # ---------- Scenario filter ----------
     if scenario:
         normalized = normalize_name_list(scenario)
         has_custom = "custom" in normalized
@@ -902,8 +890,9 @@ async def get_all_runs_metrics(
             conditions.append(Scenarios.is_builtin.is_(False))
 
         query = query.filter(or_(*conditions))
+
+    # ---------- Template filter ----------
     if template:
-        #normalized = normalize_name_list(template)
         has_custom = "custom" in template
         selected = [t for t in template if t != "custom"]
 
@@ -916,6 +905,8 @@ async def get_all_runs_metrics(
             conditions.append(Templates.is_builtin.is_(False))
 
         query = query.filter(or_(*conditions))
+
+    # ---------- Role play filter ----------
     if role_play:
         has_custom = "custom" in role_play
         selected = [r for r in role_play if r != "custom"]
@@ -930,16 +921,16 @@ async def get_all_runs_metrics(
 
         query = query.filter(or_(*conditions))
 
-    if metric:  # metric is the list from query, e.g., ['AOR', 'SM']
+    # ---------- Metric filter (HAS VALUE, INCLUDING 0) ----------
+    if metric:
         metric_column_map = {
             "AOR": RunsMetrics.metrics_aor,
             "ORR": RunsMetrics.metrics_orr,
             "ASR": RunsMetrics.metrics_asr,
-            "Static Metric": RunsMetrics.static_metric,  # match frontend 'SM' to DB column
+            "SM": RunsMetrics.static_metric,  # frontend sends "SM"
         }
 
         metric_filters = []
-
         for m in metric:
             col = metric_column_map.get(m)
             if col is not None:
@@ -948,58 +939,23 @@ async def get_all_runs_metrics(
         if metric_filters:
             query = query.filter(or_(*metric_filters))
 
-    results = query.all()
+    return query.all()
 
-    """
-    mock_run = {
-        "id": 999,
-        "attack_type": "ROLE_PLAY_ATTACK",
-        "attack_model": "qwen2.5-coder:1.5b",
-        "target_model": "qwen2.5:1.5b",
-        "scenarios": {
-            "id": 999,
-            "name": "custom_scenario",
-            "is_builtin": False,
-            "created_at": "2026-01-25T12:00:00",
-            "storage_path": "/backend/datasets/custom_scenario.json",
-        },
-        "template_datasets": {
-            "id": 999,
-            "name": "custom_template",
-            "description": "Custom template",
-            "is_builtin": False,
-            "created_at": "2026-01-25T12:00:00",
-            "storage_path": "/backend/datasets/custom_template.json",
-        },
-        "role_play_options": {
-            "id": 999,
-            "name": "CUSTOM_ROLE_PLAY",
-            "description": "Custom role play",
-            "is_builtin": False,
-            "created_at": "2026-01-25T12:00:00",
-            "storage_path": "/backend/datasets/custom_role_play.yaml",
-        },
-        "users": {
-            "id": 1,
-            "email": "joao.carvalho@gmail.com",
-        },
-        "started_at": "2026-01-25T23:08:58",
-        "ended_at": "2026-01-25T23:12:10",
-        "status": "completed",
-        "metrics_aor": None,
-        "metrics_orr": None,
-        "metrics_asr": None,
-        "static_metric": 0.1,
-    }
-
-        # Append mock to results
-    results.append(mock_run)
-    """
-    
-    # Return raw ORM objects with relationships loaded
-    return results
-    
-
+@app.get("/runs-metrics")
+async def get_all_runs_metrics(
+    db: Session = Depends(get_db)
+):
+    RunsMetrics = Base.classes.runs_metrics
+    return (
+        db.query(RunsMetrics)
+        .options(
+            joinedload(RunsMetrics.scenarios),
+            joinedload(RunsMetrics.template_datasets),
+            joinedload(RunsMetrics.users),
+            joinedload(RunsMetrics.role_play_options),
+        )
+        .all()
+    )
 
 @app.get("/runs-metrics/{run_id}")
 async def get_runs_metrics(

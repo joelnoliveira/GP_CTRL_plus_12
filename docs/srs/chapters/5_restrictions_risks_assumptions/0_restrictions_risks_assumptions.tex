@@ -17,8 +17,9 @@
 
   \item Recursos Computacionais
   \begin{itemize}
-    \item Limitações de hardware local (ex: memória GPU, capacidade de processamento) para executar modelos grandes.
-    \item Dependência de ferramentas e plataformas externas (ex: Ollama, PyRIT) que podem impor limites de desempenho ou disponibilidade.
+    \item Dependência do servidor externo do professor (Ollama) para a execução dos modelos de LLM, cuja disponibilidade e desempenho não estão sob controlo direto.
+    \item Limitações de largura de banda e latência de rede ao comunicar com o servidor externo.
+    \item Dependência de ferramentas externas (ex: PyRIT) que podem impor limites de desempenho ou disponibilidade.
   \end{itemize}
 
   \item Âmbito do Projeto
@@ -37,7 +38,7 @@
 \subsection{Assumptions}
 
 \begin{itemize}
-  \item Recursos Computacionais: Existência de uma VM com recursos suficientes para executar LLMs locais.
+  \item Recursos Computacionais: Disponibilidade contínua do servidor externo (Ollama) fornecido pelo professor para execução dos modelos de LLM.
   \item Acesso a Modelos: Os modelos de LLM selecionados permanecerão disponíveis e acessíveis.
 \end{itemize}
 

@@ -42,10 +42,17 @@ services:
     restart: unless-stopped
     build: ../../backend
     container_name: fast_api
-    command: tail -f /dev/null
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     user: root
     environment:
-      REACT_APP_RECAPTCHA_SECRET_KEY: 6LdxHDssAAAAAPoYfGF7Sj6AvFaReCMIby4TfLll
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres_db
+      LANGFUSE_SECRET_KEY: sk-lf-1234567890
+      LANGFUSE_PUBLIC_KEY: pk-lf-1234567890
+      LANGFUSE_HOST: http://langfuse-web:3000
+      LANGFUSE_ENABLED: "true"
+      OLLAMA_BASE_URL: http://10.3.1.241:8080/v1
+      OLLAMA_MODEL: llama3.2:1b
+      AUTH_SECRET_KEY: 3b7146d9a6ea26e8c0075af0e7780b146db34a6960e127e9e9db1a1921a66f35
     volumes:
       - ../../:/workspace:Z
     ports:

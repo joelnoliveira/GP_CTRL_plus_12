@@ -1,6 +1,6 @@
 import useFetchData from "./useFetchData";
 
-const API_URL = "http://localhost:8000/runs-filters";
+const API_URL = "http://10.17.0.159:8000/runs-filters";
 
 export default function useHistoryFilters() {
   const token = localStorage.getItem("token");

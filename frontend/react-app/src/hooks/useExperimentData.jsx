@@ -10,7 +10,7 @@ export const useExperimentData = () => {
 
   const fetchScenarios = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8000/scenarios", {
+      const res = await fetch("http://10.17.0.159:8000/scenarios", {
                 method: "GET",
                 headers: {
                   "Content-Type": "application/json",
@@ -33,7 +33,7 @@ export const useExperimentData = () => {
 
   const fetchTemplates = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8000/template-datasets", {
+      const res = await fetch("http://10.17.0.159:8000/template-datasets", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -56,7 +56,7 @@ export const useExperimentData = () => {
 
   const fetchRolePlayOptions = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8000/role-play-options", {
+      const res = await fetch("http://10.17.0.159:8000/role-play-options", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -79,7 +79,13 @@ export const useExperimentData = () => {
 
   const fetchModels = useCallback(async () => {
     try {
-      const res = await fetch("http://10.3.1.241:8080/api/tags");
+      const res = await fetch("http://10.17.0.159:8000/models", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        });
       if (!res.ok) throw new Error("Failed to fetch models");
 
       const data = await res.json();

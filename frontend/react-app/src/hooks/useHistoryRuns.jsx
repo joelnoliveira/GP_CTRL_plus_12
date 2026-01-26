@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import useFetchData from "./useFetchData";
 
-const API_URL = "http://localhost:8000/runs-metrics/me";
+const API_URL = "http://10.17.0.159:8000/runs-metrics/me";
 
 export default function useHistoryRuns(filters = {}) {
   const queryParams = new URLSearchParams(
@@ -32,4 +32,4 @@ export default function useHistoryRuns(filters = {}) {
 }
 
 
-//const API_URL = "http://localhost:8000/history/mock_runs";
+//const API_URL = "http://10.17.0.159:8000/history/mock_runs";

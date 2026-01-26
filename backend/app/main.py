@@ -11,6 +11,7 @@ from .schemas import AttackRequest, AttackTemplateRequest, OverRefusalTestReques
 import io
 import json
 import os
+import httpx
 from dotenv import load_dotenv
 from langfuse import get_client
 from urllib.parse import quote
@@ -24,7 +25,6 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import or_
 from fastapi import Query
 from typing import Optional, List
-
 
 # Load .env from workspace root
 dotenv_path = os.path.join(
@@ -57,11 +57,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3001",
-        "http://10.17.0.162:3001",
-        "http://10.3.2.49:3001",
-    ],
+    #allow_origins=["http://localhost:3001","http://10.17.0.162:3001","http://10.3.2.49:3001","http://10.17.0.159:3001"],
+    allow_origins=["http://10.17.0.159:3001",  "http://localhost:3001", "http://10.3.1.241:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -967,3 +964,16 @@ async def get_runs_metrics(
 async def get_all_role_play_options(db: Session = Depends(get_db)):
     RolePlayOptions = Base.classes.role_play_options
     return db.query(RolePlayOptions).all()
+
+@app.get('/models')
+async def listar_modelos():
+  try:
+    async with httpx.AsyncClient(timeout=20) as client:
+      response = await client.get('http://10.3.1.241:8080/api/tags')
+      response.raise_for_status()
+      return response.json()
+  except httpx.RequestError as e:
+    raise HTTPException(
+      status_code=502,
+      detail=f'Erro ao comunicar com a VM de modelos: {str(e)}'
+    )

@@ -54,7 +54,7 @@ const UploadModal = ({
       const formData = new FormData();
       formData.append('file', file, file.name);
 
-      const res = await fetch(`http://localhost:8000/files/upload/${targetType}`, {
+      const res = await fetch(`http://10.17.0.159:8000/files/upload/${targetType}`, {
         method: 'POST',
         headers: {
           "Authorization": `Bearer ${token}`

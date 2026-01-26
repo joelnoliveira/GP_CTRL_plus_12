@@ -79,7 +79,7 @@ const RunExperiment = (
   useEffect(() => {
     const fetchFormats = async () => {
       try {
-        const response = await fetch("http://localhost:8000/files/formats", {
+        const response = await fetch("http://10.17.0.159:8000/files/formats", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -237,7 +237,7 @@ const RunExperiment = (
       const api_key = provider === 'EXTERNAL' && selectedApiConfig ? selectedApiConfig.api_key : null;
 
       if (scenarioType.label === "Over Refusal Test") {
-        endpoint = "http://localhost:8000/over-refusal-test";
+        endpoint = "http://10.17.0.159:8000/over-refusal-test"; 
         payload = {
           target_model_name: selections.target_model_name,
           target_provider: target_provider,
@@ -252,7 +252,7 @@ const RunExperiment = (
             return;
           }
 
-          endpoint = "http://localhost:8000/attack";
+          endpoint = "http://10.17.0.159:8000/attack"; 
           payload = {
             attack_option: selections.attack_option,
             scenario_id: scenarioType.key,
@@ -269,7 +269,7 @@ const RunExperiment = (
             return;
           }
 
-          endpoint = "http://localhost:8000/attack-template";
+          endpoint = "http://10.17.0.159:8000/attack-template";
           payload = {
             scenario_id: scenarioType.key,
             target_model_name: selections.target_model_name,

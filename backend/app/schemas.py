@@ -232,3 +232,8 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    email: str
+    token_type: str

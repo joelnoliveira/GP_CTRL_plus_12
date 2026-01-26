@@ -7,7 +7,7 @@ export default function PageLayout() {
 
     <div className="min-h-screen flex flex-col bg-white text-black font-anonymous-pro">
       <Navbar />
-      <div className="flex-1 w-full relative">
+      <div className="flex-1 flex w-full relative">
         <Outlet />
       </div>
     </div>

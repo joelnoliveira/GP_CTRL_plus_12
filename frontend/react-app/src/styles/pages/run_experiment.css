@@ -1,9 +1,9 @@
 .run_experiment{
-    @apply flex flex-row w-full h-full items-stretch;
+    @apply flex flex-row w-full items-start justify-start flex-1;
 }
 
 .run_experiment__main_area {
-    @apply flex-1 h-full flex flex-col items-center justify-center relative z-10 px-4;
+    @apply flex-1 h-full flex flex-col items-center justify-center relative z-10 px-6;
 }
 
 .run_experiment__row{

@@ -1,5 +1,5 @@
 .menu{
-    @apply min-h-full w-[20%] flex flex-col items-start gap-1 bg-black pl-6 pt-8;
+    @apply min-h-full max-w-[20%] w-full flex flex-col items-start gap-1 bg-black pl-6 pt-8;
 }
 
 .menu__h2{
@@ -7,5 +7,5 @@
 }
 
 .menu__item-list{
-    @apply pl-2;
+    @apply pl-2 w-full;
 }

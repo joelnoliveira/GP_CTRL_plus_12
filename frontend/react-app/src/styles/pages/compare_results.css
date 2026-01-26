@@ -1,9 +1,9 @@
 .compare_results{
-  @apply relative flex flex-row w-full min-h-screen items-stretch;
+  @apply relative flex flex-row w-full items-start justify-start flex-1;
 }
 
 .compare_results__main_area {
-    @apply flex-1 h-full flex flex-col items-center justify-center relative z-10 px-4;
+  @apply flex-1 h-full flex flex-col items-center justify-center relative z-10 pt-8 px-6;
 }
 
 .compare_results__content {
@@ -83,5 +83,5 @@
 /* ===== ToggleSwitch Message ===== */
 
 .toggle_switch_text {
-  @apply inline-block w-16 text-left text-white
+  @apply inline-block w-16 text-left text-white;
 }

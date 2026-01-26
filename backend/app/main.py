@@ -21,6 +21,9 @@ from .security import get_current_user, get_current_user_or_public
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from sqlalchemy import or_
+from fastapi import Query
+from typing import Optional, List
 
 
 # Load .env from workspace root
@@ -91,7 +94,6 @@ async def check_alive():
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
-
 
 @app.get("/gdpr/export")
 async def export_personal_data(
@@ -604,7 +606,6 @@ async def over_refusal_test(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.post("/api-key-configs")
 async def create_api_key_config(
     request: ApiKeyConfigRequest,
@@ -832,12 +833,24 @@ async def delete_api_key_config(
 
 @app.get("/runs-metrics/me")
 async def get_my_runs_metrics(
+    attack_type: Optional[List[str]] = Query(None),
+    attack_model: Optional[List[str]] = Query(None),
+    target_model: Optional[List[str]] = Query(None),
+    scenario: Optional[List[str]] = Query(None),
+    template: Optional[List[str]] = Query(None),
+    metric: Optional[List[str]] = Query(None),
+    role_play: Optional[List[str]] = Query(None),
     db: Session = Depends(get_db),
     current_user_email: str = Depends(get_current_user),
 ):
     user_id = _get_current_user_id(db, current_user_email)
+
     RunsMetrics = Base.classes.runs_metrics
-    return (
+    Scenarios = Base.classes.scenarios
+    Templates = Base.classes.template_datasets
+    RolePlays = Base.classes.role_play_options
+
+    query = (
         db.query(RunsMetrics)
         .options(
             joinedload(RunsMetrics.scenarios),
@@ -845,10 +858,88 @@ async def get_my_runs_metrics(
             joinedload(RunsMetrics.users),
             joinedload(RunsMetrics.role_play_options),
         )
-        .filter(RunsMetrics.users_id == user_id)
-        .all()
+        .filter(RunsMetrics.users_id == user_id)  # 👈 only MY runs
     )
 
+    # Helper to normalize scenario names
+    def normalize_name_list(names: List[str]) -> List[str]:
+        return [name.strip().lower().replace(" ", "_") for name in names]
+
+    # ---------- Basic filters ----------
+    if attack_type:
+        query = query.filter(RunsMetrics.attack_type.in_(attack_type))
+
+    if attack_model:
+        query = query.filter(RunsMetrics.attack_model.in_(attack_model))
+
+    if target_model:
+        query = query.filter(RunsMetrics.target_model.in_(target_model))
+
+    # ---------- Scenario filter ----------
+    if scenario:
+        normalized = normalize_name_list(scenario)
+        has_custom = "custom" in normalized
+        selected = [s for s in normalized if s != "custom"]
+
+        query = query.join(RunsMetrics.scenarios)
+
+        conditions = []
+        if selected:
+            conditions.append(Scenarios.name.in_(selected))
+        if has_custom:
+            conditions.append(Scenarios.is_builtin.is_(False))
+
+        query = query.filter(or_(*conditions))
+
+    # ---------- Template filter ----------
+    if template:
+        has_custom = "custom" in template
+        selected = [t for t in template if t != "custom"]
+
+        query = query.join(RunsMetrics.template_datasets)
+
+        conditions = []
+        if selected:
+            conditions.append(Templates.description.in_(selected))
+        if has_custom:
+            conditions.append(Templates.is_builtin.is_(False))
+
+        query = query.filter(or_(*conditions))
+
+    # ---------- Role play filter ----------
+    if role_play:
+        has_custom = "custom" in role_play
+        selected = [r for r in role_play if r != "custom"]
+
+        query = query.join(RunsMetrics.role_play_options)
+
+        conditions = []
+        if selected:
+            conditions.append(RolePlays.description.in_(selected))
+        if has_custom:
+            conditions.append(RolePlays.is_builtin.is_(False))
+
+        query = query.filter(or_(*conditions))
+
+    # ---------- Metric filter (HAS VALUE, INCLUDING 0) ----------
+    if metric:
+        metric_column_map = {
+            "AOR": RunsMetrics.metrics_aor,
+            "ORR": RunsMetrics.metrics_orr,
+            "ASR": RunsMetrics.metrics_asr,
+            "Static Metric": RunsMetrics.static_metric,  # frontend sends "SM"
+        }
+
+        metric_filters = []
+        for m in metric:
+            col = metric_column_map.get(m)
+            if col is not None:
+                metric_filters.append(col.isnot(None))
+
+        if metric_filters:
+            query = query.filter(or_(*metric_filters))
+
+    return query.all()
 
 @app.get("/runs-metrics")
 async def get_all_runs_metrics(
@@ -865,7 +956,6 @@ async def get_all_runs_metrics(
         )
         .all()
     )
-
 
 @app.get("/runs-metrics/{run_id}")
 async def get_runs_metrics(

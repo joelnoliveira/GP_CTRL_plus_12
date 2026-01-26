@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Base
-from ..schemas import UserLogin, Token, UserCreate, UserResponse
+from ..schemas import UserLogin, UserCreate, UserResponse, LoginResponse
 from ..security import (
     verify_password,
     create_access_token,
@@ -88,8 +88,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
     return new_user
 
-
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=LoginResponse)
 def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     # verify_recaptcha(user_credentials.captcha_token)
 
@@ -132,7 +131,7 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     db.add(audit_entry)
     db.commit()
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "email": user.email, "token_type": "bearer"}
 
 
 # Example endpoint to see if authentication is working

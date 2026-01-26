@@ -1,0 +1,59 @@
+.run-modal__overlay {
+  @apply fixed inset-0 bg-black/45 backdrop-blur-sm flex items-center justify-center z-[65];
+}
+
+.run-modal{
+    @apply w-[100px] h-[100px] flex flex-col p-6 rounded-lg shadow-sm overflow-hidden;
+}
+
+.run-modal--open{
+    @apply fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+
+.run-modal__container {
+  @apply relative w-[32rem] bg-white flex flex-col p-6 rounded-lg shadow-md;
+}
+
+.run-modal__close {
+  @apply absolute top-4 right-4 text-gray-400 hover:text-black text-xl font-bold cursor-pointer;
+}
+
+.run-modal__content__wrapper {
+    @apply flex flex-col gap-8 transition-transform duration-300 ease-in-out;
+}
+
+.run-modal__header {
+  @apply w-full flex flex-col gap-2;
+}
+
+.run-modal__header-top {
+  @apply w-full flex justify-between items-center;
+}
+
+.run-modal__header__title {
+  @apply font-bold text-black text-3xl;
+}
+
+.run-modal__header-info {
+  @apply w-full flex items-center gap-2;
+}
+
+.run-modal__header-info__text {
+  @apply font-bold text-gray-500 text-xs;
+}
+
+.run-modal__header-info__status--ongoing {
+  @apply font-black text-green-400;
+}
+
+.run-modal__header-info__status--loading {
+  @apply font-black text-yellow-400;
+}
+
+.run-modal__header-info__status--finished {
+  @apply font-black text-red-400;
+}
+
+.run-modal__header-info__divisor {
+  @apply h-[15px] w-px bg-gradient-to-b from-gray-100 via-gray-300 to-gray-100;
+}
